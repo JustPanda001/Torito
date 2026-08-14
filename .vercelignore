@@ -1,0 +1,11 @@
+# Local dev server — Vercel serves the files itself
+serve.ps1
+
+# Editor/agent config
+.claude/
+
+# Source artwork the logo was extracted from (775 KB, not referenced by the site)
+assets/Gemini_Generated_Image_*.jpe
+
+# Schema is run by hand in the Supabase SQL editor, not served to visitors
+supabase-schema.sql
