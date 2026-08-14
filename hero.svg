@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" width="1600" height="900" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="hsky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#6fb9d6"/>
+      <stop offset="55%" stop-color="#a9dbe8"/>
+      <stop offset="100%" stop-color="#dcf2ea"/>
+    </linearGradient>
+    <linearGradient id="hfar" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#8ec8dd"/><stop offset="100%" stop-color="#b6dded"/>
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="900" fill="url(#hsky)"/>
+  <circle cx="1280" cy="180" r="70" fill="#fff" opacity=".55"/>
+  <!-- far range -->
+  <path d="M0 520 L200 300 L340 440 L520 240 L700 520 Z" fill="url(#hfar)"/>
+  <path d="M520 240 L455 340 L585 340 Z" fill="#fff"/>
+  <path d="M200 300 L150 380 L250 380 Z" fill="#fff"/>
+  <path d="M620 540 L900 220 L1240 540 Z" fill="#7cbdd4"/>
+  <path d="M900 220 L820 340 L980 340 Z" fill="#fff"/>
+  <path d="M1120 560 L1360 330 L1600 560 Z" fill="#96cfe2"/>
+  <path d="M1360 330 L1310 410 L1410 410 Z" fill="#fff"/>
+  <!-- mid ridge -->
+  <path d="M0 620 C 260 540, 520 640, 800 590 C 1100 535, 1340 640, 1600 585 L1600 900 L0 900 Z" fill="#5fae9c"/>
+  <!-- near ridge -->
+  <path d="M0 720 C 300 660, 560 760, 900 700 C 1220 645, 1400 740, 1600 700 L1600 900 L0 900 Z" fill="#3f8f80"/>
+  <!-- trail -->
+  <path d="M240 900 C 420 790, 640 760, 900 726" stroke="#e8dcc0" stroke-width="26" fill="none" stroke-linecap="round" opacity=".85"/>
+  <!-- pines -->
+  <g fill="#2f7264">
+    <path d="M180 800 L214 872 L146 872 Z"/><path d="M180 758 L208 818 L152 818 Z"/>
+    <path d="M1420 780 L1452 848 L1388 848 Z"/><path d="M1420 742 L1446 796 L1394 796 Z"/>
+    <path d="M1300 812 L1330 876 L1270 876 Z"/>
+  </g>
+  <!-- two hikers on the trail -->
+  <g fill="#1d3d47">
+    <circle cx="700" cy="752" r="13"/>
+    <path d="M690 768 h20 l6 44 h-32 z"/>
+    <path d="M694 812 l-6 44 h10 l8 -40 z"/><path d="M706 812 l8 44 h10 l-8 -44 z"/>
+    <rect x="712" y="762" width="18" height="26" rx="5" fill="#2f7264"/>
+    <circle cx="762" cy="742" r="13"/>
+    <path d="M752 758 h20 l6 46 h-32 z"/>
+    <path d="M756 804 l-6 46 h10 l8 -42 z"/><path d="M768 804 l8 46 h10 l-8 -46 z"/>
+    <rect x="736" y="752" width="18" height="26" rx="5" fill="#2f7264"/>
+  </g>
+</svg>
