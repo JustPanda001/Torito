@@ -56,16 +56,9 @@ export default function SiteHeader({ solid = false }) {
             <span className="burger"><span /><span /><span /></span>
             <span className="menu-label">{t('nav.menu')}</span>
           </button>
-        </div>
 
-        <form className="search-box" onSubmit={(e) => e.preventDefault()}>
-          <svg className="search-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" />
-          </svg>
-          <input type="search" placeholder={t('nav.search')} aria-label={t('nav.search')} />
-        </form>
-
-        <div className="header-actions">
+          {/* phone only: sits with the menu on the left, not among the
+              right-hand controls */}
           <button
             className="icon-btn round search-toggle"
             type="button"
@@ -78,7 +71,16 @@ export default function SiteHeader({ solid = false }) {
               <circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" />
             </svg>
           </button>
+        </div>
 
+        <form className="search-box" onSubmit={(e) => e.preventDefault()}>
+          <svg className="search-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" />
+          </svg>
+          <input type="search" placeholder={t('nav.search')} aria-label={t('nav.search')} />
+        </form>
+
+        <div className="header-actions">
           <button className="icon-btn ai-btn" type="button" title="Ask AI" onClick={() => alert('AI assistant coming soon.')}>
             <span className="ai-dot" /><span className="hide-sm">{t('nav.askAi')}</span>
           </button>
