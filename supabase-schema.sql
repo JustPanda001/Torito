@@ -80,6 +80,30 @@ create table if not exists public.favorites (
 );
 
 -- ============================================================
+-- TOUR OPTIONS
+-- The choices behind the admin dropdowns (difficulty, languages, departure
+-- point, transport...). Kept in a table rather than hard-coded so an admin can
+-- add a new departure point without a code change.
+-- ============================================================
+create table if not exists public.tour_options (
+  field      text not null,
+  value      text not null,
+  created_at timestamptz not null default now(),
+  primary key (field, value)
+);
+
+-- seeded from the placeholder catalogue; harmless to re-run
+insert into public.tour_options (field, value) values
+  ('difficulty', 'Easy'), ('difficulty', 'Moderate'), ('difficulty', 'Medium'), ('difficulty', 'Hard'),
+  ('languages', 'EN'), ('languages', 'EN · GE'), ('languages', 'EN · GE · RU'),
+  ('departure_point', 'Tbilisi, Liberty Square'), ('departure_point', 'Tbilisi, Station Square'),
+  ('departure_point', 'Kutaisi Airport'), ('departure_point', 'Batumi, Piazza'),
+  ('transport', 'Minibus'), ('transport', 'Minibus + 4x4'), ('transport', 'Minibus + 4x4 to trailhead'),
+  ('transport', '4x4 only'), ('transport', 'Private car'),
+  ('stay', 'Guesthouse'), ('stay', 'Hotel'), ('stay', 'Tents'), ('stay', 'Day trip')
+on conflict (field, value) do nothing;
+
+-- ============================================================
 -- ADMIN CHECK
 -- security definer so it reads profiles without going through that table's own
 -- policies — a policy on profiles that queried profiles would recurse forever.
@@ -156,9 +180,21 @@ create trigger profiles_guard_role
 -- The admin page's own gate only hides the UI; these rules are what actually
 -- stop a non-admin writing anything.
 -- ============================================================
-alter table public.profiles  enable row level security;
-alter table public.tours     enable row level security;
-alter table public.favorites enable row level security;
+alter table public.profiles     enable row level security;
+alter table public.tours        enable row level security;
+alter table public.favorites    enable row level security;
+alter table public.tour_options enable row level security;
+
+-- Options are readable by anyone (the admin form needs them before the role is
+-- known) but only an admin can add or remove one.
+drop policy if exists "read options"   on public.tour_options;
+drop policy if exists "admins manage options" on public.tour_options;
+
+create policy "read options" on public.tour_options
+  for select using (true);
+
+create policy "admins manage options" on public.tour_options
+  for all using (public.is_admin()) with check (public.is_admin());
 
 -- Favourites are private: each person sees and changes only their own rows.
 -- Without the user_id = auth.uid() check, one customer could read everyone

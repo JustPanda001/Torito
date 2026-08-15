@@ -375,6 +375,26 @@ body.subpage{background:var(--page-bg);padding-top:var(--header-h)}
 .chip:hover{background:var(--green-100)}
 .chip.active{background:var(--green-500);border-color:var(--green-500);color:#fff}
 
+/* --- admin dropdown with an inline add --- */
+.option-row{display:flex;align-items:center;gap:8px}
+.option-row select,.option-row input{flex:1;min-width:0}
+.option-add{
+  width:38px;height:38px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  border:1.5px solid var(--green-300);border-radius:10px;
+  background:var(--surface);color:var(--green-700);
+  font-size:20px;line-height:1;cursor:pointer;transition:.15s;
+}
+.option-add:hover{background:var(--green-100)}
+.option-new{margin-top:8px}
+.option-save{
+  flex-shrink:0;border:0;border-radius:10px;cursor:pointer;
+  background:var(--green-500);color:#fff;
+  font:inherit;font-size:14px;font-weight:600;padding:9px 16px;
+}
+.option-save:hover{background:var(--green-700)}
+.field-hint.error{color:#b4462a}
+
 /* --- saved trips --- */
 .saved-btn{position:relative}
 .saved-count{

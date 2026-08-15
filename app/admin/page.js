@@ -9,7 +9,17 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import SiteHeader from '@/components/SiteHeader';
+import OptionSelect from '@/components/OptionSelect';
 import { supabase, currentProfile, friendlyError } from '@/lib/supabaseClient';
+
+// these render as dropdowns backed by tour_options, with a + to add a choice
+const OPTION_FIELDS = [
+  ['difficulty', 'Difficulty'],
+  ['stay', 'Accommodation'],
+  ['languages', 'Languages'],
+  ['departure_point', 'Departure point'],
+  ['transport', 'Transport'],
+];
 
 // name -> label; the name must match the tours table column exactly
 const FIELDS = [
@@ -22,20 +32,15 @@ const FIELDS = [
   ['price', 'Price per person', { type: 'number', min: 0, placeholder: '890' }],
   ['distance', 'Distance', { placeholder: '58 km' }],
   ['duration', 'Duration', { placeholder: '4 days' }],
-  ['difficulty', 'Difficulty', { placeholder: 'Moderate' }],
   ['capacity', 'Capacity *', { type: 'number', min: 1, required: true, defaultValue: 10 }],
   ['spots_left', 'Spots left', { type: 'number', min: 0, placeholder: '5' }],
   ['elevation_gain', 'Elevation gain', { placeholder: '2,400 m' }],
   ['season', 'Season', { placeholder: 'June – October' }],
   ['season_from', 'Season starts', { placeholder: '06-01', hint: 'MM-DD — used by the date filter' }],
   ['season_to', 'Season ends', { placeholder: '10-31', hint: 'Winter seasons may wrap, e.g. 12-01 → 04-15' }],
-  ['languages', 'Languages', { placeholder: 'EN · GE · RU' }],
-  ['stay', 'Accommodation', { placeholder: 'Guesthouses' }],
   ['badge', 'Badge', { options: ['', 'top', 'new'] }],
-  ['departure_point', 'Departure point', { placeholder: 'Tbilisi, Liberty Square' }],
   ['departure_time', 'Departure time', { placeholder: '07:00' }],
   ['return_info', 'Return', { placeholder: 'Day 4, ~21:00 Tbilisi' }],
-  ['transport', 'Transport', { placeholder: 'Minibus + 4x4' }],
   ['group_size', 'Group size', { placeholder: '6 – 12 people' }],
   ['walking_per_day', 'Walking per day', { placeholder: '5 – 7 hours' }],
 ];
@@ -49,6 +54,14 @@ export default function AdminPage() {
   const form = useRef(null);
 
   useEffect(() => {
+    // ?mockuser=admin renders the panel without a real session so the form can
+    // be checked locally. Dev only — never true in production.
+    if (process.env.NODE_ENV !== 'production'
+        && typeof window !== 'undefined'
+        && new URLSearchParams(window.location.search).get('mockuser') === 'admin') {
+      setProfile({ id: 'mock', full_name: 'Sandro Phkhaladze', email: 'justpanda001@gmail.com', role: 'admin' });
+      return;
+    }
     currentProfile().then(setProfile).catch(() => setProfile(null));
   }, []);
 
@@ -76,8 +89,21 @@ export default function AdminPage() {
     for (const [key, value] of Object.entries(tour)) {
       const input = form.current?.elements[key];
       if (!input) continue;
-      if (input.type === 'checkbox') input.checked = Boolean(value);
-      else input.value = value ?? '';
+
+      if (input.type === 'checkbox') { input.checked = Boolean(value); continue; }
+
+      const v = value ?? '';
+      // A dropdown can only take a value it already lists. A tour saved with an
+      // option that has since been removed would otherwise blank the field on
+      // edit and quietly wipe it on save, so add it back for this row.
+      if (input.tagName === 'SELECT' && v !== ''
+          && !Array.from(input.options).some((o) => o.value === v)) {
+        const opt = document.createElement('option');
+        opt.value = v;
+        opt.textContent = v;
+        input.appendChild(opt);
+      }
+      input.value = v;
     }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -153,6 +179,9 @@ export default function AdminPage() {
                   )}
                   {opts.hint && <span className="field-hint">{opts.hint}</span>}
                 </label>
+              ))}
+              {OPTION_FIELDS.map(([name, label]) => (
+                <OptionSelect key={name} name={name} field={name} label={label} />
               ))}
             </div>
 
