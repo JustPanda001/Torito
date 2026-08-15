@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { seasonLabel } from '@/lib/season';
 import { useT } from '@/lib/i18n';
+import FavoriteButton from './FavoriteButton';
 
 const ICONS = {
   distance: <><path d="M4 18h16" /><path d="M7 18l5-12 5 12" /></>,
@@ -59,7 +60,10 @@ export default function TourCard({ tour }) {
       </div>
 
       <div className="tour-side">
-        <div className="tour-region">{tour.region || ''}</div>
+        <div className="tour-region-row">
+          <FavoriteButton slug={tour.slug} />
+          <span className="tour-region">{tour.region || ''}</span>
+        </div>
         <div className={`tour-status ${full ? 'full' : 'open'}`}>{full ? t('listing.fullyBooked') : t('listing.spotsOpen')}</div>
 
         <div className="tour-capacity">

@@ -67,6 +67,19 @@ create index if not exists tours_published_created_idx
   on public.tours (published, created_at desc);
 
 -- ============================================================
+-- FAVOURITES
+-- One row per (person, trip). The slug is stored rather than a foreign key to
+-- tours.id so a saved trip survives the placeholder catalogue being replaced by
+-- real database rows.
+-- ============================================================
+create table if not exists public.favorites (
+  user_id    uuid not null references auth.users(id) on delete cascade,
+  tour_slug  text not null,
+  created_at timestamptz not null default now(),
+  primary key (user_id, tour_slug)
+);
+
+-- ============================================================
 -- ADMIN CHECK
 -- security definer so it reads profiles without going through that table's own
 -- policies — a policy on profiles that queried profiles would recurse forever.
@@ -143,8 +156,25 @@ create trigger profiles_guard_role
 -- The admin page's own gate only hides the UI; these rules are what actually
 -- stop a non-admin writing anything.
 -- ============================================================
-alter table public.profiles enable row level security;
-alter table public.tours    enable row level security;
+alter table public.profiles  enable row level security;
+alter table public.tours     enable row level security;
+alter table public.favorites enable row level security;
+
+-- Favourites are private: each person sees and changes only their own rows.
+-- Without the user_id = auth.uid() check, one customer could read everyone
+-- else's saved trips.
+drop policy if exists "read own favorites"   on public.favorites;
+drop policy if exists "add own favorites"    on public.favorites;
+drop policy if exists "remove own favorites" on public.favorites;
+
+create policy "read own favorites" on public.favorites
+  for select using (user_id = auth.uid());
+
+create policy "add own favorites" on public.favorites
+  for insert with check (user_id = auth.uid());
+
+create policy "remove own favorites" on public.favorites
+  for delete using (user_id = auth.uid());
 
 drop policy if exists "read own profile"     on public.profiles;
 drop policy if exists "insert own profile"   on public.profiles;

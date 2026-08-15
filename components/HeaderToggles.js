@@ -52,19 +52,19 @@ export function ThemeToggle() {
 
 export function LanguageToggle() {
   const { lang, setLang } = useT();
-  const toGeorgian = lang === 'en';
+  const isEnglish = lang === 'en';
 
-  // shows the flag of the language you would switch TO, matching the old
-  // "ka" / "EN" labels
+  // shows the flag of the language currently in use, so the header always
+  // reflects the state of the site rather than what a click would do
   return (
     <button
       type="button"
       className="head-toggle head-flag"
-      onClick={() => setLang(toGeorgian ? 'ka' : 'en')}
-      title={toGeorgian ? 'ქართული' : 'English'}
-      aria-label={toGeorgian ? 'Switch to Georgian' : 'Switch to English'}
+      onClick={() => setLang(isEnglish ? 'ka' : 'en')}
+      title={isEnglish ? 'ქართული' : 'English'}
+      aria-label={isEnglish ? 'Switch to Georgian' : 'Switch to English'}
     >
-      {toGeorgian ? <FlagGE /> : <FlagUS />}
+      {isEnglish ? <FlagUS /> : <FlagGE />}
     </button>
   );
 }

@@ -9,6 +9,7 @@ import SiteHeader from '@/components/SiteHeader';
 import SiteFooter from '@/components/SiteFooter';
 import Gallery from '@/components/Gallery';
 import BookingModal from '@/components/BookingModal';
+import FavoriteButton from '@/components/FavoriteButton';
 import { findTour } from '@/lib/tours-data';
 import { money } from '@/lib/season';
 
@@ -97,7 +98,10 @@ export default function TourPage({ params }) {
           <Gallery photos={tour.gallery} alt={name} />
 
           <aside className="booking-card">
-            <div className={`book-status ${full ? 'full' : 'open'}`}>{full ? 'Fully booked' : 'Spots open'}</div>
+            <div className="book-top">
+              <div className={`book-status ${full ? 'full' : 'open'}`}>{full ? 'Fully booked' : 'Spots open'}</div>
+              <FavoriteButton slug={tour.slug} />
+            </div>
 
             <div className="book-capacity">
               <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" strokeWidth="1.7">

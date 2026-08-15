@@ -68,14 +68,9 @@ export default function SiteHeader({ solid = false }) {
           <ThemeToggle />
           <AccountMenu />
 
-          <Link className="icon-btn round" href="/tours" title="Saved">
+          <Link className="icon-btn round" href="/tours" title={t('nav.saved')}>
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8">
               <path d="M12 20s-7-4.6-7-9.4A4 4 0 0 1 12 8a4 4 0 0 1 7-2.6c0 4.8-7 9.4-7 9.4z" />
-            </svg>
-          </Link>
-          <Link className="icon-btn round" href="/tours" title="Bookings">
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8">
-              <path d="M6 8h12l1 12H5z" /><path d="M9 8V6a3 3 0 0 1 6 0v2" />
             </svg>
           </Link>
         </div>

@@ -1,6 +1,8 @@
 import './globals.css';
 import OfflineBanner from '@/components/OfflineBanner';
+import AccountPrompt from '@/components/AccountPrompt';
 import { LanguageProvider } from '@/lib/i18n';
+import { FavoritesProvider } from '@/lib/favorites';
 
 export const metadata = {
   title: 'Torito — Tours, Hikes, Ski & Camping',
@@ -39,8 +41,11 @@ export default function RootLayout({ children }) {
       */}
       <body suppressHydrationWarning>
         <LanguageProvider>
-          {children}
-          <OfflineBanner />
+          <FavoritesProvider>
+            {children}
+            <AccountPrompt />
+            <OfflineBanner />
+          </FavoritesProvider>
         </LanguageProvider>
       </body>
     </html>
