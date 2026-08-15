@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 90" width="260" height="90" role="img" aria-label="Georgia Tourism logo">
+  <defs>
+    <linearGradient id="lgSky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#bfe8f5"/>
+      <stop offset="100%" stop-color="#d9f2e4"/>
+    </linearGradient>
+  </defs>
+
+  <!-- ===== LEFT BLOCK: Svaneti towers (top) + skier (below) ===== -->
+  <g id="svaneti">
+    <!-- snow ridge behind towers -->
+    <path d="M4 46 L20 22 L32 38 L44 18 L60 46 Z" fill="url(#lgSky)" opacity=".55"/>
+
+    <!-- tower 1 -->
+    <g fill="#4a6b78">
+      <rect x="10" y="16" width="12" height="30" rx="1"/>
+      <rect x="9"  y="12" width="14" height="5" rx="1"/>
+      <rect x="13.5" y="22" width="2.5" height="5" fill="#eaf6f2"/>
+      <rect x="13.5" y="31" width="2.5" height="5" fill="#eaf6f2"/>
+    </g>
+    <!-- tower 2 (tallest) -->
+    <g fill="#3d5c69">
+      <rect x="25" y="8"  width="13" height="38" rx="1"/>
+      <rect x="24" y="4"  width="15" height="5" rx="1"/>
+      <rect x="29" y="14" width="3" height="6" fill="#eaf6f2"/>
+      <rect x="29" y="24" width="3" height="6" fill="#eaf6f2"/>
+      <rect x="29" y="34" width="3" height="6" fill="#eaf6f2"/>
+    </g>
+    <!-- tower 3 -->
+    <g fill="#4a6b78">
+      <rect x="41" y="18" width="11" height="28" rx="1"/>
+      <rect x="40" y="14" width="13" height="5" rx="1"/>
+      <rect x="44.5" y="24" width="2.5" height="5" fill="#eaf6f2"/>
+      <rect x="44.5" y="33" width="2.5" height="5" fill="#eaf6f2"/>
+    </g>
+
+    <!-- ski slope -->
+    <path d="M2 78 C 18 74, 34 62, 56 50" stroke="#8fd6c4" stroke-width="3" fill="none" stroke-linecap="round"/>
+
+    <!-- skier going down -->
+    <g stroke="#2f4a55" stroke-width="2.6" stroke-linecap="round" fill="none">
+      <circle cx="26" cy="55" r="3.4" fill="#2f4a55" stroke="none"/>
+      <path d="M25 59 L22 65"/>
+      <path d="M22 65 L17 69"/>
+      <path d="M22 65 L26 68"/>
+      <path d="M27 58 L32 60"/>
+      <path d="M24 58 L19 61"/>
+      <!-- skis -->
+      <path d="M12 71 L24 67" stroke="#4fb3a0"/>
+      <path d="M21 71 L33 67" stroke="#4fb3a0"/>
+    </g>
+  </g>
+
+  <!-- ===== MIDDLE: Sameba cathedral ===== -->
+  <g id="sameba" fill="#3d5c69">
+    <!-- cross -->
+    <rect x="127" y="4" width="2.2" height="9" rx="1"/>
+    <rect x="124.5" y="6.5" width="7.5" height="2.2" rx="1"/>
+    <!-- cone dome -->
+    <path d="M128 13 L138 34 L118 34 Z" fill="#4a6b78"/>
+    <!-- drum -->
+    <rect x="120" y="34" width="16" height="14"/>
+    <rect x="126" y="38" width="3" height="8" fill="#eaf6f2"/>
+    <!-- body -->
+    <path d="M110 48 L146 48 L146 78 L110 78 Z"/>
+    <!-- side wings -->
+    <path d="M102 58 L110 58 L110 78 L102 78 Z" fill="#4a6b78"/>
+    <path d="M146 58 L154 58 L154 78 L146 78 Z" fill="#4a6b78"/>
+    <!-- arched door + windows -->
+    <path d="M124 78 L124 64 a4 4 0 0 1 8 0 L132 78 Z" fill="#eaf6f2"/>
+    <rect x="114" y="56" width="3" height="8" rx="1.5" fill="#eaf6f2"/>
+    <rect x="139" y="56" width="3" height="8" rx="1.5" fill="#eaf6f2"/>
+  </g>
+
+  <!-- ===== RIGHT: campsite with campfire ===== -->
+  <g id="camp">
+    <!-- pine trees -->
+    <g fill="#7cc9ae">
+      <path d="M180 44 L188 62 L172 62 Z"/>
+      <path d="M180 34 L187 50 L173 50 Z"/>
+      <rect x="178.5" y="62" width="3" height="6" fill="#4a6b78"/>
+    </g>
+    <!-- tent -->
+    <path d="M212 70 L228 40 L244 70 Z" fill="#4fb3a0"/>
+    <path d="M228 40 L228 70" stroke="#eaf6f2" stroke-width="1.6"/>
+    <path d="M222 70 L228 52 L234 70 Z" fill="#2f4a55"/>
+    <!-- campfire -->
+    <g>
+      <path d="M199 68 c-4-4 -1-8 1-10 c0 3 2 4 3 2 c3 3 3 6 1 8 z" fill="#f6b352"/>
+      <path d="M200 68 c-2-2 -0.5-4 0.6-5.4 c0.2 1.8 1.4 2.2 2 1 c1.4 1.8 1.2 3.4 0 4.4 z" fill="#ef8354"/>
+      <path d="M193 72 L207 68" stroke="#4a6b78" stroke-width="2.4" stroke-linecap="round"/>
+      <path d="M194 68 L206 72" stroke="#4a6b78" stroke-width="2.4" stroke-linecap="round"/>
+    </g>
+  </g>
+
+  <!-- ground line -->
+  <path d="M96 80 L256 80" stroke="#8fd6c4" stroke-width="2.5" stroke-linecap="round"/>
+</svg>
