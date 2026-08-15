@@ -3,8 +3,11 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import AccountMenu from './AccountMenu';
+import { ThemeToggle, LanguageToggle } from './HeaderToggles';
+import { useT } from '@/lib/i18n';
 
 export default function SiteHeader({ solid = false }) {
+  const { t } = useT();
   // sub-pages have no hero behind the header, so it stays solid all the time
   const [scrolled, setScrolled] = useState(solid);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -45,7 +48,7 @@ export default function SiteHeader({ solid = false }) {
             onClick={(e) => { e.stopPropagation(); setMenuOpen((v) => !v); }}
           >
             <span className="burger"><span /><span /><span /></span>
-            <span className="menu-label">Menu</span>
+            <span className="menu-label">{t('nav.menu')}</span>
           </button>
         </div>
 
@@ -53,14 +56,16 @@ export default function SiteHeader({ solid = false }) {
           <svg className="search-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
             <circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" />
           </svg>
-          <input type="search" placeholder="Search tours, hikes, instructors…" aria-label="Search" />
+          <input type="search" placeholder={t('nav.search')} aria-label={t('nav.search')} />
         </form>
 
         <div className="header-actions">
           <button className="icon-btn ai-btn" type="button" title="Ask AI" onClick={() => alert('AI assistant coming soon.')}>
-            <span className="ai-dot" /><span className="hide-sm">Ask AI</span>
+            <span className="ai-dot" /><span className="hide-sm">{t('nav.askAi')}</span>
           </button>
 
+          <LanguageToggle />
+          <ThemeToggle />
           <AccountMenu />
 
           <Link className="icon-btn round" href="/tours" title="Saved">

@@ -13,16 +13,18 @@ import DateFilter from '@/components/DateFilter';
 import { TOURS } from '@/lib/tours-data';
 import { seasonCovers } from '@/lib/season';
 import { supabase } from '@/lib/supabaseClient';
+import { useT } from '@/lib/i18n';
 
 const CHIPS = [
-  ['all', 'All'],
-  ['hiking', 'Hiking'],
-  ['camping', 'Camping'],
-  ['ski', 'Ski & snowboard'],
-  ['culture', 'Culture'],
+  ['all', 'cat.all'],
+  ['hiking', 'cat.hiking'],
+  ['camping', 'cat.camping'],
+  ['ski', 'cat.ski'],
+  ['culture', 'cat.culture'],
 ];
 
 export default function ToursPage() {
+  const { t } = useT();
   const [tours, setTours] = useState(TOURS);
   const [category, setCategory] = useState('all');
   const [range, setRange] = useState({ from: null, to: null });
@@ -55,8 +57,8 @@ export default function ToursPage() {
       <main className="listing-page">
 
         <div className="listing-head">
-          <h1>Activities</h1>
-          <p className="listing-count">{shown.length} trips available</p>
+          <h1>{t('listing.title')}</h1>
+          <p className="listing-count">{t('listing.count', { n: shown.length })}</p>
         </div>
 
         <div className="filter-bar">
@@ -67,7 +69,7 @@ export default function ToursPage() {
               className={`chip${category === key ? ' active' : ''}`}
               onClick={() => setCategory(key)}
             >
-              {text}
+              {t(text)}
             </button>
           ))}
         </div>
@@ -76,8 +78,8 @@ export default function ToursPage() {
 
         <div className="listing">
           {shown.length
-            ? shown.map((t) => <TourCard key={t.slug} tour={t} />)
-            : <p className="form-note">No trips match those dates. Try a wider range.</p>}
+            ? shown.map((tour) => <TourCard key={tour.slug} tour={tour} />)
+            : <p className="form-note">{t('listing.none')}</p>}
         </div>
       </main>
       <SiteFooter />

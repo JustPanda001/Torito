@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { seasonLabel } from '@/lib/season';
+import { useT } from '@/lib/i18n';
 
 const ICONS = {
   distance: <><path d="M4 18h16" /><path d="M7 18l5-12 5 12" /></>,
@@ -16,6 +17,7 @@ const Icon = ({ children }) => (
 );
 
 export default function TourCard({ tour }) {
+  const { t } = useT();
   const router = useRouter();
   const full = tour.spots_left === 0;
   const season = seasonLabel(tour);
@@ -58,18 +60,18 @@ export default function TourCard({ tour }) {
 
       <div className="tour-side">
         <div className="tour-region">{tour.region || ''}</div>
-        <div className={`tour-status ${full ? 'full' : 'open'}`}>{full ? 'Fully booked' : 'Spots open'}</div>
+        <div className={`tour-status ${full ? 'full' : 'open'}`}>{full ? t('listing.fullyBooked') : t('listing.spotsOpen')}</div>
 
         <div className="tour-capacity">
           <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.7">
             <circle cx="9" cy="8" r="3.2" /><path d="M2.5 19c0-3.4 2.9-5.5 6.5-5.5s6.5 2.1 6.5 5.5" />
             <circle cx="17.5" cy="9" r="2.6" /><path d="M17.5 14c2.6 0 4 1.8 4 4" />
           </svg>
-          <strong>{tour.capacity}</strong><span className="cap-label">people max</span>
+          <strong>{tour.capacity}</strong><span className="cap-label">{t('listing.peopleMax')}</span>
         </div>
 
         <Link className={`tour-btn${full ? ' ghost' : ''}`} href={href}>
-          {full ? 'Join waitlist' : 'View trip'}
+          {full ? t('listing.waitlist') : t('listing.viewTrip')}
         </Link>
       </div>
     </article>

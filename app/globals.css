@@ -14,7 +14,45 @@
   --radius-lg:28px;
   --shadow:0 8px 24px rgba(47,74,85,.08);
   --max:1440px;
+  --header-max:1280px;
   --header-h:80px;
+
+  /* Surfaces are variables so the dark theme can swap them. Text sitting on a
+     coloured button stays literal #fff in both themes — those are not surfaces. */
+  --surface:#fff;
+  --surface-2:#f7fafb;
+  --page-bg:#f4f7f8;
+  --header-bg:rgba(255,255,255,.95);
+  --search-bg:rgba(255,255,255,.9);
+  --line:var(--green-100);
+}
+
+:root[data-theme="dark"]{
+  --green-50:#16302b;
+  --green-100:#1d3d37;
+  --green-300:#2f6a5f;
+  --green-500:#4fb3a0;
+  --green-700:#6ecdb9;
+  --blue-50:#16262e;
+  --blue-100:#1b3038;
+  --blue-300:#2b4d5c;
+  --ink:#e6edf0;
+  --ink-soft:#9fb3bc;
+
+  --surface:#182226;
+  --surface-2:#1e2a2f;
+  --page-bg:#121a1d;
+  --header-bg:rgba(18,26,29,.95);
+  --search-bg:rgba(255,255,255,.08);
+  --shadow:0 8px 24px rgba(0,0,0,.4);
+  --line:#26363c;
+
+  color-scheme:dark;
+}
+
+/* the theme flips instantly on click; without this the surfaces jump */
+body,.tour-card,.booking-card,.detail-block,.auth-card,.subpage-shell{
+  transition:background-color .2s ease,color .2s ease;
 }
 
 *{box-sizing:border-box}
@@ -23,7 +61,7 @@ body{
   margin:0;
   font-family:"Segoe UI",system-ui,-apple-system,sans-serif;
   color:var(--ink);
-  background:var(--white);
+  background:var(--surface);
   line-height:1.65;
 }
 img{max-width:100%;display:block}
@@ -39,12 +77,12 @@ a{color:inherit;text-decoration:none}
   transition:background .35s ease,box-shadow .35s ease;
 }
 .site-header.solid{
-  background:rgba(255,255,255,.95);
+  background:var(--header-bg);
   backdrop-filter:blur(12px);
   box-shadow:0 2px 16px rgba(47,74,85,.10);
 }
 .header-inner{
-  max-width:var(--max);margin:0 auto;height:var(--header-h);
+  max-width:var(--header-max);margin:0 auto;height:var(--header-h);
   display:flex;align-items:center;gap:20px;padding:0 28px;
   position:relative;
 }
@@ -72,12 +110,12 @@ a{color:inherit;text-decoration:none}
 .search-box{
   flex:0 1 420px;min-width:0;margin:0 12px;
   display:flex;align-items:center;gap:10px;
-  background:rgba(255,255,255,.9);
+  background:var(--search-bg);
   border:1.5px solid transparent;
   border-radius:999px;padding:9px 20px;
   transition:border-color .25s,background .25s;
 }
-.search-box:focus-within{border-color:var(--green-500);background:#fff}
+.search-box:focus-within{border-color:var(--green-500);background:var(--surface)}
 .search-icon{color:var(--ink-soft);flex-shrink:0}
 .search-box input{
   flex:1;min-width:0;border:none;outline:none;background:transparent;
@@ -92,14 +130,14 @@ a{color:inherit;text-decoration:none}
   color:inherit;padding:9px 14px;border-radius:999px;transition:.2s;
 }
 .icon-btn:hover{background:rgba(143,214,196,.35)}
-.icon-btn.round{width:42px;height:42px;padding:0;justify-content:center;background:rgba(255,255,255,.75)}
+.icon-btn.round{width:42px;height:42px;padding:0;justify-content:center;background:var(--search-bg)}
 .icon-btn.round:hover{background:var(--green-300)}
 .ai-btn{
   background:linear-gradient(120deg,var(--blue-300),var(--green-300));
   color:#1e3a44;font-weight:600;padding:9px 18px;
 }
 .ai-btn:hover{filter:brightness(1.06)}
-.ai-dot{width:8px;height:8px;border-radius:50%;background:#fff;animation:pulse 2s infinite}
+.ai-dot{width:8px;height:8px;border-radius:50%;background:var(--surface);animation:pulse 2s infinite}
 @keyframes pulse{
   0%{box-shadow:0 0 0 0 rgba(255,255,255,.9)}
   70%{box-shadow:0 0 0 8px rgba(255,255,255,0)}
@@ -118,7 +156,7 @@ a{color:inherit;text-decoration:none}
 
 /* --- mega menu --- */
 .mega-menu{
-  background:rgba(255,255,255,.97);backdrop-filter:blur(12px);
+  background:var(--header-bg);backdrop-filter:blur(12px);
   border-top:1px solid var(--green-100);
   box-shadow:0 12px 28px rgba(47,74,85,.12);
   overflow:hidden;
@@ -136,7 +174,7 @@ a{color:inherit;text-decoration:none}
 
 /* ================= HERO SLIDER ================= */
 .hero{
-  position:relative;height:88vh;min-height:520px;
+  position:relative;height:100vh;min-height:520px;
   display:flex;align-items:center;overflow:hidden;
 }
 /* pure-CSS slider: 5 slides + a clone, one step every 2s, right to left */
@@ -174,7 +212,7 @@ a{color:inherit;text-decoration:none}
 }
 .hero p{margin:0 0 30px;font-size:clamp(16px,1.6vw,20px);max-width:520px;text-shadow:0 1px 10px rgba(0,0,0,.4)}
 .btn-pill{
-  display:inline-block;background:#fff;color:var(--ink);
+  display:inline-block;background:var(--surface);color:var(--ink);
   padding:15px 40px;border-radius:999px;font-weight:600;font-size:16px;
   transition:.25s;box-shadow:0 6px 20px rgba(0,0,0,.18);
 }
@@ -291,11 +329,11 @@ a{color:inherit;text-decoration:none}
 }
 
 /* ================= LISTING PAGE ================= */
-body.subpage{background:#f4f7f8;padding-top:var(--header-h)}
+body.subpage{background:var(--page-bg);padding-top:var(--header-h)}
 /* App Router renders <body> in the root layout, so a page cannot put a class on
    it. This wrapper does the same job: clears the fixed header and carries the
    subpage background. */
-.subpage-shell{background:#f4f7f8;padding-top:var(--header-h);min-height:100vh}
+.subpage-shell{background:var(--page-bg);padding-top:var(--header-h);min-height:100vh}
 
 .listing-page{max-width:1180px;margin:0 auto;padding:36px 24px 72px}
 .listing-head{display:flex;align-items:baseline;gap:14px;margin-bottom:20px}
@@ -305,7 +343,7 @@ body.subpage{background:#f4f7f8;padding-top:var(--header-h)}
 /* filter chips */
 .filter-bar{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:26px}
 .chip{
-  border:1.5px solid var(--green-300);background:#fff;color:var(--ink);
+  border:1.5px solid var(--green-300);background:var(--surface);color:var(--ink);
   font:inherit;font-size:14px;padding:8px 18px;border-radius:999px;
   cursor:pointer;transition:.2s;
 }
@@ -323,7 +361,7 @@ body.modal-open{overflow:hidden}
 @keyframes bmFade{from{opacity:0}to{opacity:1}}
 .booking-modal{
   width:min(440px,100%);max-height:calc(100vh - 40px);overflow-y:auto;
-  background:#fff;border-radius:20px;
+  background:var(--surface);border-radius:20px;
   box-shadow:0 24px 60px rgba(23,38,44,.3);
   animation:bmRise .22s cubic-bezier(.2,.8,.3,1) both;
 }
@@ -354,7 +392,7 @@ body.modal-open{overflow:hidden}
 .bm-people{display:flex;align-items:center;gap:16px}
 .bm-step{
   width:38px;height:38px;flex-shrink:0;
-  border:1.5px solid var(--green-300);background:#fff;color:var(--ink);
+  border:1.5px solid var(--green-300);background:var(--surface);color:var(--ink);
   border-radius:50%;font-size:19px;line-height:1;cursor:pointer;transition:.15s;
 }
 .bm-step:hover{background:var(--green-100)}
@@ -399,7 +437,7 @@ body.has-offline-banner{padding-bottom:104px}
 .date-bar{position:relative;margin:-14px 0 26px}
 .date-btn{
   display:inline-flex;align-items:center;gap:9px;
-  border:1.5px solid var(--green-300);background:#fff;color:var(--ink);
+  border:1.5px solid var(--green-300);background:var(--surface);color:var(--ink);
   font:inherit;font-size:14px;padding:8px 18px;border-radius:999px;
   cursor:pointer;transition:.2s;
 }
@@ -468,7 +506,7 @@ body.has-offline-banner{padding-bottom:104px}
   display:grid;
   grid-template-columns:232px minmax(0,1fr) auto;
   gap:26px;align-items:start;
-  background:#fff;border-radius:18px;padding:16px;
+  background:var(--surface);border-radius:18px;padding:16px;
   box-shadow:0 2px 10px rgba(47,74,85,.07);
   transition:box-shadow .25s,transform .25s;
   cursor:pointer;   /* the whole card opens the trip, not just the photo/button */
@@ -529,7 +567,7 @@ body.has-offline-banner{padding-bottom:104px}
   transition:.2s;white-space:nowrap;
 }
 .tour-btn:hover{background:var(--green-700)}
-.tour-btn.ghost{background:#fff;color:var(--ink-soft);border:1.5px solid var(--blue-300)}
+.tour-btn.ghost{background:var(--surface);color:var(--ink-soft);border:1.5px solid var(--blue-300)}
 .tour-btn.ghost:hover{background:var(--blue-50);color:var(--ink)}
 
 @media (max-width:900px){
@@ -583,7 +621,7 @@ body.has-offline-banner{padding-bottom:104px}
   color:var(--ink);border-color:rgba(47,74,85,.15);opacity:.7;
 }
 .detail-gallery:hover .gal-arrow{opacity:.95}
-.detail-gallery .gal-arrow:hover{background:#fff;opacity:1}
+.detail-gallery .gal-arrow:hover{background:var(--surface);opacity:1}
 
 .gallery-thumbs{
   display:flex;gap:8px;margin-top:10px;
@@ -600,7 +638,7 @@ body.has-offline-banner{padding-bottom:104px}
 
 /* --- booking sidebar --- */
 .booking-card{
-  background:#fff;border-radius:18px;padding:22px;
+  background:var(--surface);border-radius:18px;padding:22px;
   box-shadow:0 4px 18px rgba(47,74,85,.10);
   position:sticky;top:calc(var(--header-h) + 16px);
 }
@@ -634,7 +672,7 @@ body.has-offline-banner{padding-bottom:104px}
   padding:13px 20px;border-radius:999px;transition:.2s;margin-bottom:10px;
 }
 .book-btn:hover{background:var(--green-700)}
-.book-btn.secondary{background:#fff;color:var(--ink);border:1.5px solid var(--blue-300)}
+.book-btn.secondary{background:var(--surface);color:var(--ink);border:1.5px solid var(--blue-300)}
 .book-btn.secondary:hover{background:var(--blue-50)}
 
 .guide-row{
@@ -651,7 +689,7 @@ body.has-offline-banner{padding-bottom:104px}
 
 /* --- info blocks --- */
 .detail-block{
-  background:#fff;border-radius:18px;padding:28px;
+  background:var(--surface);border-radius:18px;padding:28px;
   box-shadow:0 2px 12px rgba(47,74,85,.07);margin-bottom:24px;
 }
 .detail-block h2{margin:0 0 16px;font-size:clamp(20px,2.2vw,26px)}
@@ -663,7 +701,7 @@ body.has-offline-banner{padding-bottom:104px}
   background:var(--green-100);border:1px solid var(--green-100);
   border-radius:12px;overflow:hidden;
 }
-.info-item{background:#fff;padding:14px 16px;display:flex;flex-direction:column;gap:3px}
+.info-item{background:var(--surface);padding:14px 16px;display:flex;flex-direction:column;gap:3px}
 .info-label{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft)}
 .info-value{font-size:15px;font-weight:600}
 
@@ -721,7 +759,7 @@ body.has-offline-banner{padding-bottom:104px}
 }
 .auth-card{
   width:100%;max-width:420px;
-  background:#fff;border-radius:20px;padding:36px 34px;
+  background:var(--surface);border-radius:20px;padding:36px 34px;
   box-shadow:0 12px 40px rgba(47,74,85,.12);
 }
 .auth-logo{
@@ -745,7 +783,7 @@ body.has-offline-banner{padding-bottom:104px}
   border:1.5px solid #dbe7ea;background:#fbfdfd;
   transition:border-color .2s,background .2s;
 }
-.field input:focus{outline:none;border-color:var(--green-500);background:#fff}
+.field input:focus{outline:none;border-color:var(--green-500);background:var(--surface)}
 .field-hint{font-size:12.5px;color:var(--ink-soft)}
 
 .auth-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
@@ -765,7 +803,7 @@ body.has-offline-banner{padding-bottom:104px}
 }
 .auth-btn:hover{background:var(--green-700)}
 .auth-btn.google{
-  background:#fff;color:var(--ink);border:1.5px solid #dbe7ea;margin-bottom:4px;
+  background:var(--surface);color:var(--ink);border:1.5px solid #dbe7ea;margin-bottom:4px;
 }
 .auth-btn.google:hover{background:#f6fafb}
 
@@ -791,7 +829,7 @@ body.has-offline-banner{padding-bottom:104px}
 .account-menu{position:relative}
 .account-drop{
   position:absolute;right:0;top:calc(100% + 8px);min-width:180px;
-  background:#fff;border-radius:12px;padding:6px;
+  background:var(--surface);border-radius:12px;padding:6px;
   box-shadow:0 10px 30px rgba(47,74,85,.18);z-index:200;
 }
 .account-drop[hidden]{display:none}
@@ -815,7 +853,7 @@ body.has-offline-banner{padding-bottom:104px}
   padding:12px 14px;border-radius:10px;
   border:1.5px solid #dbe7ea;background:#fbfdfd;
 }
-.admin-form textarea:focus{outline:none;border-color:var(--green-500);background:#fff}
+.admin-form textarea:focus{outline:none;border-color:var(--green-500);background:var(--surface)}
 .admin-form select{
   font:inherit;font-size:15px;color:var(--ink);
   padding:12px 14px;border-radius:10px;
@@ -878,3 +916,37 @@ body.has-offline-banner{padding-bottom:104px}
   .section{padding:48px 16px}
   .footer-inner{grid-template-columns:1fr}
 }
+
+/* ================= THEME + LANGUAGE CONTROLS ================= */
+.head-toggle{
+  display:flex;align-items:center;justify-content:center;
+  width:42px;height:42px;padding:0;flex-shrink:0;
+  border:none;border-radius:999px;cursor:pointer;
+  background:var(--search-bg);color:inherit;font:inherit;
+  font-size:13px;font-weight:700;letter-spacing:.5px;
+  transition:.2s;
+}
+.head-toggle:hover{background:var(--green-300)}
+.site-header:not(.solid) .head-toggle{background:rgba(255,255,255,.22)}
+
+/* dark theme: a few surfaces that were tuned for light backgrounds */
+:root[data-theme="dark"] .tour-card,
+:root[data-theme="dark"] .booking-card,
+:root[data-theme="dark"] .detail-block,
+:root[data-theme="dark"] .auth-card{
+  border:1px solid var(--line);
+}
+:root[data-theme="dark"] .site-footer{background:var(--surface-2);border-top-color:var(--line)}
+:root[data-theme="dark"] .chip{background:var(--surface);border-color:var(--green-300)}
+:root[data-theme="dark"] .chip:hover{background:var(--green-100)}
+:root[data-theme="dark"] .date-btn{background:var(--surface);border-color:var(--green-300)}
+:root[data-theme="dark"] .field input,
+:root[data-theme="dark"] .field select,
+:root[data-theme="dark"] .field textarea{
+  background:var(--surface-2);color:var(--ink);border-color:var(--line);
+}
+:root[data-theme="dark"] .bm-total,
+:root[data-theme="dark"] .bm-summary{background:var(--surface-2)}
+:root[data-theme="dark"] .booking-modal{border:1px solid var(--line)}
+:root[data-theme="dark"] .activity-card span,
+:root[data-theme="dark"] .hero-content{color:#fff}

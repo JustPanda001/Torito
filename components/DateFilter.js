@@ -6,9 +6,10 @@
 import { useEffect, useRef, useState } from 'react';
 import Calendar from './Calendar';
 import { MONTHS_SHORT, sameDay } from '@/lib/season';
+import { useT } from '@/lib/i18n';
 
-function label(from, to) {
-  if (!from) return 'Any dates';
+function label(from, to, anyLabel) {
+  if (!from) return anyLabel;
   const end = to || from;
   if (sameDay(from, end)) return `${from.getDate()} ${MONTHS_SHORT[from.getMonth()]}`;
   if (from.getMonth() === end.getMonth()) {
@@ -18,6 +19,7 @@ function label(from, to) {
 }
 
 export default function DateFilter({ from, to, onChange }) {
+  const { t } = useT();
   const [open, setOpen] = useState(false);
   const wrap = useRef(null);
 
@@ -52,14 +54,14 @@ export default function DateFilter({ from, to, onChange }) {
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8">
           <rect x="3" y="5" width="18" height="16" rx="2.5" /><path d="M3 10h18M8 3v4M16 3v4" />
         </svg>
-        <span>{label(from, to)}</span>
+        <span>{label(from, to, t('listing.anyDates'))}</span>
       </button>
 
       {open && (
         <Calendar value={from} rangeEnd={to} mode="range" onPick={pick}>
           <div className="cal-foot">
-            <button type="button" className="cal-clear" onClick={() => onChange({ from: null, to: null })}>Clear</button>
-            <button type="button" className="cal-done" onClick={() => setOpen(false)}>Done</button>
+            <button type="button" className="cal-clear" onClick={() => onChange({ from: null, to: null })}>{t('cal.clear')}</button>
+            <button type="button" className="cal-done" onClick={() => setOpen(false)}>{t('cal.done')}</button>
           </div>
         </Calendar>
       )}

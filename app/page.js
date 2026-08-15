@@ -1,6 +1,9 @@
+'use client';
+
 import Link from 'next/link';
 import SiteHeader from '@/components/SiteHeader';
 import SiteFooter from '@/components/SiteFooter';
+import { useT } from '@/lib/i18n';
 
 const HERO = [
   '/assets/svaneti.jpg',
@@ -11,13 +14,15 @@ const HERO = [
 ];
 
 const ACTIVITIES = [
-  ['/assets/Svaneti-history.jpg', 'Hiking'],
-  ['/assets/camping.jpg', 'Camping'],
-  ['/assets/sameba.webp', 'Culture'],
-  ['/assets/skier-gudauri-yellow-jacket-768x512.jpg', 'Ski & Snowboard'],
+  ['/assets/Svaneti-history.jpg', 'cat.hiking'],
+  ['/assets/camping.jpg', 'cat.camping'],
+  ['/assets/sameba.webp', 'cat.culture'],
+  ['/assets/skier-gudauri-yellow-jacket-768x512.jpg', 'cat.ski'],
 ];
 
 export default function HomePage() {
+  const { t } = useT();
+
   return (
     <>
       <SiteHeader />
@@ -33,25 +38,25 @@ export default function HomePage() {
           </div>
           <div className="hero-scrim" />
           <div className="hero-content">
-            <h1>THE MOUNTAINS<br />ARE WAITING</h1>
-            <p>Tours, hikes, ski instructors and camping across Georgia</p>
-            <Link className="btn-pill" href="/tours">Explore trips</Link>
+            <h1>{t('hero.title1')}<br />{t('hero.title2')}</h1>
+            <p>{t('hero.sub')}</p>
+            <Link className="btn-pill" href="/tours">{t('hero.cta')}</Link>
           </div>
         </section>
 
         <section className="section reveal visible" id="activities">
-          <h2 className="section-title">Explore by activity</h2>
+          <h2 className="section-title">{t('home.exploreByActivity')}</h2>
           <div className="activity-row">
-            {ACTIVITIES.map(([src, name]) => (
-              <Link className="activity-card" href="/tours" key={name}>
-                <img src={src} alt="" /><span>{name}</span>
+            {ACTIVITIES.map(([src, key]) => (
+              <Link className="activity-card" href="/tours" key={key}>
+                <img src={src} alt="" /><span>{t(key)}</span>
               </Link>
             ))}
           </div>
         </section>
 
         <section className="section">
-          <h2 className="section-title">What we do</h2>
+          <h2 className="section-title">{t('home.whatWeDo')}</h2>
 
           <div className="feature reveal visible">
             <div className="feature-img">

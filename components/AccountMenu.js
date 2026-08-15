@@ -6,8 +6,10 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { currentProfile, signOut } from '@/lib/supabaseClient';
+import { useT } from '@/lib/i18n';
 
 export default function AccountMenu() {
+  const { t } = useT();
   const [profile, setProfile] = useState(null);
   const [open, setOpen] = useState(false);
 
@@ -31,7 +33,7 @@ export default function AccountMenu() {
         <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8">
           <circle cx="12" cy="8" r="4" /><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7" />
         </svg>
-        <span className="hide-sm">Log in</span>
+        <span className="hide-sm">{t('nav.login')}</span>
       </Link>
     );
   }
@@ -53,10 +55,10 @@ export default function AccountMenu() {
 
       {open && (
         <div className="account-drop">
-          {profile.role === 'admin' && <Link href="/admin" className="admin-link">Admin panel</Link>}
-          <Link href="/tours">My bookings</Link>
-          <Link href="/reset">Change password</Link>
-          <button type="button" className="signout" onClick={signOut}>Sign out</button>
+          {profile.role === 'admin' && <Link href="/admin" className="admin-link">{t('account.adminPanel')}</Link>}
+          <Link href="/tours">{t('account.myBookings')}</Link>
+          <Link href="/reset">{t('account.changePassword')}</Link>
+          <button type="button" className="signout" onClick={signOut}>{t('account.signOut')}</button>
         </div>
       )}
     </div>

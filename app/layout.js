@@ -1,5 +1,6 @@
 import './globals.css';
 import OfflineBanner from '@/components/OfflineBanner';
+import { LanguageProvider } from '@/lib/i18n';
 
 export const metadata = {
   title: 'Torito — Tours, Hikes, Ski & Camping',
@@ -12,9 +13,24 @@ export const viewport = {
   initialScale: 1,
 };
 
+// Runs before the first paint, so a dark-theme visitor never sees a white
+// flash. It cannot be a component: React renders too late for that.
+const THEME_SCRIPT = `
+(function(){
+  try {
+    var saved = localStorage.getItem('theme');
+    var dark = saved ? saved === 'dark'
+      : window.matchMedia('(prefers-color-scheme: dark)').matches;
+    if (dark) document.documentElement.dataset.theme = 'dark';
+  } catch (e) {}
+})();`;
+
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className="js">
+    <html lang="en" className="js" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+      </head>
       {/*
         Browser extensions (ColorZilla, Grammarly and friends) add attributes to
         <body> before React hydrates, which React then reports as a mismatch.
@@ -22,8 +38,10 @@ export default function RootLayout({ children }) {
         rather than chasing an error the page cannot cause.
       */}
       <body suppressHydrationWarning>
-        {children}
-        <OfflineBanner />
+        <LanguageProvider>
+          {children}
+          <OfflineBanner />
+        </LanguageProvider>
       </body>
     </html>
   );
