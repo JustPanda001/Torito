@@ -14,7 +14,9 @@
   --radius-lg:28px;
   --shadow:0 8px 24px rgba(47,74,85,.08);
   --max:1440px;
-  --header-max:1560px;
+  /* matches --max so the header lines up with the page content below it
+     instead of running wider and looking off-centre */
+  --header-max:1440px;
   --header-h:80px;
 
   /* Surfaces are variables so the dark theme can swap them. Text sitting on a
