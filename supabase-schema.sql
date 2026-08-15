@@ -59,9 +59,15 @@ create table if not exists public.tours (
   walking_per_day text,
 
   summary         text,
+  -- ordered public URLs from the tour-photos bucket; cover_image is whichever
+  -- one the admin starred
+  gallery         text[] not null default '{}',
   published       boolean not null default true,
   created_at      timestamptz not null default now()
 );
+
+-- for projects created before the photo manager existed
+alter table public.tours add column if not exists gallery text[] not null default '{}';
 
 create index if not exists tours_published_created_idx
   on public.tours (published, created_at desc);
@@ -240,6 +246,28 @@ create policy "published tours are public" on public.tours
 
 create policy "admins manage tours" on public.tours
   for all using (public.is_admin()) with check (public.is_admin());
+
+-- ============================================================
+-- STORAGE: tour-photos
+-- Create the bucket first (Storage > New bucket > tour-photos > Public).
+-- Public only governs reading; these decide who may put files in it.
+-- ============================================================
+drop policy if exists "public read tour photos"    on storage.objects;
+drop policy if exists "admins upload tour photos"  on storage.objects;
+drop policy if exists "admins replace tour photos" on storage.objects;
+drop policy if exists "admins delete tour photos"  on storage.objects;
+
+create policy "public read tour photos" on storage.objects
+  for select using (bucket_id = 'tour-photos');
+
+create policy "admins upload tour photos" on storage.objects
+  for insert with check (bucket_id = 'tour-photos' and public.is_admin());
+
+create policy "admins replace tour photos" on storage.objects
+  for update using (bucket_id = 'tour-photos' and public.is_admin());
+
+create policy "admins delete tour photos" on storage.objects
+  for delete using (bucket_id = 'tour-photos' and public.is_admin());
 
 -- ============================================================
 -- BACKFILL

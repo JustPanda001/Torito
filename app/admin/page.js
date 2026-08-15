@@ -10,6 +10,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import SiteHeader from '@/components/SiteHeader';
 import OptionSelect from '@/components/OptionSelect';
+import PhotoManager from '@/components/PhotoManager';
 import { supabase, currentProfile, friendlyError } from '@/lib/supabaseClient';
 
 // these render as dropdowns backed by tour_options, with a + to add a choice
@@ -28,7 +29,6 @@ const FIELDS = [
   ['subtitle', 'Subtitle', { placeholder: '4 days' }],
   ['category', 'Category *', { required: true, options: ['hiking', 'camping', 'ski', 'culture', 'other'] }],
   ['region', 'Region', { placeholder: 'Svaneti' }],
-  ['cover_image', 'Cover image', { placeholder: '/assets/svaneti.jpg' }],
   ['price', 'Price per person', { type: 'number', min: 0, placeholder: '890' }],
   ['distance', 'Distance', { placeholder: '58 km' }],
   ['duration', 'Duration', { placeholder: '4 days' }],
@@ -51,6 +51,8 @@ export default function AdminPage() {
   const [editingId, setEditingId] = useState(null);
   const [note, setNote] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [photos, setPhotos] = useState([]);
+  const [cover, setCover] = useState('');
   const form = useRef(null);
 
   useEffect(() => {
@@ -86,6 +88,8 @@ export default function AdminPage() {
 
   function edit(tour) {
     setEditingId(tour.id);
+    setPhotos(Array.isArray(tour.gallery) ? tour.gallery : []);
+    setCover(tour.cover_image ?? '');
     for (const [key, value] of Object.entries(tour)) {
       const input = form.current?.elements[key];
       if (!input) continue;
@@ -110,6 +114,8 @@ export default function AdminPage() {
 
   function resetForm() {
     setEditingId(null);
+    setPhotos([]);
+    setCover('');
     form.current?.reset();
     setNote(null);
   }
@@ -130,6 +136,10 @@ export default function AdminPage() {
     row.spots_left = row.spots_left === '' ? null : Number(row.spots_left);
     row.price = row.price === '' ? null : Number(row.price);
     if (row.badge === '') row.badge = null;
+
+    row.gallery = photos;
+    // a starred photo wins; otherwise fall back to the first one
+    row.cover_image = cover || photos[0] || null;
 
     setSaving(true);
     const { error } = editingId
@@ -184,6 +194,12 @@ export default function AdminPage() {
                 <OptionSelect key={name} name={name} field={name} label={label} />
               ))}
             </div>
+
+            <PhotoManager
+              photos={photos}
+              cover={cover}
+              onChange={({ photos: p, cover: c }) => { setPhotos(p); setCover(c); }}
+            />
 
             <label className="field">
               <span className="field-label">Summary</span>
