@@ -8,6 +8,7 @@
 
 import { useEffect, useState } from 'react';
 import { useT } from '@/lib/i18n';
+import { FlagGE, FlagUS } from './Flags';
 
 export function ThemeToggle() {
   const { t } = useT();
@@ -51,16 +52,19 @@ export function ThemeToggle() {
 
 export function LanguageToggle() {
   const { lang, setLang } = useT();
+  const toGeorgian = lang === 'en';
 
+  // shows the flag of the language you would switch TO, matching the old
+  // "ka" / "EN" labels
   return (
     <button
       type="button"
-      className="head-toggle"
-      onClick={() => setLang(lang === 'en' ? 'ka' : 'en')}
-      title={lang === 'en' ? 'ქართული' : 'English'}
-      aria-label={lang === 'en' ? 'Switch to Georgian' : 'Switch to English'}
+      className="head-toggle head-flag"
+      onClick={() => setLang(toGeorgian ? 'ka' : 'en')}
+      title={toGeorgian ? 'ქართული' : 'English'}
+      aria-label={toGeorgian ? 'Switch to Georgian' : 'Switch to English'}
     >
-      {lang === 'en' ? 'ka' : 'EN'}
+      {toGeorgian ? <FlagGE /> : <FlagUS />}
     </button>
   );
 }

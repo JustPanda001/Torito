@@ -949,6 +949,14 @@ body.has-offline-banner{padding-bottom:104px}
 .head-toggle:hover{background:var(--green-300)}
 .site-header:not(.solid) .head-toggle{background:rgba(255,255,255,.22)}
 
+/* the flag is a rectangle inside a round button, so it needs its own rounding
+   and a hairline edge to separate the white stripes from a light header */
+.head-flag{overflow:hidden}
+.flag{
+  border-radius:3px;display:block;
+  box-shadow:0 0 0 1px rgba(0,0,0,.18);
+}
+
 /* dark theme: a few surfaces that were tuned for light backgrounds */
 :root[data-theme="dark"] .tour-card,
 :root[data-theme="dark"] .booking-card,
