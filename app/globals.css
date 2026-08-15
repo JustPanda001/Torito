@@ -847,6 +847,20 @@ body.has-offline-banner{padding-bottom:104px}
 .account-drop a:hover,.account-drop button:hover{background:var(--green-50)}
 .account-drop .admin-link{color:var(--green-700);font-weight:600}
 
+/* who you are signed in as, above the links */
+.account-who{
+  padding:8px 12px 10px;margin-bottom:4px;
+  border-bottom:1px solid var(--line);
+  display:flex;flex-direction:column;line-height:1.35;
+}
+.account-who strong{font-size:14px;color:var(--ink)}
+.account-who span{font-size:12px;color:var(--ink-soft);word-break:break-all}
+.account-drop .signout{
+  margin-top:4px;border-top:1px solid var(--line);
+  border-radius:0 0 8px 8px;color:#b4462a;font-weight:600;
+}
+.account-drop .signout:hover{background:#fdf0eb}
+
 .admin-tag{
   background:var(--green-500);color:#fff;font-size:11px;font-weight:700;
   letter-spacing:.08em;padding:4px 10px;border-radius:6px;
