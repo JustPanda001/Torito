@@ -7,9 +7,11 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { currentProfile, signOut } from '@/lib/supabaseClient';
 import { useT } from '@/lib/i18n';
+import { useFavorites } from '@/lib/favorites';
 
 export default function AccountMenu() {
   const { t } = useT();
+  const { favorites } = useFavorites();
   const [profile, setProfile] = useState(null);
   const [open, setOpen] = useState(false);
   const wrap = useRef(null);
@@ -88,6 +90,15 @@ export default function AccountMenu() {
               {t('account.adminPanel')}
             </Link>
           )}
+
+          <Link href="/tours?saved=1" className="drop-fav" onClick={() => setOpen(false)}>
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8">
+              <path d="M12 20s-7-4.6-7-9.4A4 4 0 0 1 12 8a4 4 0 0 1 7-2.6c0 4.8-7 9.4-7 9.4z" />
+            </svg>
+            <span>{t('nav.saved')}</span>
+            {favorites.size > 0 && <span className="drop-count">{favorites.size}</span>}
+          </Link>
+
           <Link href="/tours" onClick={() => setOpen(false)}>{t('account.myBookings')}</Link>
           <Link href="/reset" onClick={() => setOpen(false)}>{t('account.changePassword')}</Link>
 

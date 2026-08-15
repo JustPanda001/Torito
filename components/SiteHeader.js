@@ -11,6 +11,9 @@ export default function SiteHeader({ solid = false }) {
   const { t } = useT();
   const { favorites } = useFavorites();
   const savedCount = favorites.size;
+  // on phones the search field cannot share the row with the buttons, so it
+  // collapses to an icon that drops a full-width field below the bar
+  const [searchOpen, setSearchOpen] = useState(false);
   // sub-pages have no hero behind the header, so it stays solid all the time
   const [scrolled, setScrolled] = useState(solid);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -63,6 +66,19 @@ export default function SiteHeader({ solid = false }) {
         </form>
 
         <div className="header-actions">
+          <button
+            className="icon-btn round search-toggle"
+            type="button"
+            aria-expanded={searchOpen}
+            title={t('nav.search')}
+            aria-label={t('nav.search')}
+            onClick={(e) => { e.stopPropagation(); setSearchOpen((v) => !v); }}
+          >
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" />
+            </svg>
+          </button>
+
           <button className="icon-btn ai-btn" type="button" title="Ask AI" onClick={() => alert('AI assistant coming soon.')}>
             <span className="ai-dot" /><span className="hide-sm">{t('nav.askAi')}</span>
           </button>
@@ -71,6 +87,7 @@ export default function SiteHeader({ solid = false }) {
           <ThemeToggle />
           <AccountMenu />
 
+          {/* on phones this moves into the account menu, where there is room */}
           <Link className="icon-btn round saved-btn" href="/tours?saved=1" title={t('nav.saved')} aria-label={t('nav.saved')}>
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8">
               <path d="M12 20s-7-4.6-7-9.4A4 4 0 0 1 12 8a4 4 0 0 1 7-2.6c0 4.8-7 9.4-7 9.4z" />
@@ -79,6 +96,18 @@ export default function SiteHeader({ solid = false }) {
           </Link>
         </div>
       </div>
+
+      {searchOpen && (
+        <div className="mobile-search" onClick={(e) => e.stopPropagation()}>
+          <form className="search-box" onSubmit={(e) => e.preventDefault()}>
+            <svg className="search-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" />
+            </svg>
+            {/* eslint-disable-next-line jsx-a11y/no-autofocus */}
+            <input type="search" autoFocus placeholder={t('nav.search')} aria-label={t('nav.search')} />
+          </form>
+        </div>
+      )}
 
       {menuOpen && (
         <div className="mega-menu opening">
