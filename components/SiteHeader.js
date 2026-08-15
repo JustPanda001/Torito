@@ -5,9 +5,12 @@ import Link from 'next/link';
 import AccountMenu from './AccountMenu';
 import { ThemeToggle, LanguageToggle } from './HeaderToggles';
 import { useT } from '@/lib/i18n';
+import { useFavorites } from '@/lib/favorites';
 
 export default function SiteHeader({ solid = false }) {
   const { t } = useT();
+  const { favorites } = useFavorites();
+  const savedCount = favorites.size;
   // sub-pages have no hero behind the header, so it stays solid all the time
   const [scrolled, setScrolled] = useState(solid);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -68,10 +71,11 @@ export default function SiteHeader({ solid = false }) {
           <ThemeToggle />
           <AccountMenu />
 
-          <Link className="icon-btn round" href="/tours" title={t('nav.saved')}>
+          <Link className="icon-btn round saved-btn" href="/tours?saved=1" title={t('nav.saved')} aria-label={t('nav.saved')}>
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8">
               <path d="M12 20s-7-4.6-7-9.4A4 4 0 0 1 12 8a4 4 0 0 1 7-2.6c0 4.8-7 9.4-7 9.4z" />
             </svg>
+            {savedCount > 0 && <span className="saved-count">{savedCount}</span>}
           </Link>
         </div>
       </div>
