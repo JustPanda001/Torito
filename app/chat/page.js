@@ -9,6 +9,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import SiteHeader from '@/components/SiteHeader';
+import Linkify from '@/components/Linkify';
 import { supabase, currentProfile, friendlyError } from '@/lib/supabaseClient';
 
 const POLL_MS = 10000;
@@ -179,7 +180,7 @@ export default function ChatAdminPage() {
               <div className="chat-log" ref={logRef}>
                 {messages.map((m) => (
                   <div key={m.id} className={`chat-msg ${m.sender === 'admin' ? 'admin' : 'theirs'}`}>
-                    <p>{linkify(m.body)}</p>
+                    <p><Linkify text={m.body} /></p>
                     <time>{whenFull(m.created_at)}</time>
                   </div>
                 ))}
@@ -206,19 +207,6 @@ export default function ChatAdminPage() {
       </main>
     </>
   );
-}
-
-/**
- * Makes the trip link in a message clickable, so a question can be read in
- * context in one click. Split rather than dangerouslySetInnerHTML: the text is
- * written by visitors, and it must never be able to inject markup.
- */
-function linkify(body) {
-  return body.split(/(https?:\/\/\S+)/g).map((part, i) => (
-    /^https?:\/\//.test(part)
-      ? <a key={i} href={part} target="_blank" rel="noreferrer">{part}</a>
-      : part
-  ));
 }
 
 function whenFull(iso) {

@@ -15,6 +15,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { supabase, currentProfile } from '@/lib/supabaseClient';
 import { useT } from '@/lib/i18n';
+import Linkify from './Linkify';
 
 const STORE_KEY = 'torito.chat.conversation';
 const POLL_MS = 8000;
@@ -282,7 +283,7 @@ export default function ChatWidget() {
           <div className="chat-log" ref={logRef}>
             {messages.map((m) => (
               <div key={m.id} className={`chat-msg ${m.sender === 'user' ? 'mine' : 'theirs'}`}>
-                <p>{m.body}</p>
+                <p><Linkify text={m.body} /></p>
                 {m.created_at && (
                   <time>
                     {new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
