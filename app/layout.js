@@ -1,6 +1,7 @@
 import './globals.css';
 import OfflineBanner from '@/components/OfflineBanner';
 import AccountPrompt from '@/components/AccountPrompt';
+import ChatWidget from '@/components/ChatWidget';
 import { LanguageProvider } from '@/lib/i18n';
 import { FavoritesProvider } from '@/lib/favorites';
 
@@ -43,6 +44,7 @@ export default function RootLayout({ children }) {
         <LanguageProvider>
           <FavoritesProvider>
             {children}
+            <ChatWidget />
             <AccountPrompt />
             <OfflineBanner />
           </FavoritesProvider>
