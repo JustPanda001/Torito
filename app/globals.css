@@ -1041,11 +1041,11 @@ body.has-offline-banner{padding-bottom:104px}
 /* ================= FOOTER ================= */
 .site-footer{background:var(--green-100);border-top:2px solid var(--green-300);padding:56px 28px 24px}
 .footer-inner{max-width:var(--max);margin:0 auto;display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:32px}
-.footer-logo{height:44px;margin-bottom:10px}
+.footer-logo{height:132px;width:auto;margin-bottom:14px}
 .site-footer h4{margin:0 0 10px;font-size:15px}
 .site-footer a{display:block;font-size:14px;color:var(--ink-soft);padding:3px 0}
 .site-footer a:hover{color:var(--green-500)}
-.site-footer p{color:var(--ink-soft);font-size:14px;margin:0}
+.site-footer p{color:var(--ink-soft);font-size:15px;margin:0;max-width:34ch}
 .copyright{max-width:var(--max);margin:32px auto 0;text-align:center;font-size:13px}
 
 /* ================= RESPONSIVE ================= */
@@ -1108,6 +1108,7 @@ body.has-offline-banner{padding-bottom:104px}
   .hero{height:76vh}
   .section{padding:48px 16px}
   .footer-inner{grid-template-columns:1fr}
+  .footer-logo{height:96px}
 }
 
 /* ================= THEME + LANGUAGE CONTROLS ================= */
