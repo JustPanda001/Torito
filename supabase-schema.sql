@@ -376,3 +376,51 @@ create policy "read conversation" on public.chat_messages
 
 create policy "admins manage messages" on public.chat_messages
   for all using (public.is_admin()) with check (public.is_admin());
+
+-- ============================================================
+-- CHAT EXPIRY
+-- Threads are deleted 24 hours after their last message — measured from the
+-- last message rather than from when the thread started, so an exchange still
+-- in progress is never cut off mid-conversation.
+--
+-- Messages go with the conversation through the on delete cascade above, so
+-- deleting the parent row is enough.
+--
+-- security definer because the callers are the site's own anon and signed-in
+-- roles, which have no delete policy on these tables and should not get one:
+-- this function is the only deletion anyone can perform.
+-- ============================================================
+create or replace function public.purge_old_chats()
+returns integer
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  removed integer;
+begin
+  delete from public.chat_conversations
+   where last_message_at < now() - interval '24 hours';
+  get diagnostics removed = row_count;
+  return removed;
+end;
+$$;
+
+grant execute on function public.purge_old_chats() to anon, authenticated;
+
+-- Preferred path: the database sweeps hourly on its own, so threads expire even
+-- if nobody opens the site. pg_cron is not enabled on every Supabase project,
+-- and enabling it needs privileges this script may not have, so a failure here
+-- is not fatal — the app also calls purge_old_chats() when the chat is used.
+do $$
+begin
+  create extension if not exists pg_cron;
+
+  perform cron.unschedule('purge-old-chats')
+   where exists (select 1 from cron.job where jobname = 'purge-old-chats');
+
+  perform cron.schedule('purge-old-chats', '17 * * * *', 'select public.purge_old_chats()');
+exception when others then
+  raise notice 'pg_cron not scheduled (%). The app will still purge on use.', sqlerrm;
+end;
+$$;

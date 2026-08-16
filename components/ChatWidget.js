@@ -16,6 +16,7 @@ import { usePathname } from 'next/navigation';
 import { supabase, currentProfile } from '@/lib/supabaseClient';
 import { useT } from '@/lib/i18n';
 import Linkify from './Linkify';
+import { purgeOldChats } from '@/lib/chatExpiry';
 
 const STORE_KEY = 'torito.chat.conversation';
 const POLL_MS = 8000;
@@ -138,6 +139,22 @@ export default function ChatWidget() {
     const id = conversationId.current;
     if (!id) { setMessages([greeting]); return; }
 
+    // the thread may have aged out since this browser last used it; writing
+    // into a deleted row would fail the foreign key, so forget it and start over
+    const { data: conv } = await supabase
+      .from('chat_conversations')
+      .select('id')
+      .eq('id', id)
+      .maybeSingle();
+
+    if (!conv) {
+      conversationId.current = null;
+      localStorage.removeItem(STORE_KEY);
+      seen.current.clear();
+      setMessages([greeting]);
+      return;
+    }
+
     const { data, error } = await supabase
       .from('chat_messages')
       .select('id, sender, body, created_at')
@@ -157,6 +174,7 @@ export default function ChatWidget() {
   const show = useCallback((tour) => {
     setOpen(true);
     setUnread(0);
+    purgeOldChats();
     if (tour) setAskAbout(tour);
     loadHistory();
   }, [loadHistory]);
