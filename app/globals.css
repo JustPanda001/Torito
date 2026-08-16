@@ -868,7 +868,7 @@ body.has-offline-banner{padding-bottom:104px}
   display:flex;align-items:flex-start;gap:12px;
   padding:14px 16px;border-radius:12px;background:var(--green-50);
 }
-.inc-item.no{background:#f6f8f9}
+.inc-item.no{background:var(--surface-2);border:1px solid var(--line)}
 .inc-item .mark{
   width:24px;height:24px;border-radius:50%;flex-shrink:0;
   display:grid;place-items:center;font-size:14px;font-weight:700;color:#fff;
@@ -947,7 +947,7 @@ body.has-offline-banner{padding-bottom:104px}
 .auth-btn.google{
   background:var(--surface);color:var(--ink);border:1.5px solid #dbe7ea;margin-bottom:4px;
 }
-.auth-btn.google:hover{background:#f6fafb}
+.auth-btn.google:hover{background:var(--surface-2)}
 
 .auth-or{
   display:flex;align-items:center;gap:14px;
