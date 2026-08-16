@@ -36,12 +36,29 @@ export default function ToursPage() {
   );
 }
 
+/**
+ * Loose text match across the fields a visitor would actually type: the trip
+ * name, where it is and what kind of thing it is. Every word has to appear
+ * somewhere, so "svaneti trek" narrows rather than widens.
+ */
+function matches(tour, query) {
+  if (!query) return true;
+  const haystack = [
+    tour.title, tour.subtitle, tour.region, tour.category,
+    tour.difficulty, tour.summary, tour.season,
+  ].filter(Boolean).join(' ').toLowerCase();
+
+  return query.toLowerCase().split(/\s+/).every((word) => haystack.includes(word));
+}
+
 function ToursListing() {
   const { t } = useT();
   const params = useSearchParams();
   const { isFavorite, signedIn, favorites } = useFavorites();
   // ?saved=1 narrows the listing to trips this visitor has hearted
   const savedOnly = params.get('saved') === '1';
+  // ?q=… comes from the header search box
+  const query = (params.get('q') ?? '').trim();
 
   const [tours, setTours] = useState(TOURS);
   const [category, setCategory] = useState('all');
@@ -68,7 +85,8 @@ function ToursListing() {
     (category === 'all' || tour.category === category)
     && seasonCovers(tour, range.from, range.to)
     && (!savedOnly || isFavorite(tour.slug))
-  )), [tours, category, range, savedOnly, isFavorite, favorites]);
+    && matches(tour, query)
+  )), [tours, category, range, savedOnly, isFavorite, favorites, query]);
 
   return (
     <div className="subpage-shell">
@@ -76,10 +94,16 @@ function ToursListing() {
       <main className="listing-page">
 
         <div className="listing-head">
-          <h1>{savedOnly ? t('saved.title') : t('listing.title')}</h1>
+          <h1>
+            {query ? t('listing.searchTitle', { q: query })
+              : savedOnly ? t('saved.title') : t('listing.title')}
+          </h1>
           <p className="listing-count">{t('listing.count', { n: shown.length })}</p>
           {savedOnly && (
             <Link className="auth-link saved-back" href="/tours">{t('saved.showAll')}</Link>
+          )}
+          {query && (
+            <Link className="auth-link saved-back" href="/tours">{t('listing.clearSearch')}</Link>
           )}
         </div>
 
@@ -111,6 +135,8 @@ function ToursListing() {
                 {signedIn ? t('saved.browse') : t('auth.signInBtn')}
               </Link>
             </div>
+          ) : query ? (
+            <p className="form-note">{t('listing.noSearch', { q: query })}</p>
           ) : (
             <p className="form-note">{t('listing.none')}</p>
           )}

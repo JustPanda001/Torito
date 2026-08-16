@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import AccountMenu from './AccountMenu';
 import { ThemeToggle, LanguageToggle } from './HeaderToggles';
@@ -18,6 +19,24 @@ export default function SiteHeader({ solid = false }) {
   const [scrolled, setScrolled] = useState(solid);
   const [menuOpen, setMenuOpen] = useState(false);
   const header = useRef(null);
+
+  const router = useRouter();
+  const pathname = usePathname();
+  const [query, setQuery] = useState('');
+
+  // arriving on /tours?q=… (a reload, or the back button) should leave the term
+  // in the box rather than showing filtered results next to an empty field
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search).get('q');
+    setQuery(pathname === '/tours' ? (q ?? '') : '');
+  }, [pathname]);
+
+  function submitSearch(e) {
+    e.preventDefault();
+    const q = query.trim();
+    setSearchOpen(false);
+    router.push(q ? `/tours?q=${encodeURIComponent(q)}` : '/tours');
+  }
 
   useEffect(() => {
     if (solid) return undefined;
@@ -73,11 +92,19 @@ export default function SiteHeader({ solid = false }) {
           </button>
         </div>
 
-        <form className="search-box" onSubmit={(e) => e.preventDefault()}>
-          <svg className="search-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" />
-          </svg>
-          <input type="search" placeholder={t('nav.search')} aria-label={t('nav.search')} />
+        <form className="search-box" onSubmit={submitSearch} role="search">
+          <button className="search-icon-btn" type="submit" aria-label={t('nav.search')}>
+            <svg className="search-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" />
+            </svg>
+          </button>
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={t('nav.search')}
+            aria-label={t('nav.search')}
+          />
         </form>
 
         <div className="header-actions">
@@ -101,12 +128,21 @@ export default function SiteHeader({ solid = false }) {
 
       {searchOpen && (
         <div className="mobile-search" onClick={(e) => e.stopPropagation()}>
-          <form className="search-box" onSubmit={(e) => e.preventDefault()}>
-            <svg className="search-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" />
-            </svg>
+          <form className="search-box" onSubmit={submitSearch} role="search">
+            <button className="search-icon-btn" type="submit" aria-label={t('nav.search')}>
+              <svg className="search-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" />
+              </svg>
+            </button>
             {/* eslint-disable-next-line jsx-a11y/no-autofocus */}
-            <input type="search" autoFocus placeholder={t('nav.search')} aria-label={t('nav.search')} />
+            <input
+              type="search"
+              autoFocus
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={t('nav.search')}
+              aria-label={t('nav.search')}
+            />
           </form>
         </div>
       )}
