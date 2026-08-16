@@ -11,6 +11,7 @@ import Link from 'next/link';
 import SiteHeader from '@/components/SiteHeader';
 import Linkify from '@/components/Linkify';
 import { supabase, currentProfile, friendlyError } from '@/lib/supabaseClient';
+import { purgeOldChats, CHAT_TTL_HOURS } from '@/lib/chatExpiry';
 
 const POLL_MS = 10000;
 
@@ -67,6 +68,7 @@ export default function ChatAdminPage() {
 
   useEffect(() => {
     if (profile?.role !== 'admin') return undefined;
+    purgeOldChats();
     loadList();
 
     const tick = setInterval(() => {
@@ -138,6 +140,10 @@ export default function ChatAdminPage() {
           <h1>Visitor questions</h1>
           <p className="listing-count">
             {conversations.length} conversations{waiting ? ` · ${waiting} waiting` : ''}
+            {' · '}
+            <span className="listing-hint">
+              threads are deleted {CHAT_TTL_HOURS}h after their last message
+            </span>
           </p>
         </div>
 
