@@ -1044,12 +1044,13 @@ body.has-offline-banner{padding-bottom:104px}
 /* the brand column centres on its own; the link columns stay left-aligned */
 .footer-brand{text-align:center}
 .footer-brand .footer-logo{margin-left:auto;margin-right:auto}
-.footer-brand p{margin-left:auto;margin-right:auto}
 .footer-logo{height:152px;width:auto;margin-bottom:14px}
 .site-footer h4{margin:0 0 10px;font-size:15px}
 .site-footer a{display:block;font-size:14px;color:var(--ink-soft);padding:3px 0}
 .site-footer a:hover{color:var(--green-500)}
 .site-footer p{color:var(--ink-soft);font-size:15px;margin:0;max-width:34ch}
+/* after the margin reset above, which shares its specificity and would win */
+.footer-brand p{margin-left:auto;margin-right:auto}
 .copyright{max-width:var(--max);margin:32px auto 0;text-align:center;font-size:13px}
 
 /* ================= RESPONSIVE ================= */
