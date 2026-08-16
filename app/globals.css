@@ -1041,7 +1041,11 @@ body.has-offline-banner{padding-bottom:104px}
 /* ================= FOOTER ================= */
 .site-footer{background:var(--green-100);border-top:2px solid var(--green-300);padding:56px 28px 24px}
 .footer-inner{max-width:var(--max);margin:0 auto;display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:32px}
-.footer-logo{height:132px;width:auto;margin-bottom:14px}
+/* the brand column centres on its own; the link columns stay left-aligned */
+.footer-brand{text-align:center}
+.footer-brand .footer-logo{margin-left:auto;margin-right:auto}
+.footer-brand p{margin-left:auto;margin-right:auto}
+.footer-logo{height:152px;width:auto;margin-bottom:14px}
 .site-footer h4{margin:0 0 10px;font-size:15px}
 .site-footer a{display:block;font-size:14px;color:var(--ink-soft);padding:3px 0}
 .site-footer a:hover{color:var(--green-500)}
@@ -1108,7 +1112,7 @@ body.has-offline-banner{padding-bottom:104px}
   .hero{height:76vh}
   .section{padding:48px 16px}
   .footer-inner{grid-template-columns:1fr}
-  .footer-logo{height:96px}
+  .footer-logo{height:112px}
 }
 
 /* ================= THEME + LANGUAGE CONTROLS ================= */

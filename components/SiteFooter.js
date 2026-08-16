@@ -8,7 +8,7 @@ export default function SiteFooter() {
   return (
     <footer className="site-footer">
       <div className="footer-inner">
-        <div>
+        <div className="footer-brand">
           <img src="/assets/torito-logo.png" alt="" className="footer-logo" />
           <p>{t('footer.tagline')}</p>
         </div>
