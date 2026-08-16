@@ -131,7 +131,7 @@ export default function TourPage({ params }) {
             <button type="button" className={`book-btn${full ? ' secondary' : ''}`} onClick={() => setBooking(true)}>
               {full ? 'Join waitlist' : 'Book a spot'}
             </button>
-            <button type="button" className="book-btn secondary" onClick={openChat}>Ask a question</button>
+            <button type="button" className="book-btn secondary" onClick={() => openChat(tour)}>Ask a question</button>
           </aside>
         </div>
 

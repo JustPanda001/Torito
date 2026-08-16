@@ -1288,3 +1288,17 @@ body.has-offline-banner{padding-bottom:104px}
   .chat-list{max-height:220px}
   .chat-thread{height:460px}
 }
+
+/* the magnifier is a submit button now, so the search box works by click as
+   well as by Enter — it must not look any different from the old icon */
+.search-icon-btn{
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  padding:0;border:none;background:none;color:inherit;cursor:pointer;
+}
+.search-icon-btn:hover .search-icon{color:var(--green-500)}
+.site-header:not(.solid) .search-icon-btn:hover .search-icon{color:#fff;opacity:.8}
+
+/* the "about this trip" opening line carries the page link on its own row */
+.chat-msg p{white-space:pre-wrap}
+.chat-msg a{text-decoration:underline;overflow-wrap:anywhere}
+.chat-msg.mine a{color:#fff}

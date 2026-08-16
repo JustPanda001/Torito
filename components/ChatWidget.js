@@ -19,11 +19,29 @@ import { useT } from '@/lib/i18n';
 const STORE_KEY = 'torito.chat.conversation';
 const POLL_MS = 8000;
 
+// the opening line names the thing by what it actually is, so "I have a
+// question about this hike" rather than the same word for every listing
+const KIND_KEY = {
+  hiking: 'chat.aboutHike',
+  camping: 'chat.aboutCamp',
+  ski: 'chat.aboutSki',
+  culture: 'chat.aboutTour',
+};
+
 export const CHAT_OPEN_EVENT = 'torito:chat-open';
 
-/** Lets any component open the panel: openChat() from a click handler. */
-export function openChat() {
-  window.dispatchEvent(new Event(CHAT_OPEN_EVENT));
+/**
+ * Lets any component open the panel: openChat() from a click handler.
+ *
+ * Pass a tour to open it "about" that trip — the panel then sends an opening
+ * message naming the trip and linking to the page, so the inbox shows what the
+ * question is about before the visitor has typed a word.
+ */
+export function openChat(tour) {
+  const detail = tour && tour.title
+    ? { title: tour.title, subtitle: tour.subtitle ?? null, category: tour.category ?? null }
+    : null;
+  window.dispatchEvent(new CustomEvent(CHAT_OPEN_EVENT, { detail }));
 }
 
 export default function ChatWidget() {
@@ -35,6 +53,10 @@ export default function ChatWidget() {
   const [unread, setUnread] = useState(0);
   const [sending, setSending] = useState(false);
   const [text, setText] = useState('');
+  // the trip the visitor pressed "Ask a question" on, until its opening line
+  // has been sent. State rather than a ref: it has to trigger the render that
+  // sends it, and a ref set after loadHistory() resolves comes too late.
+  const [askAbout, setAskAbout] = useState(null);
 
   const conversationId = useRef(null);
   const loaded = useRef(false);
@@ -131,15 +153,17 @@ export default function ChatWidget() {
 
   /* ---------------- opening ---------------- */
 
-  const show = useCallback(() => {
+  const show = useCallback((tour) => {
     setOpen(true);
     setUnread(0);
+    if (tour) setAskAbout(tour);
     loadHistory();
   }, [loadHistory]);
 
   useEffect(() => {
-    window.addEventListener(CHAT_OPEN_EVENT, show);
-    return () => window.removeEventListener(CHAT_OPEN_EVENT, show);
+    const onOpen = (e) => show(e.detail);
+    window.addEventListener(CHAT_OPEN_EVENT, onOpen);
+    return () => window.removeEventListener(CHAT_OPEN_EVENT, onOpen);
   }, [show]);
 
   useEffect(() => {
@@ -174,13 +198,14 @@ export default function ChatWidget() {
     return data.id;
   }
 
-  async function send(e) {
-    e.preventDefault();
-    const body = text.trim();
-    if (!body || sending) return;
-
-    setSending(true);
-    setText('');
+  /**
+   * Shows the message straight away, then stores it.
+   *
+   * autoReply is off for the opening "about this trip" line: that one is sent
+   * for the visitor rather than by them, and promising a reply before they have
+   * actually asked anything reads as a bot talking to itself.
+   */
+  const post = useCallback(async (body, { autoReply = true } = {}) => {
     append({ id: `local-${Date.now()}`, sender: 'user', body, created_at: new Date().toISOString() });
 
     try {
@@ -190,7 +215,7 @@ export default function ChatWidget() {
         .insert({ conversation_id: id, sender: 'user', body });
       if (error) throw error;
 
-      if (!autoReplied.current) {
+      if (autoReply && !autoReplied.current) {
         autoReplied.current = true;
         const reply = t('chat.autoReply');
         setTimeout(async () => {
@@ -203,9 +228,37 @@ export default function ChatWidget() {
     } catch (err) {
       append({ id: `err-${Date.now()}`, sender: 'bot', body: t('chat.failed'), created_at: new Date().toISOString() });
       console.warn('Chat send failed:', err?.message ?? err);
-    } finally {
-      setSending(false);
     }
+    // ensureConversation reads refs only, so it needs no dependency entry
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [append, t]);
+
+  // Sending the opening line happens here rather than in show() so it runs
+  // after the history is on screen — otherwise the load overwrites it.
+  useEffect(() => {
+    // messages is empty until loadHistory() has run; waiting for it keeps the
+    // opening line below the greeting and lets the repeat check see the thread
+    if (!open || !askAbout || !messages.length) return;
+    const tour = askAbout;
+    setAskAbout(null);
+
+    const body = `${t(KIND_KEY[tour.category] ?? 'chat.aboutTrip')} ${tour.title}`
+      + `${tour.subtitle ? ` (${tour.subtitle})` : ''}\n${window.location.href}`;
+
+    // pressing the button twice should not repeat the same line
+    if (messages.some((m) => m.sender === 'user' && m.body === body)) return;
+    post(body, { autoReply: false });
+  }, [open, askAbout, messages, post, t]);
+
+  async function send(e) {
+    e.preventDefault();
+    const body = text.trim();
+    if (!body || sending) return;
+
+    setSending(true);
+    setText('');
+    await post(body);
+    setSending(false);
   }
 
   // the admin pages have their own chat UI; two panels at once would be silly
