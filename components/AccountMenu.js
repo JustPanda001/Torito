@@ -91,6 +91,12 @@ export default function AccountMenu() {
             </Link>
           )}
 
+          {isAdmin && (
+            <Link href="/chat" className="admin-link" onClick={() => setOpen(false)}>
+              {t('account.chat')}
+            </Link>
+          )}
+
           <Link href="/tours?saved=1" className="drop-fav" onClick={() => setOpen(false)}>
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8">
               <path d="M12 20s-7-4.6-7-9.4A4 4 0 0 1 12 8a4 4 0 0 1 7-2.6c0 4.8-7 9.4-7 9.4z" />

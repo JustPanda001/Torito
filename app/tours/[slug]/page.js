@@ -6,6 +6,7 @@
 import { use, useState } from 'react';
 import Link from 'next/link';
 import SiteHeader from '@/components/SiteHeader';
+import { openChat } from '@/components/ChatWidget';
 import SiteFooter from '@/components/SiteFooter';
 import Gallery from '@/components/Gallery';
 import BookingModal from '@/components/BookingModal';
@@ -130,7 +131,7 @@ export default function TourPage({ params }) {
             <button type="button" className={`book-btn${full ? ' secondary' : ''}`} onClick={() => setBooking(true)}>
               {full ? 'Join waitlist' : 'Book a spot'}
             </button>
-            <button type="button" className="book-btn secondary">Ask a question</button>
+            <button type="button" className="book-btn secondary" onClick={openChat}>Ask a question</button>
           </aside>
         </div>
 
