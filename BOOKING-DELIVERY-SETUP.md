@@ -50,15 +50,20 @@ group's id — it starts with a minus sign.
 This uses an Apps Script attached to the sheet itself. No Google Cloud project,
 no service account, no JSON key.
 
-1. Create a sheet. In the first row, put these headers, in this order:
+1. Create a blank sheet. You do **not** need to add headers — the script writes
+   them the first time a booking arrives.
 
-   `created_at | kind | tour_title | tour_slug | wanted_date | lesson_time | people | skill_level | lesson_type | total | name | email | phone`
-
-2. **Extensions → Apps Script**. Delete what is there and paste:
+2. **Extensions -> Apps Script**. Delete what is there and paste:
 
 ```javascript
 // Torito booking requests -> this sheet
 const SECRET = 'change-me-to-a-long-random-string';
+
+const HEADERS = [
+  'created_at', 'kind', 'tour_title', 'tour_slug', 'wanted_date',
+  'lesson_time', 'people', 'skill_level', 'lesson_type', 'total',
+  'name', 'email', 'phone',
+];
 
 function doPost(e) {
   const body = JSON.parse(e.postData.contents);
@@ -66,29 +71,42 @@ function doPost(e) {
     return ContentService.createTextOutput('no');
   }
 
-  SpreadsheetApp.getActiveSheet().appendRow([
-    body.created_at, body.kind, body.tour_title, body.tour_slug,
-    body.wanted_date, body.lesson_time, body.people,
-    body.skill_level, body.lesson_type, body.total,
-    body.name, body.email, body.phone,
-  ]);
+  const sheet = SpreadsheetApp.getActiveSheet();
+
+  // first booking into an empty sheet writes the header row
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow(HEADERS);
+    sheet.getRange(1, 1, 1, HEADERS.length).setFontWeight('bold');
+    sheet.setFrozenRows(1);
+  }
+
+  sheet.appendRow(HEADERS.map(function (key) {
+    return body[key] === undefined || body[key] === null ? '' : body[key];
+  }));
 
   return ContentService.createTextOutput('ok');
 }
 ```
 
 3. Change `SECRET` to a long random string of your own. Keep a copy.
-4. **Deploy → New deployment → Web app**. Set *Execute as* **Me**, and *Who has
+
+4. **Deploy -> New deployment -> Web app**. Set *Execute as* **Me**, and *Who has
    access* **Anyone**. Copy the **Web app URL**.
 
    "Anyone" is required for the site to be able to post to it. The secret is
    what actually protects it — without the matching string, the script writes
    nothing.
 
-5. In Vercel → **Settings → Environment Variables**, add:
+5. In Vercel -> **Settings -> Environment Variables**, add:
 
    | Name | Value |
    |---|---|
+   | `SHEETS_WEBHOOK_URL` | the Web app URL |
+   | `SHEETS_WEBHOOK_SECRET` | the same string you put in `SECRET` |
+
+6. **Redeploy.**
+
+---|---|
    | `SHEETS_WEBHOOK_URL` | the Web app URL |
    | `SHEETS_WEBHOOK_SECRET` | the same string you put in `SECRET` |
 
