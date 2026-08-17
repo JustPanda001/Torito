@@ -113,5 +113,12 @@ async function appendToSheet(row) {
     body: JSON.stringify({ secret: SHEETS_WEBHOOK_SECRET ?? '', ...row, created_at: new Date().toISOString() }),
   });
 
-  if (!res.ok) console.error('Sheet append failed:', res.status);
+  // A misconfigured web app does not fail: "Who has access" set to anything
+  // but Anyone makes Google answer with its sign-in page and a 200, and a
+  // mismatched secret makes the script answer "no". Both leave the sheet empty
+  // while looking like success, so check what came back rather than the status.
+  const reply = (await res.text()).trim();
+  if (!res.ok || reply !== 'ok') {
+    console.error('Sheet append failed:', res.status, reply.slice(0, 120));
+  }
 }
