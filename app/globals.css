@@ -373,7 +373,12 @@ body.subpage{background:var(--page-bg);padding-top:var(--header-h)}
   cursor:pointer;transition:.2s;
 }
 .chip:hover{background:var(--green-100)}
-.chip.active{background:var(--green-500);border-color:var(--green-500);color:#fff}
+.chip.active{
+  background:var(--green-500);border-color:var(--green-500);
+  color:#10231f;font-weight:700;
+  box-shadow:0 0 0 3px color-mix(in srgb, var(--green-500) 28%, transparent);
+}
+.chip.active:hover{background:var(--green-700);border-color:var(--green-700)}
 
 /* --- admin photo manager --- */
 .photo-manager{margin:8px 0 4px}
@@ -1146,6 +1151,8 @@ body.has-offline-banner{padding-bottom:104px}
 :root[data-theme="dark"] .site-footer{background:var(--surface-2);border-top-color:var(--line)}
 :root[data-theme="dark"] .chip{background:var(--surface);border-color:var(--green-300)}
 :root[data-theme="dark"] .chip:hover{background:var(--green-100)}
+:root[data-theme="dark"] .chip.active{background:var(--green-500);border-color:var(--green-500)}
+:root[data-theme="dark"] .chip.active:hover{background:var(--green-700);border-color:var(--green-700)}
 :root[data-theme="dark"] .date-btn{background:var(--surface);border-color:var(--green-300)}
 :root[data-theme="dark"] .field input,
 :root[data-theme="dark"] .field select,
