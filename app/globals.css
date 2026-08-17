@@ -1316,5 +1316,9 @@ body.has-offline-banner{padding-bottom:104px}
 .chat-msg a{text-decoration:underline;overflow-wrap:anywhere}
 .chat-msg.mine a{color:#fff}
 
+/* the lesson questions in the booking dialog: chips, wrapping onto rows */
+.bm-choices{display:flex;flex-wrap:wrap;gap:8px}
+.bm-choices .chip{padding:8px 16px}
+
 /* the expiry note sits inside the inbox count line, quieter than the count */
 .listing-hint{color:var(--ink-soft);font-size:13px}

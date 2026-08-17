@@ -23,6 +23,8 @@ const CHIPS = [
   ['hiking', 'cat.hiking'],
   ['camping', 'cat.camping'],
   ['ski', 'cat.ski'],
+  ['lesson', 'cat.lesson'],
+  ['freeride', 'cat.freeride'],
   ['culture', 'cat.culture'],
 ];
 

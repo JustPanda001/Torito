@@ -158,12 +158,14 @@ export default function SiteHeader({ solid = false }) {
             <div><h4>Activities</h4>
               <Link href="/tours?cat=hiking">Hiking</Link><Link href="/tours?cat=camping">Camping</Link>
               <Link href="/tours?cat=ski">Ski &amp; snowboard</Link>
+              <Link href="/tours?cat=lesson">Lessons</Link>
+              <Link href="/tours?cat=freeride">Freeride</Link>
               {/* no category of their own yet, so these search instead */}
               <Link href="/tours?q=horse">Horse riding</Link>
               <Link href="/tours?q=rafting">Rafting</Link>
             </div>
             <div><h4>Instructors</h4>
-              <Link href="/tours">Ski instructors</Link><Link href="/tours">Snowboard instructors</Link>
+              <Link href="/tours?cat=lesson">Ski instructors</Link><Link href="/tours?cat=lesson">Snowboard instructors</Link>
               <Link href="/tours">Mountain guides</Link><Link href="/signup">Become an instructor</Link>
             </div>
             <div><h4>Info</h4>
