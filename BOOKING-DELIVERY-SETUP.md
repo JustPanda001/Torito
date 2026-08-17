@@ -57,7 +57,7 @@ no service account, no JSON key.
 
 ```javascript
 // Torito booking requests -> this sheet
-const SECRET = 'change-me-to-a-long-random-string';
+const SECRET = 'put-your-own-random-string-here';
 
 const HEADERS = [
   'created_at', 'kind', 'tour_title', 'tour_slug', 'wanted_date',
@@ -79,19 +79,56 @@ function doPost(e) {
   }
 
   const sheet = SpreadsheetApp.getActiveSheet();
-
-  // first booking into an empty sheet writes the header row
   if (sheet.getLastRow() === 0) {
-    sheet.appendRow(HEADERS);
-    sheet.getRange(1, 1, 1, HEADERS.length).setFontWeight('bold');
-    sheet.setFrozenRows(1);
+    setUpSheet(sheet);
   }
 
-  sheet.appendRow(HEADERS.map(function (key) {
+  const row = HEADERS.map(function (key) {
     return body[key] === undefined || body[key] === null ? '' : body[key];
-  }));
+  });
+
+  sheet.appendRow(row);
+  dressRow(sheet, sheet.getLastRow());
 
   return ContentService.createTextOutput('ok');
+}
+
+// Header row, widths and formats. The phone column is forced to plain text:
+// a number starting with "+" is read as a formula and lands as #ERROR!
+function setUpSheet(sheet) {
+  sheet.appendRow(HEADERS.map(function (h) {
+    return h.replace(/_/g, ' ').replace(/^./, function (c) { return c.toUpperCase(); });
+  }));
+
+  sheet.getRange(1, 1, 1, HEADERS.length)
+    .setFontWeight('bold')
+    .setFontSize(11)
+    .setBackground('#4fb3a0')
+    .setFontColor('#ffffff')
+    .setVerticalAlignment('middle');
+
+  sheet.setRowHeight(1, 34);
+  sheet.setFrozenRows(1);
+
+  const widths = [150, 90, 230, 190, 110, 90, 70, 110, 140, 90, 200, 220, 150];
+  widths.forEach(function (w, i) { sheet.setColumnWidth(i + 1, w); });
+
+  sheet.getRange(2, 13, sheet.getMaxRows() - 1, 1).setNumberFormat('@');   // phone
+  sheet.getRange(2, 10, sheet.getMaxRows() - 1, 1).setNumberFormat('0 "GEL"');
+  sheet.getRange(2, 1, sheet.getMaxRows() - 1, 1).setNumberFormat('yyyy-mm-dd hh:mm');
+}
+
+function dressRow(sheet, r) {
+  const range = sheet.getRange(r, 1, 1, HEADERS.length);
+  range.setVerticalAlignment('middle').setFontSize(10);
+  if (r % 2 === 0) range.setBackground('#f2fbf7');
+
+  // the timestamp arrives as an ISO string; store a real date so the column
+  // sorts and filters as one
+  const iso = sheet.getRange(r, 1).getValue();
+  if (typeof iso === 'string' && iso.indexOf('T') > 0) {
+    sheet.getRange(r, 1).setValue(new Date(iso));
+  }
 }
 ```
 
