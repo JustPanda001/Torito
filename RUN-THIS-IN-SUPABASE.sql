@@ -1,6 +1,6 @@
--- Torito — chat tables.
+-- Torito — chat tables and booking requests.
 -- Paste this whole file into the Supabase SQL editor and press Run.
--- Safe to run more than once.
+-- Safe to re-run: it never drops data.
 
 -- CHAT
 -- The "Ask a question" widget (components/ChatWidget.js) writes
@@ -136,3 +136,57 @@ exception when others then
   raise notice 'pg_cron not scheduled (%). The app will still purge on use.', sqlerrm;
 end;
 $$;
+
+-- ============================================================
+-- BOOKINGS
+-- Every "Book a spot" and "Book a lesson" request. This table is the record;
+-- Telegram and the Google Sheet are copies of it, so a failed webhook can
+-- never lose a request.
+--
+-- The lesson columns are null for a trip, and vice versa: one table rather than
+-- two, because the admin panel wants a single chronological list of "people who
+-- asked for something".
+-- ============================================================
+create table if not exists public.bookings (
+  id           uuid primary key default gen_random_uuid(),
+  user_id      uuid references auth.users(id) on delete set null,
+
+  tour_slug    text not null,
+  tour_title   text not null,
+  kind         text not null default 'trip' check (kind in ('trip','lesson','waitlist')),
+
+  wanted_date  date,
+  people       integer not null default 1,
+  total        numeric,
+
+  -- lessons only
+  lesson_time  text,
+  skill_level  text,
+  lesson_type  text,
+
+  -- so you can reply to someone who was not signed in
+  name         text,
+  email        text,
+  phone        text,
+
+  status       text not null default 'new' check (status in ('new','confirmed','declined')),
+  created_at   timestamptz not null default now()
+);
+
+create index if not exists bookings_recent_idx on public.bookings (created_at desc);
+
+alter table public.bookings enable row level security;
+
+drop policy if exists "anyone can request"    on public.bookings;
+drop policy if exists "read own bookings"     on public.bookings;
+drop policy if exists "admins manage bookings" on public.bookings;
+
+-- a visitor does not have to sign in to ask for a place
+create policy "anyone can request" on public.bookings
+  for insert with check (user_id is null or user_id = auth.uid());
+
+create policy "read own bookings" on public.bookings
+  for select using (user_id is not null and user_id = auth.uid());
+
+create policy "admins manage bookings" on public.bookings
+  for all using (public.is_admin()) with check (public.is_admin());

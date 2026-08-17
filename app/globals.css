@@ -1322,3 +1322,11 @@ body.has-offline-banner{padding-bottom:104px}
 
 /* the expiry note sits inside the inbox count line, quieter than the count */
 .listing-hint{color:var(--ink-soft);font-size:13px}
+
+/* contact details in the booking dialog */
+.bm-contact{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.bm-contact .field:first-child{grid-column:1 / -1}
+.bm-note.error{color:#b4462a}
+@media (max-width:520px){
+  .bm-contact{grid-template-columns:1fr}
+}
