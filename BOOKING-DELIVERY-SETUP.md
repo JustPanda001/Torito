@@ -65,6 +65,13 @@ const HEADERS = [
   'name', 'email', 'phone',
 ];
 
+// open the /exec URL in a browser: "alive" means this code really is the
+// version being served. Apps Script keeps serving the old version until you
+// deploy a NEW version, and a missing doPost is the usual symptom.
+function doGet() {
+  return ContentService.createTextOutput('alive');
+}
+
 function doPost(e) {
   const body = JSON.parse(e.postData.contents);
   if (body.secret !== SECRET) {
