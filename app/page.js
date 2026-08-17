@@ -13,11 +13,13 @@ const HERO = [
   '/assets/kaxeti.jpg',
 ];
 
+// [image, label, tours-page category] — the category preselects the filter
+// chip on the listing, so the visitor lands on what they clicked
 const ACTIVITIES = [
-  ['/assets/Svaneti-history.jpg', 'cat.hiking'],
-  ['/assets/camping.jpg', 'cat.camping'],
-  ['/assets/sameba.webp', 'cat.culture'],
-  ['/assets/skier-gudauri-yellow-jacket-768x512.jpg', 'cat.ski'],
+  ['/assets/Svaneti-history.jpg', 'cat.hiking', 'hiking'],
+  ['/assets/camping.jpg', 'cat.camping', 'camping'],
+  ['/assets/sameba.webp', 'cat.culture', 'culture'],
+  ['/assets/skier-gudauri-yellow-jacket-768x512.jpg', 'cat.ski', 'ski'],
 ];
 
 export default function HomePage() {
@@ -47,8 +49,8 @@ export default function HomePage() {
         <section className="section reveal visible" id="activities">
           <h2 className="section-title">{t('home.exploreByActivity')}</h2>
           <div className="activity-row">
-            {ACTIVITIES.map(([src, key]) => (
-              <Link className="activity-card" href="/tours" key={key}>
+            {ACTIVITIES.map(([src, key, cat]) => (
+              <Link className="activity-card" href={`/tours?cat=${cat}`} key={key}>
                 <img src={src} alt="" /><span>{t(key)}</span>
               </Link>
             ))}

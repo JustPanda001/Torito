@@ -151,14 +151,16 @@ export default function SiteHeader({ solid = false }) {
         <div className="mega-menu opening">
           <div className="mega-inner">
             <div><h4>Tours</h4>
-              <Link href="/tours">Svaneti</Link><Link href="/tours">Kazbegi</Link>
-              <Link href="/tours">Tusheti</Link><Link href="/tours">Mtskheta</Link>
-              <Link href="/tours">Kakheti</Link>
+              <Link href="/tours?q=svaneti">Svaneti</Link><Link href="/tours?q=kazbegi">Kazbegi</Link>
+              <Link href="/tours?q=tusheti">Tusheti</Link><Link href="/tours?q=mtskheta">Mtskheta</Link>
+              <Link href="/tours?q=kakheti">Kakheti</Link>
             </div>
             <div><h4>Activities</h4>
-              <Link href="/tours">Hiking</Link><Link href="/tours">Camping</Link>
-              <Link href="/tours">Ski &amp; snowboard</Link><Link href="/tours">Horse riding</Link>
-              <Link href="/tours">Rafting</Link>
+              <Link href="/tours?cat=hiking">Hiking</Link><Link href="/tours?cat=camping">Camping</Link>
+              <Link href="/tours?cat=ski">Ski &amp; snowboard</Link>
+              {/* no category of their own yet, so these search instead */}
+              <Link href="/tours?q=horse">Horse riding</Link>
+              <Link href="/tours?q=rafting">Rafting</Link>
             </div>
             <div><h4>Instructors</h4>
               <Link href="/tours">Ski instructors</Link><Link href="/tours">Snowboard instructors</Link>

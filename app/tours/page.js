@@ -59,10 +59,18 @@ function ToursListing() {
   const savedOnly = params.get('saved') === '1';
   // ?q=… comes from the header search box
   const query = (params.get('q') ?? '').trim();
+  // ?cat=… comes from the menu and the home page activity cards
+  const wanted = params.get('cat');
 
   const [tours, setTours] = useState(TOURS);
-  const [category, setCategory] = useState('all');
+  const [category, setCategory] = useState(CHIPS.some(([k]) => k === wanted) ? wanted : 'all');
   const [range, setRange] = useState({ from: null, to: null });
+
+  // following another menu link while already on the listing has to move the
+  // chip too, and that is a prop change rather than a fresh mount
+  useEffect(() => {
+    if (wanted && CHIPS.some(([k]) => k === wanted)) setCategory(wanted);
+  }, [wanted]);
 
   useEffect(() => {
     let alive = true;
