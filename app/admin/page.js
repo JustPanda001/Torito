@@ -12,6 +12,7 @@ import SiteHeader from '@/components/SiteHeader';
 import OptionSelect from '@/components/OptionSelect';
 import PhotoManager from '@/components/PhotoManager';
 import { supabase, currentProfile, friendlyError } from '@/lib/supabaseClient';
+import { slugify } from '@/lib/slug';
 
 // these render as dropdowns backed by tour_options, with a + to add a choice
 const OPTION_FIELDS = [
@@ -25,7 +26,7 @@ const OPTION_FIELDS = [
 // name -> label; the name must match the tours table column exactly
 const FIELDS = [
   ['title', 'Title *', { required: true, placeholder: 'Mestia – Ushguli Trek' }],
-  ['slug', 'URL slug *', { required: true, placeholder: 'mestia-ushguli-trek', hint: 'Lowercase, dashes instead of spaces' }],
+  ['slug', 'URL slug *', { required: true, placeholder: 'mestia-ushguli-trek', hint: 'Fills itself from the title — edit it if you want a different address' }],
   ['subtitle', 'Subtitle', { placeholder: '4 days' }],
   ['category', 'Category *', { required: true, options: ['hiking', 'camping', 'ski', 'culture', 'other'] }],
   ['region', 'Region', { placeholder: 'Svaneti' }],
@@ -54,6 +55,8 @@ export default function AdminPage() {
   const [photos, setPhotos] = useState([]);
   const [cover, setCover] = useState('');
   const form = useRef(null);
+  // once the slug has been typed in by hand, the title stops overwriting it
+  const slugTouched = useRef(false);
 
   useEffect(() => {
     // ?mockuser=admin renders the panel without a real session so the form can
@@ -88,6 +91,7 @@ export default function AdminPage() {
 
   function edit(tour) {
     setEditingId(tour.id);
+    slugTouched.current = true;
     setPhotos(Array.isArray(tour.gallery) ? tour.gallery : []);
     setCover(tour.cover_image ?? '');
     for (const [key, value] of Object.entries(tour)) {
@@ -112,10 +116,19 @@ export default function AdminPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
+  function onTitleInput(e) {
+    // an existing trip keeps its address: changing it would 404 every link
+    // already shared, including the ones sitting in the chat inbox
+    if (editingId || slugTouched.current) return;
+    const slug = form.current?.elements.slug;
+    if (slug) slug.value = slugify(e.target.value);
+  }
+
   function resetForm() {
     setEditingId(null);
     setPhotos([]);
     setCover('');
+    slugTouched.current = false;
     form.current?.reset();
     setNote(null);
   }
@@ -185,6 +198,11 @@ export default function AdminPage() {
                       required={opts.required}
                       placeholder={opts.placeholder}
                       defaultValue={opts.defaultValue}
+                      onChange={
+                        name === 'title' ? onTitleInput
+                          : name === 'slug' ? () => { slugTouched.current = true; }
+                            : undefined
+                      }
                     />
                   )}
                   {opts.hint && <span className="field-hint">{opts.hint}</span>}
