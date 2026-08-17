@@ -54,7 +54,10 @@ export async function POST(request) {
   }
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-  const { data, error } = await supabase.from('bookings').insert(row).select('id').single();
+  // no .select() on the way back: reading the new row would need a select
+  // policy, and a guest is deliberately not allowed to read bookings — asking
+  // for it turns a successful insert into an RLS violation
+  const { error } = await supabase.from('bookings').insert(row);
 
   if (error) {
     console.error('Booking insert failed:', error.message);
@@ -64,7 +67,7 @@ export async function POST(request) {
   // copies, best effort, never blocking the answer to the visitor
   await Promise.allSettled([notifyTelegram(row), appendToSheet(row)]);
 
-  return Response.json({ ok: true, id: data.id });
+  return Response.json({ ok: true });
 }
 
 function lines(row) {
