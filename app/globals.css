@@ -368,7 +368,7 @@ body.subpage{background:var(--page-bg);padding-top:var(--header-h)}
 /* filter chips */
 /* the category row and the row of its own filters belong together, so the
    space between them is smaller than the space below the pair */
-.filter-bar{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px}
+.filter-bar{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:6px}
 .chip{
   border:1.5px solid var(--green-300);background:var(--surface);color:var(--ink);
   font:inherit;font-size:14px;padding:8px 18px;border-radius:999px;
@@ -1339,6 +1339,10 @@ body.has-offline-banner{padding-bottom:104px}
   gap:12px;flex-wrap:wrap;margin-bottom:26px;
 }
 .sub-filter{display:flex;flex-wrap:wrap;gap:8px}
+/* the date picker used to sit on its own line and still carries the negative
+   top margin that pulled it up there; inside this row it just knocks the
+   button out of line with the chips beside it */
+.filter-row .date-bar{margin:0}
 /* a size down from the category chips, so the two rows read as a hierarchy */
 .chip.small{font-size:13px;padding:6px 14px}
 @media (max-width:520px){
