@@ -135,17 +135,27 @@ function ToursListing() {
         {/* the category's own filter on the left, dates pushed to the right */}
         <div className="filter-row">
           {subFilter ? (
-            <select
-              className="sub-filter"
-              value={sub}
-              onChange={(e) => setSub(e.target.value)}
-              aria-label={subFilter.label}
-            >
-              <option value="">{subFilter.label}</option>
+            <div className="sub-filter">
+              {/* the same chips as the row above, one level down: clearing is
+                  a chip of its own rather than a hidden "none" option */}
+              <button
+                type="button"
+                className={`chip small${sub === '' ? ' active' : ''}`}
+                onClick={() => setSub('')}
+              >
+                {subFilter.label}
+              </button>
               {subFilter.options.map(([value, label]) => (
-                <option value={value} key={value}>{label}</option>
+                <button
+                  key={value}
+                  type="button"
+                  className={`chip small${sub === value ? ' active' : ''}`}
+                  onClick={() => setSub(value)}
+                >
+                  {label}
+                </button>
               ))}
-            </select>
+            </div>
           ) : <span />}
 
           <DateFilter from={range.from} to={range.to} onChange={setRange} />
