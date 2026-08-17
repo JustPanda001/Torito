@@ -9,6 +9,26 @@ import { useEffect, useState } from 'react';
 import Calendar from './Calendar';
 import { inSeason, MONTHS, money } from '@/lib/season';
 import { isLesson, SKILL_LEVELS, LESSON_TYPES, LESSON_TIMES } from '@/lib/lessons';
+import { currentProfile } from '@/lib/supabaseClient';
+
+function ContactFields({ name, setName, email, setEmail, phone, setPhone }) {
+  return (
+    <div className="bm-contact">
+      <label className="field">
+        <span className="field-label">Name *</span>
+        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nino Beridze" />
+      </label>
+      <label className="field">
+        <span className="field-label">Email *</span>
+        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" />
+      </label>
+      <label className="field">
+        <span className="field-label">Phone</span>
+        <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+995 …" />
+      </label>
+    </div>
+  );
+}
 
 export default function BookingModal({ tour, onClose }) {
   const seats = tour.spots_left ?? tour.capacity;
@@ -21,6 +41,61 @@ export default function BookingModal({ tour, onClose }) {
   const [time, setTime] = useState('');
   const [level, setLevel] = useState('');
   const [kind, setKind] = useState('');
+  // we have to be able to answer the person, and most visitors are not signed in
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [sending, setSending] = useState(false);
+  const [failed, setFailed] = useState(null);
+
+  // a signed-in visitor should not retype what the account already knows
+  useEffect(() => {
+    let alive = true;
+    currentProfile()
+      .then((p) => {
+        if (!alive || !p) return;
+        setName((v) => v || p.full_name || '');
+        setEmail((v) => v || p.email || '');
+      })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, []);
+
+  async function submit(requestKind) {
+    setSending(true);
+    setFailed(null);
+    try {
+      const res = await fetch('/api/bookings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tour_slug: tour.slug,
+          tour_title: tour.full_title || tour.title,
+          kind: requestKind,
+          // a plain YYYY-MM-DD, built locally: toISOString() would shift the
+          // date backwards for anyone east of UTC, which is everyone here
+          wanted_date: date
+            ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+            : null,
+          people,
+          total: requestKind === 'waitlist' ? null : total,
+          lesson_time: lesson ? time : null,
+          skill_level: lesson ? level : null,
+          lesson_type: lesson ? kind : null,
+          name,
+          email,
+          phone,
+        }),
+      });
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? 'Request failed');
+      if (requestKind === 'waitlist') setWaitlisted(true); else setDone(true);
+    } catch (err) {
+      setFailed('That did not go through. Please try again, or ask us in the chat.');
+      console.warn('Booking request failed:', err.message);
+    } finally {
+      setSending(false);
+    }
+  }
   const [done, setDone] = useState(false);
   const [waitlisted, setWaitlisted] = useState(false);
 
@@ -59,7 +134,20 @@ export default function BookingModal({ tour, onClose }) {
                   This trip is fully booked. Leave your details and we will contact
                   you the moment a place frees up.
                 </p>
-                <button type="button" className="book-btn" onClick={() => setWaitlisted(true)}>Join waitlist</button>
+                <ContactFields
+                  name={name} setName={setName}
+                  email={email} setEmail={setEmail}
+                  phone={phone} setPhone={setPhone}
+                />
+                <button
+                  type="button"
+                  className="book-btn"
+                  disabled={sending || !name || !email}
+                  onClick={() => submit('waitlist')}
+                >
+                  {sending ? 'Sending…' : !name || !email ? 'Name and email first' : 'Join waitlist'}
+                </button>
+                {failed && <p className="bm-note error">{failed}</p>}
               </>
             )
           ) : done ? (
@@ -75,8 +163,7 @@ export default function BookingModal({ tour, onClose }) {
                 <div className="bm-line bm-grand"><span>Total</span><span>{money(total)}</span></div>
               </div>
               <p className="bm-hint">
-                Nothing is stored yet — this is the form only. Wiring it to the
-                database is the next step.
+                We have your request and will confirm by email shortly.
               </p>
             </>
           ) : (
@@ -157,6 +244,15 @@ export default function BookingModal({ tour, onClose }) {
                 </p>
               </section>
 
+              <section className="bm-section">
+                <h3>Who is it for?</h3>
+                <ContactFields
+                  name={name} setName={setName}
+                  email={email} setEmail={setEmail}
+                  phone={phone} setPhone={setPhone}
+                />
+              </section>
+
               <section className="bm-section bm-total">
                 <div className="bm-line">
                   <span>{money(tour.price)} × {people}</span><span>{money(total)}</span>
@@ -168,15 +264,19 @@ export default function BookingModal({ tour, onClose }) {
               <button
                 type="button"
                 className="book-btn"
-                disabled={!date || (lesson && (!time || !level || !kind))}
-                onClick={() => setDone(true)}
+                disabled={sending || !date || !name || !email || (lesson && (!time || !level || !kind))}
+                onClick={() => submit(lesson ? 'lesson' : 'trip')}
               >
-                {!date ? 'Choose a date first'
-                  : lesson && !time ? 'Pick a time'
-                    : lesson && !level ? 'Pick your level'
-                      : lesson && !kind ? 'Pick a lesson type'
-                        : `Request ${people} ${people === 1 ? 'place' : 'places'} — ${money(total)}`}
+                {sending ? 'Sending…'
+                  : !date ? 'Choose a date first'
+                    : lesson && !time ? 'Pick a time'
+                      : lesson && !level ? 'Pick your level'
+                        : lesson && !kind ? 'Pick a lesson type'
+                          : !name ? 'Add your name'
+                            : !email ? 'Add your email'
+                              : `Request ${people} ${people === 1 ? 'place' : 'places'} — ${money(total)}`}
               </button>
+              {failed && <p className="bm-note error">{failed}</p>}
             </>
           )}
         </div>
