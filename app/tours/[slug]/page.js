@@ -13,6 +13,7 @@ import BookingModal from '@/components/BookingModal';
 import FavoriteButton from '@/components/FavoriteButton';
 import { findTour } from '@/lib/tours-data';
 import { money } from '@/lib/season';
+import { isLesson } from '@/lib/lessons';
 
 const ICONS = {
   distance: <><path d="M4 18h16" /><path d="M7 18l5-12 5 12" /></>,
@@ -51,8 +52,15 @@ export default function TourPage({ params }) {
 
   const name = tour.full_title || tour.title;
   const full = tour.spots_left === 0;
+  const lesson = isLesson(tour);
 
-  const facts = [
+  // A lesson has no distance, no elevation and nowhere to sleep, and its
+  // difficulty is whatever the visitor brings — those rows would all read "—".
+  const facts = lesson ? [
+    [ICONS.clock, 'Lesson length', tour.duration_long || tour.duration],
+    [ICONS.calendar, 'Season', tour.season_text],
+    [ICONS.globe, 'Languages', tour.languages],
+  ] : [
     [ICONS.distance, 'Distance', tour.distance],
     [ICONS.clock, 'Duration', tour.duration_long || tour.duration],
     [ICONS.peak, 'Difficulty', tour.difficulty],
@@ -62,7 +70,12 @@ export default function TourPage({ params }) {
     [ICONS.house, 'Stay', tour.stay],
   ];
 
-  const info = [
+  // nobody is being driven anywhere for a lesson: they meet the instructor on
+  // the slope, at the time they asked for
+  const info = lesson ? [
+    ['Meeting point', tour.info?.departure_point],
+    ['Group size', tour.info?.group_size],
+  ] : [
     ['Departure point', tour.info?.departure_point],
     ['Departure time', tour.info?.departure_time],
     ['Return', tour.info?.return_info],
@@ -129,14 +142,14 @@ export default function TourPage({ params }) {
             </ul>
 
             <button type="button" className={`book-btn${full ? ' secondary' : ''}`} onClick={() => setBooking(true)}>
-              {full ? 'Join waitlist' : 'Book a spot'}
+              {full ? 'Join waitlist' : lesson ? 'Book a lesson' : 'Book a spot'}
             </button>
             <button type="button" className="book-btn secondary" onClick={() => openChat(tour)}>Ask a question</button>
           </aside>
         </div>
 
         <section className="detail-block">
-          <h2>About this trip</h2>
+          <h2>{lesson ? 'About these lessons' : 'About this trip'}</h2>
           <p className="lead">{tour.summary}</p>
 
           <div className="info-grid">
@@ -148,15 +161,19 @@ export default function TourPage({ params }) {
             ))}
           </div>
 
-          <h3>Where we go</h3>
-          <ol className="itinerary">
-            {tour.itinerary.map(([title, text], i) => (
-              <li key={title}>
-                <span className="day">{tour.itinerary.length === 1 ? 'Plan' : `Day ${i + 1}`}</span>
-                <div><strong>{title}</strong><p>{text}</p></div>
-              </li>
-            ))}
-          </ol>
+          {!lesson && tour.itinerary?.length > 0 && (
+            <>
+              <h3>Where we go</h3>
+              <ol className="itinerary">
+                {tour.itinerary.map(([title, text], i) => (
+                  <li key={title}>
+                    <span className="day">{tour.itinerary.length === 1 ? 'Plan' : `Day ${i + 1}`}</span>
+                    <div><strong>{title}</strong><p>{text}</p></div>
+                  </li>
+                ))}
+              </ol>
+            </>
+          )}
         </section>
 
         <section className="detail-block">

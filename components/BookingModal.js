@@ -8,13 +8,19 @@
 import { useEffect, useState } from 'react';
 import Calendar from './Calendar';
 import { inSeason, MONTHS, money } from '@/lib/season';
+import { isLesson, SKILL_LEVELS, LESSON_TYPES, LESSON_TIMES } from '@/lib/lessons';
 
 export default function BookingModal({ tour, onClose }) {
   const seats = tour.spots_left ?? tour.capacity;
   const full = seats === 0;
 
+  const lesson = isLesson(tour);
   const [date, setDate] = useState(null);
   const [people, setPeople] = useState(1);
+  // lesson requests only: when, and what they want out of it
+  const [time, setTime] = useState('');
+  const [level, setLevel] = useState('');
+  const [kind, setKind] = useState('');
   const [done, setDone] = useState(false);
   const [waitlisted, setWaitlisted] = useState(false);
 
@@ -37,7 +43,7 @@ export default function BookingModal({ tour, onClose }) {
 
         <div className="bm-head">
           <div>
-            <h2 id="bmTitle">{full ? 'Join the waitlist' : 'Book a spot'}</h2>
+            <h2 id="bmTitle">{full ? 'Join the waitlist' : lesson ? 'Book a lesson' : 'Book a spot'}</h2>
             <p className="bm-sub">{tour.full_title || tour.title}</p>
           </div>
           <button type="button" className="bm-close" aria-label="Close" onClick={onClose}>×</button>
@@ -62,7 +68,10 @@ export default function BookingModal({ tour, onClose }) {
               <div className="bm-summary">
                 <div className="bm-line"><span>Trip</span><span>{tour.full_title || tour.title}</span></div>
                 <div className="bm-line"><span>Date</span><span>{date.getDate()} {MONTHS[date.getMonth()]} {date.getFullYear()}</span></div>
+                {lesson && <div className="bm-line"><span>Time</span><span>{time}</span></div>}
                 <div className="bm-line"><span>People</span><span>{people}</span></div>
+                {lesson && <div className="bm-line"><span>Level</span><span>{level}</span></div>}
+                {lesson && <div className="bm-line"><span>Lesson</span><span>{kind}</span></div>}
                 <div className="bm-line bm-grand"><span>Total</span><span>{money(total)}</span></div>
               </div>
               <p className="bm-hint">
@@ -73,7 +82,7 @@ export default function BookingModal({ tour, onClose }) {
           ) : (
             <>
               <section className="bm-section">
-                <h3>When do you want to go?</h3>
+                <h3>{lesson ? 'Which day?' : 'When do you want to go?'}</h3>
                 <Calendar
                   value={date}
                   onPick={setDate}
@@ -82,6 +91,58 @@ export default function BookingModal({ tour, onClose }) {
                 />
               </section>
 
+              {lesson && (
+                <>
+                  <section className="bm-section">
+                    <h3>What time?</h3>
+                    <div className="bm-choices">
+                      {LESSON_TIMES.map((slot) => (
+                        <button
+                          key={slot}
+                          type="button"
+                          className={`chip${time === slot ? ' active' : ''}`}
+                          onClick={() => setTime(slot)}
+                        >
+                          {slot}
+                        </button>
+                      ))}
+                    </div>
+                  </section>
+
+                  <section className="bm-section">
+                    <h3>How much can you already do?</h3>
+                    <div className="bm-choices">
+                      {SKILL_LEVELS.map((l) => (
+                        <button
+                          key={l}
+                          type="button"
+                          className={`chip${level === l ? ' active' : ''}`}
+                          onClick={() => setLevel(l)}
+                        >
+                          {l}
+                        </button>
+                      ))}
+                    </div>
+                  </section>
+
+                  <section className="bm-section">
+                    <h3>What kind of lesson?</h3>
+                    <div className="bm-choices">
+                      {LESSON_TYPES.map((k) => (
+                        <button
+                          key={k}
+                          type="button"
+                          className={`chip${kind === k ? ' active' : ''}`}
+                          onClick={() => setKind(k)}
+                        >
+                          {k}
+                        </button>
+                      ))}
+                    </div>
+                  </section>
+                </>
+              )}
+
               <section className="bm-section">
                 <h3>How many people?</h3>
                 <div className="bm-people">
@@ -89,7 +150,11 @@ export default function BookingModal({ tour, onClose }) {
                   <span className="bm-count"><strong>{people}</strong> {people === 1 ? 'person' : 'people'}</span>
                   <button type="button" className="bm-step" onClick={() => step(1)} aria-label="One more">+</button>
                 </div>
-                <p className="bm-hint">{seats} {seats === 1 ? 'place' : 'places'} left on this departure</p>
+                <p className="bm-hint">
+                  {lesson
+                    ? 'Everyone in the group is taught together'
+                    : `${seats} ${seats === 1 ? 'place' : 'places'} left on this departure`}
+                </p>
               </section>
 
               <section className="bm-section bm-total">
@@ -100,10 +165,17 @@ export default function BookingModal({ tour, onClose }) {
                 <p className="bm-hint">Per person, all inclusions listed below. Paid on the day.</p>
               </section>
 
-              <button type="button" className="book-btn" disabled={!date} onClick={() => setDone(true)}>
-                {date
-                  ? `Request ${people} ${people === 1 ? 'place' : 'places'} — ${money(total)}`
-                  : 'Choose a date first'}
+              <button
+                type="button"
+                className="book-btn"
+                disabled={!date || (lesson && (!time || !level || !kind))}
+                onClick={() => setDone(true)}
+              >
+                {!date ? 'Choose a date first'
+                  : lesson && !time ? 'Pick a time'
+                    : lesson && !level ? 'Pick your level'
+                      : lesson && !kind ? 'Pick a lesson type'
+                        : `Request ${people} ${people === 1 ? 'place' : 'places'} — ${money(total)}`}
               </button>
             </>
           )}
