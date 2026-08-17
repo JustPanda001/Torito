@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 400" role="img" aria-label="Transfer">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#d6eefa"/><stop offset="1" stop-color="#eefaf3"/>
+    </linearGradient>
+  </defs>
+  <rect width="640" height="400" fill="url(#sky)"/>
+  <path d="M0 300 L150 190 L250 260 L360 160 L470 250 L560 200 L640 250 L640 400 L0 400Z" fill="#8fd6c4" opacity=".55"/>
+  <path d="M0 330 L120 260 L240 320 L380 250 L520 310 L640 270 L640 400 L0 400Z" fill="#4fb3a0" opacity=".45"/>
+  <rect x="0" y="330" width="640" height="70" fill="#3f8f80" opacity=".25"/>
+  <g transform="translate(170 232)">
+    <path d="M18 56 L34 22 C38 13 46 8 56 8 h108 c10 0 18 5 22 14 l16 34"
+          fill="#2f4a55" opacity=".92"/>
+    <rect x="0" y="54" width="300" height="40" rx="14" fill="#2f4a55"/>
+    <path d="M46 26 h70 v28 H34 z M126 26 h56 c6 0 9 3 12 8 l10 20 H126 z" fill="#d6eefa"/>
+    <circle cx="66" cy="96" r="20" fill="#1d2b31"/><circle cx="66" cy="96" r="8" fill="#8fd6c4"/>
+    <circle cx="234" cy="96" r="20" fill="#1d2b31"/><circle cx="234" cy="96" r="8" fill="#8fd6c4"/>
+  </g>
+</svg>

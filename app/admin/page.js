@@ -14,6 +14,7 @@ import PhotoManager from '@/components/PhotoManager';
 import { supabase, currentProfile, friendlyError } from '@/lib/supabaseClient';
 import { slugify } from '@/lib/slug';
 import { LESSON } from '@/lib/lessons';
+import { CATEGORIES } from '@/lib/catalog';
 
 // these render as dropdowns backed by tour_options, with a + to add a choice
 const OPTION_FIELDS = [
@@ -30,14 +31,17 @@ const OPTION_FIELDS = [
 // see lib/lessons.js. Anything not listed here is hidden for that category and
 // saved as null, rather than sitting empty on the trip page.
 const LESSON_FIELDS = new Set([
-  'title', 'slug', 'subtitle', 'category', 'region', 'price', 'duration',
-  'capacity', 'spots_left', 'season', 'season_from', 'season_to', 'badge',
-  'group_size',
+  'title', 'slug', 'subtitle', 'category', 'subtype', 'region', 'price',
+  'duration', 'capacity', 'spots_left', 'season', 'season_from', 'season_to',
+  'badge', 'group_size',
 ]);
 
 const FIELDS = [
   ['title', 'Title *', { required: true, placeholder: 'Mestia – Ushguli Trek' }],
-  ['category', 'Category *', { required: true, options: ['hiking', 'camping', 'ski', 'lesson', 'freeride', 'culture', 'other'] }],
+  ['category', 'Category *', { required: true, options: CATEGORIES }],
+  // ski only: what the visitor is actually booking. A lesson has no journey,
+  // so choosing it strips the form down the same way the category used to.
+  ['subtype', 'Type *', { options: ['', 'lessons', 'freeride', 'freestyle'], onlyFor: 'ski' }],
   ['slug', 'URL slug *', { required: true, placeholder: 'mestia-ushguli-trek', hint: 'Fills itself from the title — edit it if you want a different address' }],
   ['subtitle', 'Subtitle', { placeholder: '4 days' }],
   ['region', 'Region', { placeholder: 'Svaneti' }],
@@ -66,7 +70,10 @@ export default function AdminPage() {
   const [photos, setPhotos] = useState([]);
   const [cover, setCover] = useState('');
   // drives which fields the form shows; lessons need far fewer
-  const [category, setCategory] = useState('hiking');
+  const [category, setCategory] = useState('tours');
+  // ski's second choice, which decides whether this is a lesson
+  const [subtype, setSubtype] = useState('');
+  const lessonForm = category === 'ski' && subtype === LESSON;
   const form = useRef(null);
   // once the slug has been typed in by hand, the title stops overwriting it
   const slugTouched = useRef(false);
@@ -105,7 +112,8 @@ export default function AdminPage() {
   function edit(tour) {
     setEditingId(tour.id);
     slugTouched.current = true;
-    setCategory(tour.category ?? 'hiking');
+    setCategory(tour.category ?? 'tours');
+    setSubtype(tour.subtype ?? '');
     setPhotos(Array.isArray(tour.gallery) ? tour.gallery : []);
     setCover(tour.cover_image ?? '');
     for (const [key, value] of Object.entries(tour)) {
@@ -143,7 +151,8 @@ export default function AdminPage() {
     setPhotos([]);
     setCover('');
     slugTouched.current = false;
-    setCategory('hiking');
+    setCategory('tours');
+    setSubtype('');
     form.current?.reset();
     setNote(null);
   }
@@ -165,9 +174,10 @@ export default function AdminPage() {
     row.price = row.price === '' ? null : Number(row.price);
     if (row.badge === '') row.badge = null;
 
-    if (category === LESSON) {
+    if (lessonForm) {
       for (const [name] of FIELDS) if (!LESSON_FIELDS.has(name)) row[name] = null;
     }
+    if (row.subtype === '') row.subtype = null;
 
     row.gallery = photos;
     // a starred photo wins; otherwise fall back to the first one
@@ -197,7 +207,7 @@ export default function AdminPage() {
 
         <section className="detail-block">
           <h2>{editingId ? 'Editing tour' : 'Add a tour'}</h2>
-          {category === LESSON && (
+          {lessonForm && (
             <p className="form-note">
               Lessons ask the visitor for the day, time, how many of them there
               are, their skill level and the kind of lesson when they book, so
@@ -208,7 +218,9 @@ export default function AdminPage() {
 
           <form className="admin-form" ref={form} onSubmit={onSubmit}>
             <div className="admin-grid">
-              {FIELDS.filter(([name]) => category !== LESSON || LESSON_FIELDS.has(name))
+              {FIELDS
+                .filter(([, , opts = {}]) => !opts.onlyFor || opts.onlyFor === category)
+                .filter(([name]) => !lessonForm || LESSON_FIELDS.has(name))
                 .map(([name, label, opts = {}]) => (
                 <label className="field" key={name}>
                   <span className="field-label">{label}</span>
@@ -217,7 +229,11 @@ export default function AdminPage() {
                       name={name}
                       required={opts.required}
                       defaultValue=""
-                      onChange={name === 'category' ? (e) => setCategory(e.target.value) : undefined}
+                      onChange={
+                        name === 'category' ? (e) => { setCategory(e.target.value); setSubtype(''); }
+                          : name === 'subtype' ? (e) => setSubtype(e.target.value)
+                            : undefined
+                      }
                     >
                       {opts.options.map((o) => (
                         <option value={o} key={o || 'none'}>{o === '' ? 'None' : o}</option>
@@ -241,7 +257,7 @@ export default function AdminPage() {
                   {opts.hint && <span className="field-hint">{opts.hint}</span>}
                 </label>
               ))}
-              {category !== LESSON && OPTION_FIELDS.map(([name, label]) => (
+              {!lessonForm && OPTION_FIELDS.map(([name, label]) => (
                 <OptionSelect key={name} name={name} field={name} label={label} />
               ))}
             </div>

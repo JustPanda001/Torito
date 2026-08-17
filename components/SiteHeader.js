@@ -150,22 +150,21 @@ export default function SiteHeader({ solid = false }) {
       {menuOpen && (
         <div className="mega-menu opening">
           <div className="mega-inner">
-            <div><h4>Tours</h4>
+            <div><h4>{t('nav.catalog')}</h4>
+              <Link href="/tours?cat=tours">{t('cat.tours')}</Link>
+              <Link href="/tours?cat=hiking">{t('cat.hiking')}</Link>
+              <Link href="/tours?cat=ski">{t('cat.ski')}</Link>
+              <Link href="/tours?cat=transfer">{t('cat.transfer')}</Link>
+              {/* no category of its own yet, so this one searches instead */}
+              <Link href="/tours?q=rafting">Rafting</Link>
+            </div>
+            <div><h4>Regions</h4>
               <Link href="/tours?q=svaneti">Svaneti</Link><Link href="/tours?q=kazbegi">Kazbegi</Link>
               <Link href="/tours?q=tusheti">Tusheti</Link><Link href="/tours?q=mtskheta">Mtskheta</Link>
               <Link href="/tours?q=kakheti">Kakheti</Link>
             </div>
-            <div><h4>Activities</h4>
-              <Link href="/tours?cat=hiking">Hiking</Link><Link href="/tours?cat=camping">Camping</Link>
-              <Link href="/tours?cat=ski">Ski &amp; snowboard</Link>
-              <Link href="/tours?cat=lesson">Lessons</Link>
-              <Link href="/tours?cat=freeride">Freeride</Link>
-              {/* no category of their own yet, so these search instead */}
-              <Link href="/tours?q=horse">Horse riding</Link>
-              <Link href="/tours?q=rafting">Rafting</Link>
-            </div>
             <div><h4>Instructors</h4>
-              <Link href="/tours?cat=lesson">Ski instructors</Link><Link href="/tours?cat=lesson">Snowboard instructors</Link>
+              <Link href="/tours?cat=ski">Ski instructors</Link><Link href="/tours?cat=ski">Snowboard instructors</Link>
               <Link href="/tours">Mountain guides</Link><Link href="/signup">Become an instructor</Link>
             </div>
             <div><h4>Info</h4>

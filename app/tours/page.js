@@ -17,16 +17,9 @@ import { seasonCovers } from '@/lib/season';
 import { supabase } from '@/lib/supabaseClient';
 import { useT } from '@/lib/i18n';
 import { useFavorites } from '@/lib/favorites';
+import { CATEGORIES, SUB_FILTERS, categoryOf, matchesSubFilter } from '@/lib/catalog';
 
-const CHIPS = [
-  ['all', 'cat.all'],
-  ['hiking', 'cat.hiking'],
-  ['camping', 'cat.camping'],
-  ['ski', 'cat.ski'],
-  ['lesson', 'cat.lesson'],
-  ['freeride', 'cat.freeride'],
-  ['culture', 'cat.culture'],
-];
+const CHIPS = [['all', 'cat.all'], ...CATEGORIES.map((c) => [c, `cat.${c}`])];
 
 // useSearchParams() opts a page out of prerendering unless it sits inside a
 // Suspense boundary, so the listing itself lives in the inner component.
@@ -67,11 +60,19 @@ function ToursListing() {
   const [tours, setTours] = useState(TOURS);
   const [category, setCategory] = useState(CHIPS.some(([k]) => k === wanted) ? wanted : 'all');
   const [range, setRange] = useState({ from: null, to: null });
+  // the second filter belongs to the category, so switching category clears it
+  const [sub, setSub] = useState('');
+  const subFilter = SUB_FILTERS[category] ?? null;
+
+  function pickCategory(key) {
+    setCategory(key);
+    setSub('');
+  }
 
   // following another menu link while already on the listing has to move the
   // chip too, and that is a prop change rather than a fresh mount
   useEffect(() => {
-    if (wanted && CHIPS.some(([k]) => k === wanted)) setCategory(wanted);
+    if (wanted && CHIPS.some(([k]) => k === wanted)) { setCategory(wanted); setSub(''); }
   }, [wanted]);
 
   useEffect(() => {
@@ -92,11 +93,12 @@ function ToursListing() {
   }, []);
 
   const shown = useMemo(() => tours.filter((tour) => (
-    (category === 'all' || tour.category === category)
+    (category === 'all' || categoryOf(tour) === category)
+    && matchesSubFilter(tour, category, sub)
     && seasonCovers(tour, range.from, range.to)
     && (!savedOnly || isFavorite(tour.slug))
     && matches(tour, query)
-  )), [tours, category, range, savedOnly, isFavorite, favorites, query]);
+  )), [tours, category, sub, range, savedOnly, isFavorite, favorites, query]);
 
   return (
     <div className="subpage-shell">
@@ -123,14 +125,31 @@ function ToursListing() {
               key={key}
               type="button"
               className={`chip${category === key ? ' active' : ''}`}
-              onClick={() => setCategory(key)}
+              onClick={() => pickCategory(key)}
             >
               {t(text)}
             </button>
           ))}
         </div>
 
-        <DateFilter from={range.from} to={range.to} onChange={setRange} />
+        {/* the category's own filter on the left, dates pushed to the right */}
+        <div className="filter-row">
+          {subFilter ? (
+            <select
+              className="sub-filter"
+              value={sub}
+              onChange={(e) => setSub(e.target.value)}
+              aria-label={subFilter.label}
+            >
+              <option value="">{subFilter.label}</option>
+              {subFilter.options.map(([value, label]) => (
+                <option value={value} key={value}>{label}</option>
+              ))}
+            </select>
+          ) : <span />}
+
+          <DateFilter from={range.from} to={range.to} onChange={setRange} />
+        </div>
 
         <div className="listing">
           {shown.length ? (

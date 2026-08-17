@@ -91,7 +91,7 @@ export default function TourPage({ params }) {
 
         <nav className="crumbs">
           <Link href="/">Home</Link><span>/</span>
-          <Link href="/tours">Activities</Link><span>/</span>
+          <Link href="/tours">Catalog</Link><span>/</span>
           <span className="here">{name}</span>
         </nav>
 
