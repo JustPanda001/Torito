@@ -4,7 +4,8 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase, friendlyError } from '@/lib/supabaseClient';
-import { DIAL_CODES, DEFAULT_DIAL, phoneDigits } from '@/lib/dial-codes';
+import { DEFAULT_DIAL, phoneDigits } from '@/lib/dial-codes';
+import DialSelect from '@/components/DialSelect';
 
 /** Where to go after signing in: back to the trip, if we came from one. */
 function nextUrl() {
@@ -91,11 +92,7 @@ export default function SignupPage() {
           <div className="field">
             <span className="field-label">Phone</span>
             <div className="bm-phone">
-              <select value={dial} onChange={(e) => setDial(e.target.value)} aria-label="Country code">
-                {DIAL_CODES.map(([code, short]) => (
-                  <option value={code} key={`${code} ${short}`}>{code} · {short}</option>
-                ))}
-              </select>
+              <DialSelect value={dial} onChange={setDial} />
               <input name="phone" inputMode="tel" autoComplete="tel" placeholder="599 12 34 56" required />
             </div>
             <span className="field-hint">So we can reach you about a booking</span>

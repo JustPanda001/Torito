@@ -10,7 +10,8 @@ import Calendar from './Calendar';
 import { inSeason, MONTHS, money } from '@/lib/season';
 import { isLesson, SKILL_LEVELS, LESSON_TYPES, LESSON_TIMES } from '@/lib/lessons';
 import { supabase, currentProfile } from '@/lib/supabaseClient';
-import { DIAL_CODES, DEFAULT_DIAL, phoneDigits } from '@/lib/dial-codes';
+import { DEFAULT_DIAL, phoneDigits } from '@/lib/dial-codes';
+import DialSelect from './DialSelect';
 
 function ContactFields({ profile, phone, setPhone, dial, setDial }) {
   return (
@@ -27,11 +28,7 @@ function ContactFields({ profile, phone, setPhone, dial, setDial }) {
           <div className="bm-phone">
             {/* the code is a separate control so the number itself stays clean:
                 a pasted "+995 599…" and a typed "599…" end up identical */}
-            <select value={dial} onChange={(e) => setDial(e.target.value)} aria-label="Country code">
-              {DIAL_CODES.map(([code, short]) => (
-                <option value={code} key={`${code} ${short}`}>{code} · {short}</option>
-              ))}
-            </select>
+            <DialSelect value={dial} onChange={setDial} />
             <input
               inputMode="tel"
               value={phone}

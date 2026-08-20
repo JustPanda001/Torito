@@ -1338,13 +1338,32 @@ body.has-offline-banner{padding-bottom:104px}
 /* a flex item is as wide as its longest option unless told otherwise, and
    "+7 · Russia / Kazakhstan" is long enough to push the number out of the
    card; the code is what matters once chosen, so the rest may be clipped */
-.bm-phone select{
-  flex:0 0 108px;width:108px;min-width:0;
-  font:inherit;font-size:15px;color:var(--ink);
-  padding:12px 8px;border-radius:10px;
+/* the code picker: narrow when closed, a short scrolling list when open —
+   a native select popup is sized by the browser from the option count and
+   41 of them ran the full height of the screen */
+.dial-select{position:relative;flex:0 0 108px}
+.dial-btn{
+  display:flex;align-items:center;justify-content:space-between;gap:6px;
+  width:100%;font:inherit;font-size:15px;color:var(--ink);cursor:pointer;
+  padding:12px 10px;border-radius:10px;
   border:1.5px solid var(--line);background:var(--surface-2);
-  text-overflow:ellipsis;
 }
+.dial-btn:hover{border-color:var(--green-300)}
+.dial-list{
+  position:absolute;top:calc(100% + 6px);left:0;z-index:80;
+  width:260px;max-height:240px;overflow-y:auto;
+  margin:0;padding:6px;list-style:none;
+  background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  box-shadow:0 16px 36px rgba(23,38,44,.28);
+}
+.dial-list button{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  width:100%;text-align:left;font:inherit;font-size:14px;color:var(--ink);
+  background:none;border:0;cursor:pointer;padding:8px 10px;border-radius:8px;
+}
+.dial-list button:hover{background:var(--green-50)}
+.dial-list button.active{background:var(--green-100);font-weight:600}
+.dial-code{color:var(--ink-soft);font-size:13px;flex-shrink:0}
 .bm-phone input{flex:1}
 .bm-note.error{color:#b4462a}
 @media (max-width:520px){
