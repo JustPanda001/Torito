@@ -9,7 +9,7 @@ import { useEffect, useState } from 'react';
 import Calendar from './Calendar';
 import { inSeason, MONTHS, money } from '@/lib/season';
 import { isLesson, SKILL_LEVELS, LESSON_TYPES, LESSON_TIMES } from '@/lib/lessons';
-import { currentProfile } from '@/lib/supabaseClient';
+import { supabase, currentProfile } from '@/lib/supabaseClient';
 import { DIAL_CODES, DEFAULT_DIAL, phoneDigits } from '@/lib/dial-codes';
 
 function ContactFields({ profile, phone, setPhone, dial, setDial }) {
@@ -109,6 +109,16 @@ export default function BookingModal({ tour, onClose }) {
         }),
       });
       if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? 'Request failed');
+
+      // an account made before sign-up asked for a phone keeps the one given
+      // here, so it is asked for exactly once rather than on every booking
+      if (!savedPhone && profile?.id) {
+        const { error: saveError } = await supabase
+          .from('profiles')
+          .update({ phone: `${dial} ${phone.trim()}` })
+          .eq('id', profile.id);
+        if (saveError) console.warn('Could not save phone to profile:', saveError.message);
+      }
       if (requestKind === 'waitlist') setWaitlisted(true); else setDone(true);
     } catch (err) {
       setFailed('That did not go through. Please try again, or ask us in the chat.');
