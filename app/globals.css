@@ -509,7 +509,7 @@ body.modal-open{overflow:hidden}
 }
 @keyframes bmFade{from{opacity:0}to{opacity:1}}
 .booking-modal{
-  width:min(440px,100%);max-height:calc(100vh - 40px);overflow-y:auto;
+  width:min(560px,100%);max-height:calc(100vh - 40px);overflow-y:auto;overflow-x:hidden;
   background:var(--surface);border-radius:20px;
   box-shadow:0 24px 60px rgba(23,38,44,.3);
   animation:bmRise .22s cubic-bezier(.2,.8,.3,1) both;
@@ -1328,6 +1328,19 @@ body.has-offline-banner{padding-bottom:104px}
 /* contact details in the booking dialog */
 .bm-contact{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .bm-contact .field:first-child{grid-column:1 / -1}
+/* a grid item is min-width:auto by default, so a long placeholder or value
+   pushes the column wider than its track and the dialog scrolls sideways */
+.bm-contact .field{min-width:0}
+.bm-contact input,.bm-contact select{width:100%;min-width:0}
+
+/* country code beside the number, sized to the code rather than the country */
+.bm-phone{display:flex;gap:8px}
+.bm-phone select{
+  flex:0 0 104px;font:inherit;font-size:15px;color:var(--ink);
+  padding:12px 6px;border-radius:10px;
+  border:1.5px solid var(--line);background:var(--surface-2);
+}
+.bm-phone input{flex:1}
 .bm-note.error{color:#b4462a}
 @media (max-width:520px){
   .bm-contact{grid-template-columns:1fr}

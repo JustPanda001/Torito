@@ -10,8 +10,11 @@ import Calendar from './Calendar';
 import { inSeason, MONTHS, money } from '@/lib/season';
 import { isLesson, SKILL_LEVELS, LESSON_TYPES, LESSON_TIMES } from '@/lib/lessons';
 import { currentProfile } from '@/lib/supabaseClient';
+import { DIAL_CODES, DEFAULT_DIAL, phoneDigits } from '@/lib/dial-codes';
 
-function ContactFields({ name, setName, email, setEmail, phone, setPhone }) {
+function ContactFields({
+  name, setName, email, setEmail, phone, setPhone, dial, setDial,
+}) {
   return (
     <div className="bm-contact">
       <label className="field">
@@ -22,10 +25,25 @@ function ContactFields({ name, setName, email, setEmail, phone, setPhone }) {
         <span className="field-label">Email *</span>
         <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" />
       </label>
-      <label className="field">
-        <span className="field-label">Phone</span>
-        <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+995 …" />
-      </label>
+      <div className="field">
+        <span className="field-label">Phone *</span>
+        <div className="bm-phone">
+          {/* the code is a separate control so the number itself stays clean:
+              a pasted "+995 599…" and a typed "599…" end up identical */}
+          <select value={dial} onChange={(e) => setDial(e.target.value)} aria-label="Country code">
+            {DIAL_CODES.map(([code, country]) => (
+              <option value={code} key={`${code} ${country}`}>{code} · {country}</option>
+            ))}
+          </select>
+          <input
+            inputMode="tel"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            placeholder="599 12 34 56"
+            aria-label="Phone number"
+          />
+        </div>
+      </div>
     </div>
   );
 }
@@ -45,6 +63,7 @@ export default function BookingModal({ tour, onClose }) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [dial, setDial] = useState(DEFAULT_DIAL);
   const [sending, setSending] = useState(false);
   const [failed, setFailed] = useState(null);
 
@@ -60,6 +79,10 @@ export default function BookingModal({ tour, onClose }) {
       .catch(() => {});
     return () => { alive = false; };
   }, []);
+
+  // six is the shortest national number in use anywhere; anything under that
+  // is a slip rather than a number we could ring back
+  const phoneOk = phoneDigits(phone).length >= 6;
 
   async function submit(requestKind) {
     setSending(true);
@@ -84,7 +107,7 @@ export default function BookingModal({ tour, onClose }) {
           lesson_type: lesson ? kind : null,
           name,
           email,
-          phone,
+          phone: `${dial} ${phone.trim()}`,
         }),
       });
       if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? 'Request failed');
@@ -138,14 +161,19 @@ export default function BookingModal({ tour, onClose }) {
                   name={name} setName={setName}
                   email={email} setEmail={setEmail}
                   phone={phone} setPhone={setPhone}
+                  dial={dial} setDial={setDial}
                 />
                 <button
                   type="button"
                   className="book-btn"
-                  disabled={sending || !name || !email}
+                  disabled={sending || !name || !email || !phoneOk}
                   onClick={() => submit('waitlist')}
                 >
-                  {sending ? 'Sending…' : !name || !email ? 'Name and email first' : 'Join waitlist'}
+                  {sending ? 'Sending…'
+                    : !name ? 'Add your name'
+                      : !email ? 'Add your email'
+                        : !phoneOk ? 'Add your phone'
+                          : 'Join waitlist'}
                 </button>
                 {failed && <p className="bm-note error">{failed}</p>}
               </>
@@ -250,6 +278,7 @@ export default function BookingModal({ tour, onClose }) {
                   name={name} setName={setName}
                   email={email} setEmail={setEmail}
                   phone={phone} setPhone={setPhone}
+                  dial={dial} setDial={setDial}
                 />
               </section>
 
@@ -264,7 +293,7 @@ export default function BookingModal({ tour, onClose }) {
               <button
                 type="button"
                 className="book-btn"
-                disabled={sending || !date || !name || !email || (lesson && (!time || !level || !kind))}
+                disabled={sending || !date || !name || !email || !phoneOk || (lesson && (!time || !level || !kind))}
                 onClick={() => submit(lesson ? 'lesson' : 'trip')}
               >
                 {sending ? 'Sending…'
@@ -274,7 +303,8 @@ export default function BookingModal({ tour, onClose }) {
                         : lesson && !kind ? 'Pick a lesson type'
                           : !name ? 'Add your name'
                             : !email ? 'Add your email'
-                              : `Request ${people} ${people === 1 ? 'place' : 'places'} — ${money(total)}`}
+                              : !phoneOk ? 'Add your phone'
+                                : `Request ${people} ${people === 1 ? 'place' : 'places'} — ${money(total)}`}
               </button>
               {failed && <p className="bm-note error">{failed}</p>}
             </>
