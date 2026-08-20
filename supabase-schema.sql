@@ -478,3 +478,32 @@ create policy "read own bookings" on public.bookings
 
 create policy "admins manage bookings" on public.bookings
   for all using (public.is_admin()) with check (public.is_admin());
+
+-- ============================================================
+-- PROFILE PHONE
+-- Collected at sign-up so the booking form never asks for it again. Accounts
+-- created before this keep a null phone; the booking form asks those visitors
+-- once, for that field alone.
+-- ============================================================
+alter table public.profiles add column if not exists phone text;
+
+-- the sign-up form passes it as user metadata, the same way it passes the name
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  insert into public.profiles (id, full_name, phone)
+  values (
+    new.id,
+    nullif(new.raw_user_meta_data->>'full_name', ''),
+    nullif(new.raw_user_meta_data->>'phone', '')
+  )
+  on conflict (id) do update
+    set full_name = coalesce(public.profiles.full_name, excluded.full_name),
+        phone     = coalesce(public.profiles.phone, excluded.phone);
+  return new;
+end;
+$$;

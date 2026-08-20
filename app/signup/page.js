@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase, friendlyError } from '@/lib/supabaseClient';
+import { DIAL_CODES, DEFAULT_DIAL, phoneDigits } from '@/lib/dial-codes';
 
 /** Where to go after signing in: back to the trip, if we came from one. */
 function nextUrl() {
@@ -17,6 +18,7 @@ export default function SignupPage() {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState(null);
+  const [dial, setDial] = useState(DEFAULT_DIAL);
 
   async function onSubmit(e) {
     e.preventDefault();
@@ -34,12 +36,24 @@ export default function SignupPage() {
       setNote({ error: true, text: 'Password must be at least 8 characters.' });
       return;
     }
+    const phone = String(data.get('phone')).trim();
+    if (phoneDigits(phone).length < 6) {
+      setNote({ error: true, text: 'Enter a phone number we can reach you on.' });
+      return;
+    }
 
     setBusy(true);
     const { data: result, error } = await supabase.auth.signUp({
       email: String(data.get('email')).trim(),
       password,
-      options: { data: { full_name: String(data.get('name')).trim() } },
+      // both land on the profile row through the handle_new_user trigger, so
+      // the booking form can read them back instead of asking again
+      options: {
+        data: {
+          full_name: String(data.get('name')).trim(),
+          phone: `${dial} ${phone}`,
+        },
+      },
     });
     setBusy(false);
 
@@ -73,6 +87,19 @@ export default function SignupPage() {
             <span className="field-label">Email address</span>
             <input type="email" name="email" autoComplete="email" required />
           </label>
+
+          <div className="field">
+            <span className="field-label">Phone</span>
+            <div className="bm-phone">
+              <select value={dial} onChange={(e) => setDial(e.target.value)} aria-label="Country code">
+                {DIAL_CODES.map(([code, country]) => (
+                  <option value={code} key={`${code} ${country}`}>{code} · {country}</option>
+                ))}
+              </select>
+              <input name="phone" inputMode="tel" autoComplete="tel" placeholder="599 12 34 56" required />
+            </div>
+            <span className="field-hint">So we can reach you about a booking</span>
+          </div>
 
           <label className="field">
             <span className="field-label">Password</span>

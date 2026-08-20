@@ -12,38 +12,37 @@ import { isLesson, SKILL_LEVELS, LESSON_TYPES, LESSON_TIMES } from '@/lib/lesson
 import { currentProfile } from '@/lib/supabaseClient';
 import { DIAL_CODES, DEFAULT_DIAL, phoneDigits } from '@/lib/dial-codes';
 
-function ContactFields({
-  name, setName, email, setEmail, phone, setPhone, dial, setDial,
-}) {
+function ContactFields({ profile, phone, setPhone, dial, setDial }) {
   return (
-    <div className="bm-contact">
-      <label className="field">
-        <span className="field-label">Name *</span>
-        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nino Beridze" />
-      </label>
-      <label className="field">
-        <span className="field-label">Email *</span>
-        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" />
-      </label>
-      <div className="field">
-        <span className="field-label">Phone *</span>
-        <div className="bm-phone">
-          {/* the code is a separate control so the number itself stays clean:
-              a pasted "+995 599…" and a typed "599…" end up identical */}
-          <select value={dial} onChange={(e) => setDial(e.target.value)} aria-label="Country code">
-            {DIAL_CODES.map(([code, country]) => (
-              <option value={code} key={`${code} ${country}`}>{code} · {country}</option>
-            ))}
-          </select>
-          <input
-            inputMode="tel"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder="599 12 34 56"
-            aria-label="Phone number"
-          />
+    <div className="bm-who">
+      <p className="bm-who-line">
+        <strong>{profile?.full_name || 'Your account'}</strong>
+        <span>{profile?.email}</span>
+        {profile?.phone && <span>{profile.phone}</span>}
+      </p>
+
+      {!profile?.phone && (
+        <div className="field">
+          <span className="field-label">Phone *</span>
+          <div className="bm-phone">
+            {/* the code is a separate control so the number itself stays clean:
+                a pasted "+995 599…" and a typed "599…" end up identical */}
+            <select value={dial} onChange={(e) => setDial(e.target.value)} aria-label="Country code">
+              {DIAL_CODES.map(([code, country]) => (
+                <option value={code} key={`${code} ${country}`}>{code} · {country}</option>
+              ))}
+            </select>
+            <input
+              inputMode="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="599 12 34 56"
+              aria-label="Phone number"
+            />
+          </div>
+          <span className="field-hint">Your account has no phone number yet</span>
         </div>
-      </div>
+      )}
     </div>
   );
 }
@@ -60,29 +59,28 @@ export default function BookingModal({ tour, onClose }) {
   const [level, setLevel] = useState('');
   const [kind, setKind] = useState('');
   // we have to be able to answer the person, and most visitors are not signed in
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
+  const [profile, setProfile] = useState(null);
   const [phone, setPhone] = useState('');
   const [dial, setDial] = useState(DEFAULT_DIAL);
   const [sending, setSending] = useState(false);
   const [failed, setFailed] = useState(null);
 
-  // a signed-in visitor should not retype what the account already knows
+  // booking is gated behind an account, so this is where the name, email and
+  // phone come from — nobody types them a second time
   useEffect(() => {
     let alive = true;
     currentProfile()
-      .then((p) => {
-        if (!alive || !p) return;
-        setName((v) => v || p.full_name || '');
-        setEmail((v) => v || p.email || '');
-      })
+      .then((p) => { if (alive) setProfile(p); })
       .catch(() => {});
     return () => { alive = false; };
   }, []);
 
   // six is the shortest national number in use anywhere; anything under that
   // is a slip rather than a number we could ring back
-  const phoneOk = phoneDigits(phone).length >= 6;
+  const savedPhone = profile?.phone ?? '';
+  const phoneOk = savedPhone
+    ? true
+    : phoneDigits(phone).length >= 6;
 
   async function submit(requestKind) {
     setSending(true);
@@ -105,9 +103,9 @@ export default function BookingModal({ tour, onClose }) {
           lesson_time: lesson ? time : null,
           skill_level: lesson ? level : null,
           lesson_type: lesson ? kind : null,
-          name,
-          email,
-          phone: `${dial} ${phone.trim()}`,
+          name: profile?.full_name ?? null,
+          email: profile?.email ?? null,
+          phone: savedPhone || `${dial} ${phone.trim()}`,
         }),
       });
       if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? 'Request failed');
@@ -158,22 +156,17 @@ export default function BookingModal({ tour, onClose }) {
                   you the moment a place frees up.
                 </p>
                 <ContactFields
-                  name={name} setName={setName}
-                  email={email} setEmail={setEmail}
+                  profile={profile}
                   phone={phone} setPhone={setPhone}
                   dial={dial} setDial={setDial}
                 />
                 <button
                   type="button"
                   className="book-btn"
-                  disabled={sending || !name || !email || !phoneOk}
+                  disabled={sending || !phoneOk}
                   onClick={() => submit('waitlist')}
                 >
-                  {sending ? 'Sending…'
-                    : !name ? 'Add your name'
-                      : !email ? 'Add your email'
-                        : !phoneOk ? 'Add your phone'
-                          : 'Join waitlist'}
+                  {sending ? 'Sending…' : !phoneOk ? 'Add your phone' : 'Join waitlist'}
                 </button>
                 {failed && <p className="bm-note error">{failed}</p>}
               </>
@@ -275,8 +268,7 @@ export default function BookingModal({ tour, onClose }) {
               <section className="bm-section">
                 <h3>Who is it for?</h3>
                 <ContactFields
-                  name={name} setName={setName}
-                  email={email} setEmail={setEmail}
+                  profile={profile}
                   phone={phone} setPhone={setPhone}
                   dial={dial} setDial={setDial}
                 />
@@ -293,7 +285,7 @@ export default function BookingModal({ tour, onClose }) {
               <button
                 type="button"
                 className="book-btn"
-                disabled={sending || !date || !name || !email || !phoneOk || (lesson && (!time || !level || !kind))}
+                disabled={sending || !date || !phoneOk || (lesson && (!time || !level || !kind))}
                 onClick={() => submit(lesson ? 'lesson' : 'trip')}
               >
                 {sending ? 'Sending…'
@@ -301,10 +293,8 @@ export default function BookingModal({ tour, onClose }) {
                     : lesson && !time ? 'Pick a time'
                       : lesson && !level ? 'Pick your level'
                         : lesson && !kind ? 'Pick a lesson type'
-                          : !name ? 'Add your name'
-                            : !email ? 'Add your email'
-                              : !phoneOk ? 'Add your phone'
-                                : `Request ${people} ${people === 1 ? 'place' : 'places'} — ${money(total)}`}
+                          : !phoneOk ? 'Add your phone'
+                            : `Request ${people} ${people === 1 ? 'place' : 'places'} — ${money(total)}`}
               </button>
               {failed && <p className="bm-note error">{failed}</p>}
             </>

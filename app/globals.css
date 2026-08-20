@@ -1361,3 +1361,13 @@ body.has-offline-banner{padding-bottom:104px}
 @media (max-width:520px){
   .filter-row{flex-direction:column;align-items:stretch}
 }
+
+/* "Who is it for?" is a read-back of the account, not a form */
+.bm-who-line{
+  margin:0;padding:12px 14px;border-radius:12px;
+  background:var(--surface-2);border:1px solid var(--line);
+  display:flex;flex-direction:column;gap:2px;font-size:14px;
+}
+.bm-who-line strong{font-size:15px}
+.bm-who-line span{color:var(--ink-soft)}
+.bm-who .field{margin-top:12px}
