@@ -92,8 +92,8 @@ export default function SignupPage() {
             <span className="field-label">Phone</span>
             <div className="bm-phone">
               <select value={dial} onChange={(e) => setDial(e.target.value)} aria-label="Country code">
-                {DIAL_CODES.map(([code, country]) => (
-                  <option value={code} key={`${code} ${country}`}>{code} · {country}</option>
+                {DIAL_CODES.map(([code, short]) => (
+                  <option value={code} key={`${code} ${short}`}>{code} · {short}</option>
                 ))}
               </select>
               <input name="phone" inputMode="tel" autoComplete="tel" placeholder="599 12 34 56" required />

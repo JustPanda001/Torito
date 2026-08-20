@@ -1335,10 +1335,15 @@ body.has-offline-banner{padding-bottom:104px}
 
 /* country code beside the number, sized to the code rather than the country */
 .bm-phone{display:flex;gap:8px}
+/* a flex item is as wide as its longest option unless told otherwise, and
+   "+7 · Russia / Kazakhstan" is long enough to push the number out of the
+   card; the code is what matters once chosen, so the rest may be clipped */
 .bm-phone select{
-  flex:0 0 104px;font:inherit;font-size:15px;color:var(--ink);
-  padding:12px 6px;border-radius:10px;
+  flex:0 0 108px;width:108px;min-width:0;
+  font:inherit;font-size:15px;color:var(--ink);
+  padding:12px 8px;border-radius:10px;
   border:1.5px solid var(--line);background:var(--surface-2);
+  text-overflow:ellipsis;
 }
 .bm-phone input{flex:1}
 .bm-note.error{color:#b4462a}

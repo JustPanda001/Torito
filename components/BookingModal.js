@@ -28,8 +28,8 @@ function ContactFields({ profile, phone, setPhone, dial, setDial }) {
             {/* the code is a separate control so the number itself stays clean:
                 a pasted "+995 599…" and a typed "599…" end up identical */}
             <select value={dial} onChange={(e) => setDial(e.target.value)} aria-label="Country code">
-              {DIAL_CODES.map(([code, country]) => (
-                <option value={code} key={`${code} ${country}`}>{code} · {country}</option>
+              {DIAL_CODES.map(([code, short]) => (
+                <option value={code} key={`${code} ${short}`}>{code} · {short}</option>
               ))}
             </select>
             <input
