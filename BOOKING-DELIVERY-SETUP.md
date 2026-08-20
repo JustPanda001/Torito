@@ -84,13 +84,22 @@ function doPost(e) {
   }
 
   const row = HEADERS.map(function (key) {
-    return body[key] === undefined || body[key] === null ? '' : body[key];
+    return literal(body[key]);
   });
 
   sheet.appendRow(row);
   dressRow(sheet, sheet.getLastRow());
 
   return ContentService.createTextOutput('ok');
+}
+
+// A value starting with + = - or @ is read as a formula, so "+995 599..."
+// lands as #ERROR!. A leading apostrophe tells Sheets to store it verbatim;
+// the apostrophe is not part of the value and does not show in the cell.
+// This also stops anything typed into the booking form being run as one.
+function literal(value) {
+  if (value === undefined || value === null) return '';
+  return typeof value === 'string' && /^[-=+@]/.test(value) ? "'" + value : value;
 }
 
 // Header row, widths and formats. The phone column is forced to plain text:
