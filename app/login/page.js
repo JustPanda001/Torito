@@ -5,6 +5,14 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase, friendlyError } from '@/lib/supabaseClient';
 
+/** Where to go after signing in: back to the trip, if we came from one. */
+function nextUrl() {
+  const raw = new URLSearchParams(window.location.search).get('next');
+  // only same-site paths, so the parameter cannot be used to bounce someone
+  // off to another domain
+  return raw && raw.startsWith('/') && !raw.startsWith('//') ? raw : '/';
+}
+
 export default function LoginPage() {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -26,7 +34,7 @@ export default function LoginPage() {
     setBusy(false);
 
     if (error) { setNote({ error: true, text: friendlyError(error) }); return; }
-    router.push('/');
+    router.push(nextUrl());
   }
 
   return (

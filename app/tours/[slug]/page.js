@@ -3,13 +3,15 @@
 // Trip detail page. The slug in the URL picks the trip, so every trip has a
 // real page instead of one hard-coded one.
 
-import { use, useState } from 'react';
+import { use, useEffect, useState } from 'react';
 import Link from 'next/link';
 import SiteHeader from '@/components/SiteHeader';
 import { openChat } from '@/components/ChatWidget';
 import SiteFooter from '@/components/SiteFooter';
 import Gallery from '@/components/Gallery';
 import BookingModal from '@/components/BookingModal';
+import SignInGate from '@/components/SignInGate';
+import { currentProfile } from '@/lib/supabaseClient';
 import FavoriteButton from '@/components/FavoriteButton';
 import { findTour } from '@/lib/tours-data';
 import { money } from '@/lib/season';
@@ -33,6 +35,17 @@ export default function TourPage({ params }) {
   const { slug } = use(params);
   const tour = findTour(slug);
   const [booking, setBooking] = useState(false);
+  const [gate, setGate] = useState(false);
+  // undefined while we are still asking; null means signed out
+  const [profile, setProfile] = useState(undefined);
+
+  useEffect(() => {
+    let alive = true;
+    currentProfile()
+      .then((p) => { if (alive) setProfile(p); })
+      .catch(() => { if (alive) setProfile(null); });
+    return () => { alive = false; };
+  }, []);
 
   if (!tour) {
     return (
@@ -141,7 +154,11 @@ export default function TourPage({ params }) {
               </li>
             </ul>
 
-            <button type="button" className={`book-btn${full ? ' secondary' : ''}`} onClick={() => setBooking(true)}>
+            <button
+              type="button"
+              className={`book-btn${full ? ' secondary' : ''}`}
+              onClick={() => (profile ? setBooking(true) : setGate(true))}
+            >
               {full ? 'Join waitlist' : lesson ? 'Book a lesson' : 'Book a spot'}
             </button>
             <button type="button" className="book-btn secondary" onClick={() => openChat(tour)}>Ask a question</button>
@@ -194,6 +211,7 @@ export default function TourPage({ params }) {
       </main>
 
       {booking && <BookingModal tour={tour} onClose={() => setBooking(false)} />}
+      {gate && <SignInGate title={name} onClose={() => setGate(false)} />}
       <SiteFooter />
     </div>
   );
