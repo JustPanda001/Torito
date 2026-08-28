@@ -12,9 +12,9 @@ import Gallery from '@/components/Gallery';
 import BookingModal from '@/components/BookingModal';
 import SignInGate from '@/components/SignInGate';
 import TripPlace from '@/components/TripPlace';
-import { currentProfile } from '@/lib/supabaseClient';
+import { supabase, currentProfile } from '@/lib/supabaseClient';
 import FavoriteButton from '@/components/FavoriteButton';
-import { findTour } from '@/lib/tours-data';
+import { findTour, fromRow } from '@/lib/tours-data';
 import { money } from '@/lib/season';
 import { isLesson } from '@/lib/lessons';
 
@@ -34,7 +34,20 @@ const Icon = ({ children }) => (
 
 export default function TourPage({ params }) {
   const { slug } = use(params);
-  const tour = findTour(slug);
+  // the placeholder renders immediately so the page is never blank, then the
+  // database row replaces it — a trip added in the admin panel only exists there
+  const [tour, setTour] = useState(() => findTour(slug));
+
+  useEffect(() => {
+    let alive = true;
+    supabase
+      .from('tours')
+      .select('*')
+      .eq('slug', slug)
+      .maybeSingle()
+      .then(({ data }) => { if (alive && data) setTour(fromRow(data)); });
+    return () => { alive = false; };
+  }, [slug]);
   const [booking, setBooking] = useState(false);
   const [gate, setGate] = useState(false);
   // undefined while we are still asking; null means signed out

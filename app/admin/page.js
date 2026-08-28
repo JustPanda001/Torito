@@ -11,6 +11,7 @@ import Link from 'next/link';
 import SiteHeader from '@/components/SiteHeader';
 import OptionSelect from '@/components/OptionSelect';
 import PhotoManager from '@/components/PhotoManager';
+import PairListEditor from '@/components/PairListEditor';
 import { supabase, currentProfile, friendlyError } from '@/lib/supabaseClient';
 import { slugify } from '@/lib/slug';
 import { LESSON } from '@/lib/lessons';
@@ -35,6 +36,15 @@ const LESSON_FIELDS = new Set([
   'duration', 'capacity', 'spots_left', 'season', 'season_from', 'season_to',
   'badge', 'group_size', 'lat', 'lng',
 ]);
+
+// [section title, note, field names] — the form is built from this, so the
+// order here is the order of the page it produces
+const SECTIONS = [
+  ['The basics', 'Title and category decide everything else', ['title', 'category', 'subtype', 'slug', 'subtitle', 'region', 'price']],
+  ['The facts panel', 'The list beside the photos on the trip page', ['distance', 'duration', 'difficulty', 'capacity', 'spots_left', 'elevation_gain', 'season', 'season_from', 'season_to', 'stay', 'languages', 'badge']],
+  ['Getting there', 'The grid under "About this trip"', ['departure_point', 'departure_time', 'return_info', 'transport', 'group_size', 'walking_per_day']],
+  ['On the map', 'Drives the little map and the weather tile', ['lat', 'lng']],
+];
 
 const FIELDS = [
   ['title', 'Title *', { required: true, placeholder: 'Mestia – Ushguli Trek' }],
@@ -73,6 +83,9 @@ export default function AdminPage() {
   const [cover, setCover] = useState('');
   // drives which fields the form shows; lessons need far fewer
   const [category, setCategory] = useState('tours');
+  const [itinerary, setItinerary] = useState([]);
+  const [included, setIncluded] = useState([]);
+  const [excluded, setExcluded] = useState([]);
   // ski's second choice, which decides whether this is a lesson
   const [subtype, setSubtype] = useState('');
   const lessonForm = category === 'ski' && subtype === LESSON;
@@ -115,6 +128,12 @@ export default function AdminPage() {
     setEditingId(tour.id);
     slugTouched.current = true;
     setCategory(tour.category ?? 'tours');
+    const asPairs = (list) => (Array.isArray(list) ? list : []).map((item) => (
+      Array.isArray(item) ? { title: item[0], note: item[1] } : item
+    ));
+    setItinerary(asPairs(tour.itinerary));
+    setIncluded(asPairs(tour.included));
+    setExcluded(asPairs(tour.excluded));
     setSubtype(tour.subtype ?? '');
     setPhotos(Array.isArray(tour.gallery) ? tour.gallery : []);
     setCover(tour.cover_image ?? '');
@@ -155,6 +174,9 @@ export default function AdminPage() {
     slugTouched.current = false;
     setCategory('tours');
     setSubtype('');
+    setItinerary([]);
+    setIncluded([]);
+    setExcluded([]);
     form.current?.reset();
     setNote(null);
   }
@@ -183,6 +205,14 @@ export default function AdminPage() {
       for (const [name] of FIELDS) if (!LESSON_FIELDS.has(name)) row[name] = null;
     }
     if (row.subtype === '') row.subtype = null;
+
+    const pairs = (rows) => rows
+      .filter((r) => (r.title ?? '').trim())
+      .map((r) => [r.title.trim(), (r.note ?? '').trim()]);
+
+    row.itinerary = pairs(itinerary);
+    row.included = pairs(included);
+    row.excluded = pairs(excluded);
 
     row.gallery = photos;
     // a starred photo wins; otherwise fall back to the first one
@@ -222,11 +252,29 @@ export default function AdminPage() {
           )}
 
           <form className="admin-form" ref={form} onSubmit={onSubmit}>
-            <div className="admin-grid">
-              {FIELDS
+            {SECTIONS.map(([sectionTitle, sectionHint, names]) => {
+              const fields = FIELDS
+                .filter(([name]) => names.includes(name))
                 .filter(([, , opts = {}]) => !opts.onlyFor || opts.onlyFor === category)
-                .filter(([name]) => !lessonForm || LESSON_FIELDS.has(name))
-                .map(([name, label, opts = {}]) => (
+                .filter(([name]) => !lessonForm || LESSON_FIELDS.has(name));
+
+              // the dropdown-backed fields sit in whichever section names them
+              const options = lessonForm
+                ? []
+                : OPTION_FIELDS.filter(([name]) => names.includes(name));
+
+              // a section whose every field belongs to another category would
+              // otherwise render as a heading over nothing
+              if (!fields.length && !options.length) return null;
+
+              return (
+                <section className="admin-section" key={sectionTitle}>
+                  <div className="admin-section-head">
+                    <h3>{sectionTitle}</h3>
+                    <span className="field-hint">{sectionHint}</span>
+                  </div>
+                  <div className="admin-grid">
+                    {fields.map(([name, label, opts = {}]) => (
                 <label className="field" key={name}>
                   <span className="field-label">{label}</span>
                   {opts.options ? (
@@ -262,22 +310,77 @@ export default function AdminPage() {
                   )}
                   {opts.hint && <span className="field-hint">{opts.hint}</span>}
                 </label>
-              ))}
-              {!lessonForm && OPTION_FIELDS.map(([name, label]) => (
-                <OptionSelect key={name} name={name} field={name} label={label} />
-              ))}
-            </div>
+                    ))}
 
-            <PhotoManager
-              photos={photos}
-              cover={cover}
-              onChange={({ photos: p, cover: c }) => { setPhotos(p); setCover(c); }}
-            />
+                    {options.map(([name, label]) => (
+                      <OptionSelect key={name} name={name} field={name} label={label} />
+                    ))}
+                  </div>
+                </section>
+              );
+            })}
 
-            <label className="field">
-              <span className="field-label">Summary</span>
-              <textarea name="summary" rows={3} placeholder="What the trip is, in a couple of sentences." />
-            </label>
+            <section className="admin-section">
+              <div className="admin-section-head">
+                <h3>Photos</h3>
+                <span className="field-hint">The first is the cover, shown on the listing card</span>
+              </div>
+              <PhotoManager
+                photos={photos}
+                cover={cover}
+                onChange={({ photos: p, cover: c }) => { setPhotos(p); setCover(c); }}
+              />
+            </section>
+
+            <section className="admin-section">
+              <div className="admin-section-head">
+                <h3>About this trip</h3>
+                <span className="field-hint">The paragraph under the photos</span>
+              </div>
+              <label className="field">
+                <span className="field-label">Summary</span>
+                <textarea name="summary" rows={3} placeholder="What the trip is, in a couple of sentences." />
+              </label>
+            </section>
+
+            {!lessonForm && (
+              <section className="admin-section">
+                <PairListEditor
+                  label="Where we go"
+                  hint="One row per day, in order"
+                  rows={itinerary}
+                  onChange={setItinerary}
+                  titleLabel="Tbilisi → Mestia"
+                  notePlaceholder="What happens that day"
+                  numbered
+                  addLabel="Add a day"
+                />
+              </section>
+            )}
+
+            <section className="admin-section">
+              <PairListEditor
+                label="What's included"
+                hint="Ticked items on the trip page"
+                rows={included}
+                onChange={setIncluded}
+                titleLabel="2 mountain guides"
+                notePlaceholder="Certified, first-aid trained"
+                addLabel="Add an inclusion"
+              />
+            </section>
+
+            <section className="admin-section">
+              <PairListEditor
+                label="Not included"
+                hint="Crossed-out items, so nobody is surprised on the day"
+                rows={excluded}
+                onChange={setExcluded}
+                titleLabel="Travel insurance"
+                notePlaceholder="Required — arrange before arrival"
+                addLabel="Add an exclusion"
+              />
+            </section>
 
             <label className="check">
               <input type="checkbox" name="published" defaultChecked />

@@ -1,4 +1,4 @@
--- Torito — chat, bookings, profile phone and trip locations.
+-- Torito — chat, bookings, profile phone, trip locations and trip content.
 -- Paste this whole file into the Supabase SQL editor and press Run.
 -- Safe to re-run: it never drops data.
 
@@ -229,3 +229,16 @@ $$;
 -- ============================================================
 alter table public.tours add column if not exists lat double precision;
 alter table public.tours add column if not exists lng double precision;
+
+-- ============================================================
+-- TRIP CONTENT
+-- The parts of a trip page that are lists rather than fields: the day-by-day
+-- plan, and what the price does and does not cover. Stored as jsonb arrays of
+-- [title, note] pairs, which is the shape the page already renders.
+--
+-- Empty means "use the sensible defaults for this category" rather than "show
+-- nothing", so a half-filled trip still reads as a finished page.
+-- ============================================================
+alter table public.tours add column if not exists itinerary jsonb not null default '[]'::jsonb;
+alter table public.tours add column if not exists included  jsonb not null default '[]'::jsonb;
+alter table public.tours add column if not exists excluded  jsonb not null default '[]'::jsonb;
