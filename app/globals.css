@@ -1415,8 +1415,8 @@ body.has-offline-banner{padding-bottom:104px}
    enough that the temperature stays the thing you read first */
 .wx-facts{
   display:flex;flex-direction:column;gap:1px;flex-shrink:0;
-  font-size:12px;line-height:1.35;color:var(--ink-soft);text-align:right;
-  margin-left:auto;padding-left:10px;
+  font-size:12px;line-height:1.35;color:var(--ink-soft);
+  align-items:center;text-align:center;margin:0 auto;padding:0 10px;
 }
 .wx-facts b{color:var(--ink);font-weight:600}
 .wx-cond em{font-style:normal;color:var(--green-700)}
