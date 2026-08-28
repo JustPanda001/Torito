@@ -1411,6 +1411,16 @@ body.has-offline-banner{padding-bottom:104px}
 .place-tile-main strong{font-size:17px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .place-tile-main span{font-size:12.5px;color:var(--ink-soft)}
 .place-tile-more{font-size:12px;color:var(--green-700);white-space:nowrap;flex-shrink:0}
+/* the middle of the weather tile: three short facts, one per line, small
+   enough that the temperature stays the thing you read first */
+.wx-facts{
+  display:flex;flex-direction:column;gap:1px;flex-shrink:0;
+  font-size:12px;line-height:1.35;color:var(--ink-soft);text-align:right;
+  margin-left:auto;padding-left:10px;
+}
+.wx-facts b{color:var(--ink);font-weight:600}
+.wx-cond em{font-style:normal;color:var(--green-700)}
+@media (max-width:1100px){.wx-facts{display:none}}
 
 /* the thumbnail is scenery for the button, so it must not take the click */
 .map-thumb{

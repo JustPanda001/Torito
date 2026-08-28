@@ -67,6 +67,15 @@ export default function TripPlace({ tour }) {
             <strong>{now ? `${now.temp}°` : '—'}</strong>
             <span>{now ? CONDITIONS[kind].label : 'Weather'}</span>
           </span>
+
+          {now && (
+            <span className="wx-facts">
+              <span><b>{now.high}°</b> / {now.low}° today</span>
+              {now.rainChance != null && <span>{now.rainChance}% rain</span>}
+              <span>wind {now.wind} km/h</span>
+            </span>
+          )}
+
           <span className="place-tile-more">2-week forecast →</span>
         </button>
 
@@ -120,7 +129,12 @@ export default function TripPlace({ tour }) {
                         </span>
                         <Icon kind={k} />
                         <span className="wx-temp"><strong>{d.max}°</strong> {d.min}°</span>
-                        <span className="wx-cond">{CONDITIONS[k].label}</span>
+                        <span className="wx-cond">
+                          {CONDITIONS[k].label}
+                          {d.rainChance != null && d.rainChance > 0 && (
+                            <em> · {d.rainChance}%</em>
+                          )}
+                        </span>
                       </li>
                     );
                   })}
