@@ -11,6 +11,8 @@ import SiteFooter from '@/components/SiteFooter';
 import Gallery from '@/components/Gallery';
 import BookingModal from '@/components/BookingModal';
 import SignInGate from '@/components/SignInGate';
+import TripMap from '@/components/TripMap';
+import TripWeather from '@/components/TripWeather';
 import { currentProfile } from '@/lib/supabaseClient';
 import FavoriteButton from '@/components/FavoriteButton';
 import { findTour } from '@/lib/tours-data';
@@ -164,6 +166,13 @@ export default function TourPage({ params }) {
             <button type="button" className="book-btn secondary" onClick={() => openChat(tour)}>Ask a question</button>
           </aside>
         </div>
+
+        {typeof tour.lat === 'number' && (
+          <section className="detail-block place-block">
+            <TripMap tour={tour} />
+            <TripWeather tour={tour} />
+          </section>
+        )}
 
         <section className="detail-block">
           <h2>{lesson ? 'About these lessons' : 'About this trip'}</h2>

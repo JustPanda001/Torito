@@ -33,7 +33,7 @@ const OPTION_FIELDS = [
 const LESSON_FIELDS = new Set([
   'title', 'slug', 'subtitle', 'category', 'subtype', 'region', 'price',
   'duration', 'capacity', 'spots_left', 'season', 'season_from', 'season_to',
-  'badge', 'group_size',
+  'badge', 'group_size', 'lat', 'lng',
 ]);
 
 const FIELDS = [
@@ -45,6 +45,8 @@ const FIELDS = [
   ['slug', 'URL slug *', { required: true, placeholder: 'mestia-ushguli-trek', hint: 'Fills itself from the title — edit it if you want a different address' }],
   ['subtitle', 'Subtitle', { placeholder: '4 days' }],
   ['region', 'Region', { placeholder: 'Svaneti' }],
+  ['lat', 'Latitude', { type: 'number', step: 'any', placeholder: '43.0451', hint: 'Right-click the spot in Google Maps and copy the first number' }],
+  ['lng', 'Longitude', { type: 'number', step: 'any', placeholder: '42.7280', hint: 'The second number from the same copy' }],
   ['price', 'Price per person', { type: 'number', min: 0, placeholder: '890' }],
   ['distance', 'Distance', { placeholder: '58 km' }],
   ['duration', 'Duration', { placeholder: '4 days' }],
@@ -172,6 +174,9 @@ export default function AdminPage() {
     row.capacity = Number(row.capacity);
     row.spots_left = row.spots_left === '' ? null : Number(row.spots_left);
     row.price = row.price === '' ? null : Number(row.price);
+    // empty means "no map on this trip", which is not the same as zero
+    row.lat = row.lat === '' ? null : Number(row.lat);
+    row.lng = row.lng === '' ? null : Number(row.lng);
     if (row.badge === '') row.badge = null;
 
     if (lessonForm) {
@@ -244,6 +249,7 @@ export default function AdminPage() {
                       name={name}
                       type={opts.type || 'text'}
                       min={opts.min}
+                      step={opts.step}
                       required={opts.required}
                       placeholder={opts.placeholder}
                       defaultValue={opts.defaultValue}

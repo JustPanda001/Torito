@@ -1,4 +1,4 @@
--- Torito — chat tables, booking requests and profile phone.
+-- Torito — chat, bookings, profile phone and trip locations.
 -- Paste this whole file into the Supabase SQL editor and press Run.
 -- Safe to re-run: it never drops data.
 
@@ -219,3 +219,13 @@ begin
   return new;
 end;
 $$;
+
+-- ============================================================
+-- TRIP LOCATION
+-- One point per trip: the map pins it, and the weather panel asks Open-Meteo
+-- about it. Null means the trip simply shows neither, which is why these are
+-- nullable rather than defaulted to 0,0 — a zero would put every trip without
+-- coordinates in the Atlantic.
+-- ============================================================
+alter table public.tours add column if not exists lat double precision;
+alter table public.tours add column if not exists lng double precision;
