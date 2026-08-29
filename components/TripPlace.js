@@ -8,6 +8,7 @@
 import { useEffect, useState } from 'react';
 import { currentWeather, conditionOf, CONDITIONS } from '@/lib/weather';
 import { MONTHS_SHORT } from '@/lib/season';
+import StravaEmbed, { parseStrava } from './StravaEmbed';
 
 const ICONS = {
   clear: <><circle cx="12" cy="12" r="4.2" /><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M18.4 5.6L17 7M7 17l-1.4 1.4" /></>,
@@ -30,6 +31,9 @@ const embedFor = (lat, lng, span) => {
 
 export default function TripPlace({ tour }) {
   const { lat, lng } = tour;
+  // a published Strava route says far more than a pin: the line, and the
+  // climbing, which is the question a hiker actually has
+  const route = parseStrava(tour.strava);
   const [wx, setWx] = useState(undefined);
   const [open, setOpen] = useState(null);            // 'weather' | 'map' | null
 
@@ -87,9 +91,9 @@ export default function TripPlace({ tour }) {
           </span>
           <span className="place-tile-main">
             <strong>{tour.region || 'On the map'}</strong>
-            <span>Where it starts</span>
+            <span>{route ? 'The route' : 'Where it starts'}</span>
           </span>
-          <span className="place-tile-more">Bigger map →</span>
+          <span className="place-tile-more">{route ? 'See the route →' : 'Bigger map →'}</span>
         </button>
       </div>
 
@@ -98,7 +102,7 @@ export default function TripPlace({ tour }) {
           <div className={`booking-modal place-modal${open === 'map' ? ' map-modal' : ''}`} role="dialog" aria-modal="true">
             <div className="bm-head">
               <div>
-                <h2>{open === 'map' ? 'Where it is' : 'Next two weeks'}</h2>
+                <h2>{open === 'map' ? (route ? 'The route' : 'Where it is') : 'Next two weeks'}</h2>
                 <p className="bm-sub">{tour.full_title || tour.title}</p>
               </div>
               <button type="button" className="bm-close" aria-label="Close" onClick={() => setOpen(null)}>×</button>
@@ -107,7 +111,9 @@ export default function TripPlace({ tour }) {
             <div className="bm-body">
               {open === 'map' ? (
                 <>
-                  <iframe className="map-big" src={embedFor(lat, lng, 0.25)} title={`Map of ${tour.title}`} />
+                  {route
+                    ? <StravaEmbed className="strava-wrap" value={tour.strava} />
+                    : <iframe className="map-big" src={embedFor(lat, lng, 0.25)} title={`Map of ${tour.title}`} />}
                   <a
                     className="auth-link"
                     href={`https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=12/${lat}/${lng}`}

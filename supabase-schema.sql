@@ -530,3 +530,11 @@ alter table public.tours add column if not exists lng double precision;
 alter table public.tours add column if not exists itinerary jsonb not null default '[]'::jsonb;
 alter table public.tours add column if not exists included  jsonb not null default '[]'::jsonb;
 alter table public.tours add column if not exists excluded  jsonb not null default '[]'::jsonb;
+
+-- ============================================================
+-- STRAVA ROUTE
+-- Optional per trip: the id of a public Strava route or activity, which the
+-- map popup embeds instead of the plain pinned map. Text rather than a number
+-- because the admin form accepts a pasted URL and stores whatever was typed.
+-- ============================================================
+alter table public.tours add column if not exists strava text;

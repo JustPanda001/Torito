@@ -1,4 +1,4 @@
--- Torito — chat, bookings, profile phone, trip locations and trip content.
+-- Torito — chat, bookings, profile phone, trip locations, content and routes.
 -- Paste this whole file into the Supabase SQL editor and press Run.
 -- Safe to re-run: it never drops data.
 
@@ -242,3 +242,11 @@ alter table public.tours add column if not exists lng double precision;
 alter table public.tours add column if not exists itinerary jsonb not null default '[]'::jsonb;
 alter table public.tours add column if not exists included  jsonb not null default '[]'::jsonb;
 alter table public.tours add column if not exists excluded  jsonb not null default '[]'::jsonb;
+
+-- ============================================================
+-- STRAVA ROUTE
+-- Optional per trip: the id of a public Strava route or activity, which the
+-- map popup embeds instead of the plain pinned map. Text rather than a number
+-- because the admin form accepts a pasted URL and stores whatever was typed.
+-- ============================================================
+alter table public.tours add column if not exists strava text;

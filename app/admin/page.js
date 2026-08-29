@@ -43,7 +43,7 @@ const SECTIONS = [
   ['The basics', 'Title and category decide everything else', ['title', 'category', 'subtype', 'slug', 'subtitle', 'region', 'price']],
   ['The facts panel', 'The list beside the photos on the trip page', ['distance', 'duration', 'difficulty', 'capacity', 'spots_left', 'elevation_gain', 'season', 'season_from', 'season_to', 'stay', 'languages', 'badge']],
   ['Getting there', 'The grid under "About this trip"', ['departure_point', 'departure_time', 'return_info', 'transport', 'group_size', 'walking_per_day']],
-  ['On the map', 'Drives the little map and the weather tile', ['lat', 'lng']],
+  ['On the map', 'Drives the little map and the weather tile', ['lat', 'lng', 'strava']],
 ];
 
 const FIELDS = [
@@ -57,6 +57,7 @@ const FIELDS = [
   ['region', 'Region', { placeholder: 'Svaneti' }],
   ['lat', 'Latitude', { type: 'number', step: 'any', placeholder: '43.0451', hint: 'Right-click the spot in Google Maps and copy the first number' }],
   ['lng', 'Longitude', { type: 'number', step: 'any', placeholder: '42.7280', hint: 'The second number from the same copy' }],
+  ['strava', 'Strava route', { placeholder: 'https://www.strava.com/routes/123456789', hint: 'Optional. A public route or activity — its map and elevation replace the plain map' }],
   ['price', 'Price per person', { type: 'number', min: 0, placeholder: '890' }],
   ['distance', 'Distance', { placeholder: '58 km' }],
   ['duration', 'Duration', { placeholder: '4 days' }],
