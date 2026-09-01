@@ -166,7 +166,7 @@ export default function TourPage({ params }) {
               <li>
                 <Icon>{ICONS.clock}</Icon>
                 <span className="fact-label">Price</span>
-                <span className="fact-value">{money(tour.price)} pp</span>
+                <span className="fact-value">{money(tour.price)} per person</span>
               </li>
             </ul>
 
