@@ -1488,3 +1488,17 @@ body.has-offline-banner{padding-bottom:104px}
   .pair-fields{grid-template-columns:1fr}
   .pair-row{flex-wrap:wrap}
 }
+
+/* editing the choices behind a dropdown, in place */
+.option-manage{font-size:12px;width:auto;padding:0 10px}
+.option-manage-list{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:4px}
+.option-manage-list li{
+  display:flex;align-items:center;gap:8px;font-size:13.5px;
+  padding:5px 8px;border-radius:8px;background:var(--surface-2);
+}
+.option-remove{
+  width:20px;height:20px;flex-shrink:0;line-height:1;
+  border:0;border-radius:50%;cursor:pointer;
+  background:#e8b9a8;color:#5a2413;font-size:14px;
+}
+.option-remove:hover{background:#d98d73}

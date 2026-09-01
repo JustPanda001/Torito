@@ -1,7 +1,7 @@
 'use client';
 
-// A <select> whose choices come from the tour_options table, with a + button to
-// add a new one without leaving the form.
+// A <select> whose choices come from the tour_options table, with buttons to
+// add a choice or drop one without leaving the form.
 //
 // Deliberately uncontrolled: the admin form fills itself by assigning to
 // form.elements[name].value when you press Edit, which a React-controlled value
@@ -13,6 +13,7 @@ import { supabase, friendlyError } from '@/lib/supabaseClient';
 export default function OptionSelect({ name, label, field, hint, required = false }) {
   const [options, setOptions] = useState([]);
   const [adding, setAdding] = useState(false);
+  const [managing, setManaging] = useState(false);
   const [draft, setDraft] = useState('');
   const [error, setError] = useState(null);
   const select = useRef(null);
@@ -55,6 +56,25 @@ export default function OptionSelect({ name, label, field, hint, required = fals
     setTimeout(() => { if (select.current) select.current.value = value; }, 0);
   }
 
+  async function remove(value) {
+    // typos are the usual reason a list needs tidying, and a typo nobody has
+    // used is not worth a confirmation step — but one already on a trip is
+    if (!confirm(`Remove "${value}" from the ${label.toLowerCase()} list?`)) return;
+
+    const { error: err } = await supabase
+      .from('tour_options')
+      .delete()
+      .eq('field', field)
+      .eq('value', value);
+
+    if (err) { setError(friendlyError(err)); return; }
+
+    setOptions((prev) => prev.filter((o) => o !== value));
+    // a trip already saved with this value keeps it; the select just no longer
+    // offers it to the next one
+    if (select.current?.value === value) select.current.value = '';
+  }
+
   return (
     <label className="field option-field">
       <span className="field-label">{label}</span>
@@ -73,7 +93,29 @@ export default function OptionSelect({ name, label, field, hint, required = fals
         >
           {adding ? '×' : '+'}
         </button>
+        {options.length > 0 && (
+          <button
+            type="button"
+            className="option-add option-manage"
+            title={`Edit the ${label.toLowerCase()} list`}
+            aria-label={`Edit the ${label.toLowerCase()} list`}
+            onClick={() => { setError(null); setManaging((v) => !v); }}
+          >
+            {managing ? 'done' : 'edit'}
+          </button>
+        )}
       </div>
+
+      {managing && (
+        <ul className="option-manage-list">
+          {options.map((o) => (
+            <li key={o}>
+              <button type="button" className="option-remove" aria-label={`Remove ${o}`} onClick={() => remove(o)}>×</button>
+              <span>{o}</span>
+            </li>
+          ))}
+        </ul>
+      )}
 
       {adding && (
         <div className="option-row option-new">

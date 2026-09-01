@@ -538,3 +538,35 @@ alter table public.tours add column if not exists excluded  jsonb not null defau
 -- because the admin form accepts a pasted URL and stores whatever was typed.
 -- ============================================================
 alter table public.tours add column if not exists strava text;
+
+-- ============================================================
+-- EVERY COLUMN THE ADMIN FORM WRITES
+-- "create table if not exists" does nothing once the table exists, so a column
+-- added to that block later never reaches a database created before it — which
+-- is how saving a tour came to fail on a missing 'price'. These alters are the
+-- ones that actually run on an existing database, and they are idempotent, so
+-- listing every field the form can write is the cheap way to stay in step.
+-- ============================================================
+alter table public.tours add column if not exists price           numeric;
+alter table public.tours add column if not exists subtype         text;
+alter table public.tours add column if not exists subtitle        text;
+alter table public.tours add column if not exists region          text;
+alter table public.tours add column if not exists distance        text;
+alter table public.tours add column if not exists duration        text;
+alter table public.tours add column if not exists difficulty      text;
+alter table public.tours add column if not exists elevation_gain  text;
+alter table public.tours add column if not exists stay            text;
+alter table public.tours add column if not exists languages       text;
+alter table public.tours add column if not exists season          text;
+alter table public.tours add column if not exists season_from     text;
+alter table public.tours add column if not exists season_to       text;
+alter table public.tours add column if not exists badge           text;
+alter table public.tours add column if not exists departure_point text;
+alter table public.tours add column if not exists departure_time  text;
+alter table public.tours add column if not exists return_info     text;
+alter table public.tours add column if not exists transport       text;
+alter table public.tours add column if not exists group_size      text;
+alter table public.tours add column if not exists walking_per_day text;
+alter table public.tours add column if not exists summary         text;
+alter table public.tours add column if not exists cover_image     text;
+alter table public.tours add column if not exists spots_left      integer;
