@@ -131,7 +131,6 @@ export default function TourPage({ params }) {
             <span>{tour.region}</span><span className="dot">·</span>
             <span>{tour.views} views</span><span className="dot">·</span>
             <span>{tour.season_text}</span>
-            <span className="tour-id">ID {tour.id}</span>
           </div>
         </div>
 

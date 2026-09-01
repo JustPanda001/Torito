@@ -1511,3 +1511,15 @@ body.has-offline-banner{padding-bottom:104px}
 .admin-row-link:hover{opacity:.75}
 .admin-row-link strong{text-decoration:underline;text-decoration-color:var(--green-300)}
 .admin-row-btns .chip{display:inline-flex;align-items:center}
+
+/* the tick list of standard inclusions */
+.inc-choices{list-style:none;margin:0 0 14px;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.inc-choices .check{
+  align-items:flex-start;gap:10px;margin:0;
+  padding:10px 12px;border-radius:10px;background:var(--surface);
+  border:1px solid var(--line);cursor:pointer;
+}
+.inc-choices .check:hover{border-color:var(--green-300)}
+.inc-choices strong{display:block;font-size:14px}
+.inc-choices em{display:block;font-style:normal;font-size:12.5px;color:var(--ink-soft)}
+@media (max-width:800px){.inc-choices{grid-template-columns:1fr}}

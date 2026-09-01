@@ -12,6 +12,7 @@ import SiteHeader from '@/components/SiteHeader';
 import OptionSelect from '@/components/OptionSelect';
 import PhotoManager from '@/components/PhotoManager';
 import PairListEditor from '@/components/PairListEditor';
+import InclusionEditor from '@/components/InclusionEditor';
 import { supabase, currentProfile, friendlyError } from '@/lib/supabaseClient';
 import { slugify } from '@/lib/slug';
 import { LESSON } from '@/lib/lessons';
@@ -360,27 +361,11 @@ export default function AdminPage() {
             )}
 
             <section className="admin-section">
-              <PairListEditor
-                label="What's included"
-                hint="Ticked items on the trip page"
-                rows={included}
-                onChange={setIncluded}
-                titleLabel="2 mountain guides"
-                notePlaceholder="Certified, first-aid trained"
-                addLabel="Add an inclusion"
-              />
+              <InclusionEditor kind="included" category={category} rows={included} onChange={setIncluded} />
             </section>
 
             <section className="admin-section">
-              <PairListEditor
-                label="Not included"
-                hint="Crossed-out items, so nobody is surprised on the day"
-                rows={excluded}
-                onChange={setExcluded}
-                titleLabel="Travel insurance"
-                notePlaceholder="Required — arrange before arrival"
-                addLabel="Add an exclusion"
-              />
+              <InclusionEditor kind="excluded" category={category} rows={excluded} onChange={setExcluded} />
             </section>
 
             <label className="check">
