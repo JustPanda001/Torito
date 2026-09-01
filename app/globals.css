@@ -1502,3 +1502,12 @@ body.has-offline-banner{padding-bottom:104px}
   background:#e8b9a8;color:#5a2413;font-size:14px;
 }
 .option-remove:hover{background:#d98d73}
+
+/* the row itself opens the trip; the buttons beside it keep their own jobs */
+.admin-row-link{
+  display:flex;align-items:center;gap:14px;flex:1;min-width:0;
+  border-radius:10px;padding:2px;transition:opacity .15s;
+}
+.admin-row-link:hover{opacity:.75}
+.admin-row-link strong{text-decoration:underline;text-decoration-color:var(--green-300)}
+.admin-row-btns .chip{display:inline-flex;align-items:center}

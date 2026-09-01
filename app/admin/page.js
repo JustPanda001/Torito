@@ -406,15 +406,18 @@ export default function AdminPage() {
           {tours.length === 0 && <p className="form-note">No tours yet. Add one above.</p>}
           {tours.map((t) => (
             <div className="admin-row" key={t.id}>
-              <img src={t.cover_image || '/assets/hero.svg'} alt="" />
-              <div className="admin-row-main">
-                <strong>{t.title}</strong>
-                <span>
-                  {t.region || '—'} · {t.duration || '—'} · {t.capacity} people
-                  {!t.published && ' · draft'}
-                </span>
-              </div>
+              <Link className="admin-row-link" href={`/tours/${t.slug}`} target="_blank" rel="noreferrer">
+                <img src={t.cover_image || '/assets/hero.svg'} alt="" />
+                <div className="admin-row-main">
+                  <strong>{t.title}</strong>
+                  <span>
+                    {t.region || '—'} · {t.duration || '—'} · {t.capacity} people
+                    {!t.published && ' · draft'}
+                  </span>
+                </div>
+              </Link>
               <div className="admin-row-btns">
+                <Link className="chip" href={`/tours/${t.slug}`} target="_blank" rel="noreferrer">View</Link>
                 <button className="chip" type="button" onClick={() => edit(t)}>Edit</button>
                 <button className="chip danger" type="button" onClick={() => remove(t.id, t.title)}>Delete</button>
               </div>
