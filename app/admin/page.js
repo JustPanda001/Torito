@@ -17,6 +17,7 @@ import { supabase, currentProfile, friendlyError } from '@/lib/supabaseClient';
 import { slugify } from '@/lib/slug';
 import { LESSON } from '@/lib/lessons';
 import { CATEGORIES } from '@/lib/catalog';
+import { parseCoord, parsePair } from '@/lib/coords';
 
 // these render as dropdowns backed by tour_options, with a + to add a choice
 const OPTION_FIELDS = [
@@ -56,8 +57,8 @@ const FIELDS = [
   ['slug', 'URL slug *', { required: true, placeholder: 'mestia-ushguli-trek', hint: 'Fills itself from the title — edit it if you want a different address' }],
   ['subtitle', 'Subtitle', { placeholder: '4 days' }],
   ['region', 'Region', { placeholder: 'Svaneti' }],
-  ['lat', 'Latitude', { type: 'number', step: 'any', placeholder: '43.0451', hint: 'Right-click the spot in Google Maps and copy the first number' }],
-  ['lng', 'Longitude', { type: 'number', step: 'any', placeholder: '42.7280', hint: 'The second number from the same copy' }],
+  ['lat', 'Latitude', { placeholder: `43.0451 or 43°02'42.4"N`, hint: 'Paste either form — or paste the whole pair here and the longitude fills itself' }],
+  ['lng', 'Longitude', { placeholder: `42.7280 or 42°43'40.8"E` }],
   ['strava', 'Strava route', { placeholder: 'https://www.strava.com/routes/123456789', hint: 'Optional. A public route or activity — its map and elevation replace the plain map' }],
   ['price', 'Price per person', { type: 'number', min: 0, placeholder: '890' }],
   ['distance', 'Distance', { placeholder: '58 km' }],
@@ -161,6 +162,15 @@ export default function AdminPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
+  function onCoordInput(e) {
+    const pair = parsePair(e.target.value);
+    if (!pair) return;
+    const [lat, lng] = pair;
+    e.target.value = String(lat);
+    const other = form.current?.elements.lng;
+    if (other) other.value = String(lng);
+  }
+
   function onTitleInput(e) {
     // an existing trip keeps its address: changing it would 404 every link
     // already shared, including the ones sitting in the chat inbox
@@ -199,8 +209,8 @@ export default function AdminPage() {
     row.spots_left = row.spots_left === '' ? null : Number(row.spots_left);
     row.price = row.price === '' ? null : Number(row.price);
     // empty means "no map on this trip", which is not the same as zero
-    row.lat = row.lat === '' ? null : Number(row.lat);
-    row.lng = row.lng === '' ? null : Number(row.lng);
+    row.lat = parseCoord(row.lat);
+    row.lng = parseCoord(row.lng);
     if (row.badge === '') row.badge = null;
 
     if (lessonForm) {
@@ -306,7 +316,8 @@ export default function AdminPage() {
                       onChange={
                         name === 'title' ? onTitleInput
                           : name === 'slug' ? () => { slugTouched.current = true; }
-                            : undefined
+                            : name === 'lat' ? onCoordInput
+                              : undefined
                       }
                     />
                   )}
