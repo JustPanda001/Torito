@@ -47,6 +47,8 @@ export default function HomePage() {
           </div>
         </section>
 
+        <HotSection />
+
         <section className="section reveal visible" id="activities">
           <h2 className="section-title">{t('home.catalog')}</h2>
           <div className="activity-row">
@@ -57,8 +59,6 @@ export default function HomePage() {
             ))}
           </div>
         </section>
-
-        <HotSection />
 
         <section className="section">
           <h2 className="section-title">{t('home.whatWeDo')}</h2>
