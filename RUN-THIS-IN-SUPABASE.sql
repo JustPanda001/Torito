@@ -282,3 +282,95 @@ alter table public.tours add column if not exists walking_per_day text;
 alter table public.tours add column if not exists summary         text;
 alter table public.tours add column if not exists cover_image     text;
 alter table public.tours add column if not exists spots_left      integer;
+
+-- ============================================================
+-- REVIEWS / STAR RATINGS
+-- The score on the cards and the trip page (components/Stars.js), and the
+-- dialog that collects one (components/ReviewModal.js).
+--
+-- One review per person per trip: the unique constraint is what lets the
+-- dialog upsert instead of stacking a second rating on top of the first.
+-- ============================================================
+create table if not exists public.tour_reviews (
+  id           uuid primary key default gen_random_uuid(),
+  tour_slug    text not null,
+  user_id      uuid not null references auth.users(id) on delete cascade,
+  author_name  text,
+  rating       smallint not null check (rating between 1 and 5),
+  recommend    boolean not null default true,
+  body         text,
+  created_at   timestamptz not null default now(),
+  updated_at   timestamptz not null default now(),
+  unique (tour_slug, user_id)
+);
+
+create index if not exists tour_reviews_slug_idx
+  on public.tour_reviews (tour_slug, created_at desc);
+
+alter table public.tour_reviews enable row level security;
+
+drop policy if exists "reviews are public"    on public.tour_reviews;
+drop policy if exists "write own review"      on public.tour_reviews;
+drop policy if exists "edit own review"       on public.tour_reviews;
+drop policy if exists "delete own review"     on public.tour_reviews;
+drop policy if exists "admins manage reviews" on public.tour_reviews;
+
+-- anyone may read a score; only the author may write one, and only their own
+create policy "reviews are public" on public.tour_reviews
+  for select using (true);
+create policy "write own review" on public.tour_reviews
+  for insert with check (user_id = auth.uid());
+create policy "edit own review" on public.tour_reviews
+  for update using (user_id = auth.uid()) with check (user_id = auth.uid());
+create policy "delete own review" on public.tour_reviews
+  for delete using (user_id = auth.uid());
+create policy "admins manage reviews" on public.tour_reviews
+  for all using (public.is_admin()) with check (public.is_admin());
+
+-- ============================================================
+-- VIEW COUNTER
+-- Ranks the seasonal "Hot right now" strip (components/HotSection.js).
+--
+-- The bump goes through a security-definer function rather than an update,
+-- so a visitor can add one to a count without being able to set it to
+-- whatever they like.
+-- ============================================================
+create table if not exists public.tour_views (
+  tour_slug  text primary key,
+  views      bigint not null default 0,
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists tour_views_popular_idx
+  on public.tour_views (views desc);
+
+create or replace function public.bump_tour_view(slug text)
+returns bigint
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  total bigint;
+begin
+  insert into public.tour_views (tour_slug, views, updated_at)
+  values (slug, 1, now())
+  on conflict (tour_slug) do update
+    set views = public.tour_views.views + 1,
+        updated_at = now()
+  returning views into total;
+  return total;
+end;
+$$;
+
+grant execute on function public.bump_tour_view(text) to anon, authenticated;
+
+alter table public.tour_views enable row level security;
+
+drop policy if exists "view counts are public" on public.tour_views;
+drop policy if exists "admins manage views"    on public.tour_views;
+
+create policy "view counts are public" on public.tour_views
+  for select using (true);
+create policy "admins manage views" on public.tour_views
+  for all using (public.is_admin()) with check (public.is_admin());

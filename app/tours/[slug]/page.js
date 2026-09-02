@@ -3,7 +3,7 @@
 // Trip detail page. The slug in the URL picks the trip, so every trip has a
 // real page instead of one hard-coded one.
 
-import { use, useEffect, useState } from 'react';
+import { use, useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import SiteHeader from '@/components/SiteHeader';
 import { openChat } from '@/components/ChatWidget';
@@ -14,9 +14,13 @@ import SignInGate from '@/components/SignInGate';
 import TripPlace from '@/components/TripPlace';
 import { supabase, currentProfile } from '@/lib/supabaseClient';
 import FavoriteButton from '@/components/FavoriteButton';
+import Stars from '@/components/Stars';
+import ReviewModal from '@/components/ReviewModal';
 import { findTour, fromRow } from '@/lib/tours-data';
 import { money } from '@/lib/season';
 import { isLesson } from '@/lib/lessons';
+import { fetchReviews, useRatings } from '@/lib/ratings';
+import { bumpTourView } from '@/lib/views';
 
 const ICONS = {
   distance: <><path d="M4 18h16" /><path d="M7 18l5-12 5 12" /></>,
@@ -49,7 +53,8 @@ export default function TourPage({ params }) {
     return () => { alive = false; };
   }, [slug]);
   const [booking, setBooking] = useState(false);
-  const [gate, setGate] = useState(false);
+  // which button a signed-out visitor pressed: 'book', 'rate', or null
+  const [gate, setGate] = useState(null);
   // undefined while we are still asking; null means signed out
   const [profile, setProfile] = useState(undefined);
 
@@ -60,6 +65,20 @@ export default function TourPage({ params }) {
       .catch(() => { if (alive) setProfile(null); });
     return () => { alive = false; };
   }, []);
+
+  const { ratingFor, refresh: refreshRatings } = useRatings();
+  const score = ratingFor(slug);
+  const [reviews, setReviews] = useState([]);
+  const [rating, setRating] = useState(false);
+
+  // one open, one view — this is what ranks the "Hot right now" strip
+  useEffect(() => { bumpTourView(slug); }, [slug]);
+
+  const loadReviews = useCallback(() => {
+    fetchReviews(slug).then(setReviews).catch(() => {});
+  }, [slug]);
+
+  useEffect(() => { loadReviews(); }, [loadReviews]);
 
   if (!tour) {
     return (
@@ -126,6 +145,7 @@ export default function TourPage({ params }) {
           <div className="detail-head-left">
             {tour.badge && <span className={`badge badge-${tour.badge}`}>{tour.badge.toUpperCase()}</span>}
             <h1>{name}</h1>
+            <Stars avg={score.avg} count={score.count} size={16} />
           </div>
           <div className="detail-head-right">
             <span>{tour.region}</span><span className="dot">·</span>
@@ -173,7 +193,7 @@ export default function TourPage({ params }) {
             <button
               type="button"
               className={`book-btn${full ? ' secondary' : ''}`}
-              onClick={() => (profile ? setBooking(true) : setGate(true))}
+              onClick={() => (profile ? setBooking(true) : setGate('book'))}
             >
               {full ? 'Join waitlist' : lesson ? 'Book a lesson' : 'Book a spot'}
             </button>
@@ -224,10 +244,58 @@ export default function TourPage({ params }) {
             ))}
           </div>
         </section>
+
+        <section className="detail-block reviews-block">
+          <div className="reviews-head">
+            <h2>Reviews</h2>
+            {/* rating needs an account, the same way booking does */}
+            <button
+              type="button"
+              className="book-btn secondary rate-btn"
+              onClick={() => (profile ? setRating(true) : setGate('rate'))}
+            >
+              Rate this trip
+            </button>
+          </div>
+
+          <div className="reviews-score">
+            <Stars avg={score.avg} count={score.count} size={22} />
+          </div>
+
+          {reviews.length === 0 ? (
+            <p className="form-note">
+              No reviews yet. If you have been on this trip, yours would be the first.
+            </p>
+          ) : (
+            <ul className="reviews-list">
+              {reviews.map((r) => (
+                <li className="review" key={r.id}>
+                  <div className="review-top">
+                    <strong>{r.author_name || 'Traveller'}</strong>
+                    <Stars avg={r.rating} count={1} size={14} showCount={false} />
+                    <span className="review-date">
+                      {new Date(r.created_at).toLocaleDateString()}
+                    </span>
+                  </div>
+                  {r.recommend && <span className="review-rec">Recommends this trip</span>}
+                  {r.body && <p className="review-body">{r.body}</p>}
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
       </main>
 
       {booking && <BookingModal tour={tour} onClose={() => setBooking(false)} />}
-      {gate && <SignInGate title={name} onClose={() => setGate(false)} />}
+      {rating && (
+        <ReviewModal
+          tour={tour}
+          profile={profile}
+          onClose={() => setRating(false)}
+          onSaved={() => { refreshRatings(); loadReviews(); }}
+        />
+      )}
+      {gate && <SignInGate title={name} reason={gate} onClose={() => setGate(null)} />}
       <SiteFooter />
     </div>
   );

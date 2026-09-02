@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import SiteHeader from '@/components/SiteHeader';
 import SiteFooter from '@/components/SiteFooter';
+import HotSection from '@/components/HotSection';
 import { useT } from '@/lib/i18n';
 
 const HERO = [
@@ -56,6 +57,8 @@ export default function HomePage() {
             ))}
           </div>
         </section>
+
+        <HotSection />
 
         <section className="section">
           <h2 className="section-title">{t('home.whatWeDo')}</h2>
