@@ -108,6 +108,7 @@
 
       <a class="book-btn" href="#" id="bookBtn">Book a spot</a>
       <button class="book-btn secondary">Ask a question</button>
+      <button class="book-btn secondary" id="rateBtn" type="button">Rate this trip</button>
 
       <div class="guide-row" id="guideRow"></div>
     </aside>
@@ -128,6 +129,15 @@
   <section class="detail-block">
     <h2>What's included</h2>
     <div class="included-grid" id="includedGrid"></div>
+  </section>
+
+  <!-- ============ REVIEWS ============ -->
+  <section class="detail-block">
+    <div class="reviews-head">
+      <h2>Reviews</h2>
+      <div class="reviews-score" id="reviewsScore"></div>
+    </div>
+    <div class="reviews-list" id="reviewsList"></div>
   </section>
 
 </main>
@@ -154,6 +164,7 @@
 
 <script src="script.js"></script>
 <script type="module" src="js/session.js"></script>
+<script type="module" src="js/chat-widget.js"></script>
 <script type="module" src="js/tour-detail.js"></script>
 </body>
 </html>

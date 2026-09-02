@@ -6,6 +6,16 @@
       "runtimeExecutable": "powershell",
       "runtimeArgs": ["-ExecutionPolicy", "Bypass", "-File", "serve.ps1"],
       "port": 8000
+    },
+    {
+      "name": "torito-next",
+      "runtimeExecutable": "powershell",
+      "runtimeArgs": [
+        "-ExecutionPolicy", "Bypass", "-Command",
+        "$env:Path = $env:Path + ';C:\\Program Files\\nodejs'; Set-Location 'C:\\Users\\Mylaptop\\Desktop\\torito-next'; & 'C:\\Program Files\\nodejs\\npm.cmd' run dev"
+      ],
+      "port": 3000,
+      "autoPort": true
     }
   ]
 }

@@ -6,6 +6,7 @@
 
 import { TOURS } from './tours-data.js';
 import { initDateFilter, seasonCovers, seasonLabel } from './date-filter.js';
+import { loadRatings, ratingFor, starsHtml } from './ratings.js';
 
 const listing = document.getElementById('listing');
 const countEl = document.getElementById('listingCount');
@@ -26,6 +27,7 @@ function applyFilters({ stagger = false } = {}) {
 
   listing.innerHTML = shown.map(card).join('');
   if (countEl) countEl.textContent = `${shown.length} trips available`;
+  paintRatings();
 
   // cards are added after the scroll observer ran, so bring them in here
   requestAnimationFrame(() => {
@@ -62,6 +64,17 @@ function main() {
   wireDatePicker();
   applyFilters({ stagger: true });
   loadFromDatabase();
+  // stars arrive after the cards, so the listing never waits on them
+  loadRatings().then(paintRatings);
+}
+
+// Averages are cached per slug, so this is safe to call on every re-render:
+// before they load it paints "No ratings yet", afterwards the real score.
+function paintRatings() {
+  document.querySelectorAll('#listing .tour-rating').forEach((el) => {
+    const { avg, count } = ratingFor(el.dataset.slug);
+    el.innerHTML = starsHtml(avg, count, { size: 14 });
+  });
 }
 
 function icon(path) {
@@ -99,6 +112,7 @@ function card(t) {
         ${badge}
         <span>${t.region || ''}</span>
         ${season ? `<span class="tour-season">${season}</span>` : ''}
+        <span class="tour-rating" data-slug="${t.slug}"></span>
       </div>
     </div>
 

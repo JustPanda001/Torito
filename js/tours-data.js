@@ -66,7 +66,7 @@ const EXCLUDED = {
 
 export const TOURS = [
   {
-    slug: 'svaneti-mestia-ushguli', id: 10024, title: 'Svaneti', subtitle: 'Mestia → Ushguli trek',
+    slug: 'svaneti-mestia-ushguli', price: 890, id: 10024, title: 'Svaneti', subtitle: 'Mestia → Ushguli trek',
     full_title: 'Mestia – Ushguli Trek',
     category: 'hiking', region: 'Svaneti', cover_image: 'assets/svaneti(1).webp',
     distance: '58 km', duration: '4 days', duration_long: '4 days / 3 nights',
@@ -86,7 +86,7 @@ export const TOURS = [
     ],
   },
   {
-    slug: 'kazbegi-gergeti', id: 10025, title: 'Kazbegi', subtitle: 'Gergeti Trinity & glacier',
+    slug: 'kazbegi-gergeti', price: 320, id: 10025, title: 'Kazbegi', subtitle: 'Gergeti Trinity & glacier',
     full_title: 'Kazbegi – Gergeti Trinity & Glacier',
     category: 'hiking', region: 'Mtskheta-Mtianeti', cover_image: 'assets/sameba.webp',
     distance: '14 km', duration: '2 days', duration_long: '2 days / 1 night',
@@ -104,7 +104,7 @@ export const TOURS = [
     ],
   },
   {
-    slug: 'tavkvetili', id: 10026, title: 'Tavkvetili', subtitle: 'თავკვეთილი',
+    slug: 'tavkvetili', price: 90, id: 10026, title: 'Tavkvetili', subtitle: 'თავკვეთილი',
     full_title: 'Tavkvetili Mountain Day Hike',
     category: 'hiking', region: 'Tsalka', cover_image: 'assets/hiking.svg',
     distance: '12 km', duration: '1 day', duration_long: 'Single day',
@@ -121,7 +121,7 @@ export const TOURS = [
     ],
   },
   {
-    slug: 'rkoni', id: 10027, title: 'Rkoni', subtitle: 'Canyon & monastery camp',
+    slug: 'rkoni', price: 190, id: 10027, title: 'Rkoni', subtitle: 'Canyon & monastery camp',
     full_title: 'Rkoni Canyon & Monastery Camp',
     category: 'camping', region: 'Shida Kartli', cover_image: 'assets/camping.jpg',
     distance: '9 km', duration: '2 days', duration_long: '2 days / 1 night',
@@ -139,7 +139,7 @@ export const TOURS = [
     ],
   },
   {
-    slug: 'black-rock-lake', id: 10028, title: 'Black Rock Lake', subtitle: 'Abudelauri valley camp',
+    slug: 'black-rock-lake', price: 450, id: 10028, title: 'Black Rock Lake', subtitle: 'Abudelauri valley camp',
     full_title: 'Black Rock Lake Camp',
     category: 'camping', region: 'Racha', cover_image: 'assets/camping fier.webp',
     distance: '22 km', duration: '3 days', duration_long: '3 days / 2 nights',
@@ -158,7 +158,7 @@ export const TOURS = [
     ],
   },
   {
-    slug: 'gudauri-freeride', id: 10029, title: 'Gudauri', subtitle: 'Freeride week',
+    slug: 'gudauri-freeride', price: 1750, id: 10029, title: 'Gudauri', subtitle: 'Freeride week',
     full_title: 'Gudauri Freeride Week',
     category: 'ski', region: 'Gudauri', cover_image: 'assets/gudauri.webp',
     distance: '—', duration: '6 days', duration_long: '6 days / 5 nights',
@@ -180,7 +180,7 @@ export const TOURS = [
     ],
   },
   {
-    slug: 'bakuriani-beginners', id: 10030, title: 'Bakuriani', subtitle: 'Beginner ski camp',
+    slug: 'bakuriani-beginners', price: 980, id: 10030, title: 'Bakuriani', subtitle: 'Beginner ski camp',
     full_title: 'Bakuriani Beginner Ski Camp',
     category: 'ski', region: 'Samtskhe-Javakheti', cover_image: 'assets/skier-gudauri-yellow-jacket-768x512.jpg',
     distance: '—', duration: '4 days', duration_long: '4 days / 3 nights',
@@ -200,7 +200,7 @@ export const TOURS = [
     ],
   },
   {
-    slug: 'mtskheta', id: 10031, title: 'Mtskheta', subtitle: 'Ancient capital day tour',
+    slug: 'mtskheta', price: 120, id: 10031, title: 'Mtskheta', subtitle: 'Ancient capital day tour',
     full_title: 'Mtskheta — Ancient Capital Day Tour',
     category: 'culture', region: 'Mtskheta', cover_image: 'assets/mtskheta.svg',
     distance: '—', duration: '1 day', duration_long: 'Single day',
@@ -217,7 +217,7 @@ export const TOURS = [
     ],
   },
   {
-    slug: 'kakheti-wine', id: 10032, title: 'Kakheti', subtitle: 'Wine route & qvevri cellars',
+    slug: 'kakheti-wine', price: 380, id: 10032, title: 'Kakheti', subtitle: 'Wine route & qvevri cellars',
     full_title: 'Kakheti Wine Route',
     category: 'culture', region: 'Kakheti', cover_image: 'assets/kaxeti.jpg',
     distance: '—', duration: '2 days', duration_long: '2 days / 1 night',

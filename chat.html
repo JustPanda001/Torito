@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chat — Torito</title>
+<link rel="icon" href="assets/torito-logo.png">
+<link rel="stylesheet" href="styles.css">
+<link rel="preconnect" href="https://esm.sh" crossorigin>
+<link rel="preconnect" href="https://zwmmgrrrryxaulrcuudy.supabase.co" crossorigin>
+<script>document.documentElement.classList.add('js');</script>
+</head>
+<body class="subpage">
+
+<header class="site-header solid" id="siteHeader">
+  <div class="header-inner">
+    <div class="header-left">
+      <a class="logo" href="index.html">
+        <img src="assets/torito-logo.png" alt="Torito — Georgian Ascent Tours">
+        <span class="logo-text">TORITO</span>
+      </a>
+      <span class="admin-tag">CHAT</span>
+    </div>
+    <div class="header-actions">
+      <a class="icon-btn" href="admin.html">Manage tours</a>
+      <a class="icon-btn" href="tours.html">View site</a>
+      <a class="icon-btn" href="login.html" title="Log in">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8">
+          <circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/>
+        </svg>
+        <span class="hide-sm">Log in</span>
+      </a>
+    </div>
+  </div>
+</header>
+
+<main class="detail-page" id="chatMain" hidden>
+  <div class="listing-head">
+    <h1>Visitor questions</h1>
+    <p class="listing-count" id="chatCount"></p>
+  </div>
+
+  <section class="detail-block">
+    <div class="chat-admin">
+      <div class="chat-list" id="chatList"><p class="form-note">Loading…</p></div>
+
+      <div class="chat-thread">
+        <div class="chat-thread-head" id="threadHead">
+          <strong>No conversation selected</strong>
+          <span>Pick someone on the left to read and reply.</span>
+        </div>
+        <div class="chat-log" id="threadLog"></div>
+        <form class="chat-form" id="replyForm">
+          <input id="replyInput" autocomplete="off" placeholder="Write a reply…" aria-label="Reply" disabled>
+          <button type="submit" aria-label="Send" disabled>
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 12l16-8-6 8 6 8z"/>
+            </svg>
+          </button>
+        </form>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- shown when you are not signed in as an admin -->
+<main class="auth-page" id="chatDenied" hidden>
+  <div class="auth-card">
+    <a class="auth-logo" href="index.html">
+      <img src="assets/torito-logo.png" alt=""><span>TORITO</span>
+    </a>
+    <h1>Admins only</h1>
+    <p class="form-note" id="deniedNote">Checking your account…</p>
+    <p class="auth-foot"><a class="auth-link" href="login.html">Sign in</a> · <a class="auth-link" href="index.html">Back to site</a></p>
+  </div>
+</main>
+
+<script src="script.js"></script>
+<script type="module" src="js/session.js"></script>
+<script type="module" src="js/chat.js"></script>
+</body>
+</html>

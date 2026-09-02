@@ -25,6 +25,7 @@ if (!profile) {
     </button>
     <div class="account-drop" hidden>
       ${profile.role === 'admin' ? '<a href="admin.html" class="admin-link">Admin panel</a>' : ''}
+      ${profile.role === 'admin' ? '<a href="chat.html" class="admin-link">Chat</a>' : ''}
       <a href="#">My bookings</a>
       <a href="reset.html">Change password</a>
       <button type="button" class="signout">Sign out</button>

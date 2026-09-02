@@ -4,6 +4,9 @@
 // nine placeholder trips all have a working page instead of one hard-coded one.
 
 import { findTour } from './tours-data.js';
+import { openBooking } from './booking.js';
+import { loadRatings, ratingFor, starsHtml, fetchReviews, openReviewModal, escapeHtml as esc } from './ratings.js';
+import { bumpTourView } from './popular.js';
 
 const ICONS = {
   distance: '<path d="M4 18h16"/><path d="M7 18l5-12 5 12"/>',
@@ -49,12 +52,17 @@ function render(t) {
   }
 
   el('detailHeadRight').innerHTML = `
+    <span class="head-rating" id="headRating"></span>
+    <span class="dot">·</span>
     <span>${t.region || ''}</span>
     <span class="dot">·</span>
     <span>${t.views} views</span>
     <span class="dot">·</span>
     <span>${t.season_text || ''}</span>
     <span class="tour-id">ID ${t.id}</span>`;
+
+  // counts towards the home page's "Hot right now" strip
+  bumpTourView(t.slug);
 
   renderGallery(t, name);
 
@@ -87,6 +95,10 @@ function render(t) {
   const book = el('bookBtn');
   book.textContent = full ? 'Join waitlist' : 'Book a spot';
   if (full) book.classList.add('secondary');
+  book.addEventListener('click', (e) => {
+    e.preventDefault();
+    openBooking(t);
+  });
 
   el('guideRow').innerHTML = `
     <div class="guide-avatar">
@@ -128,6 +140,51 @@ function render(t) {
     ...t.included.map((x) => item('yes', '✓', x)),
     ...t.excluded.map((x) => item('no', '×', x)),
   ].join('');
+
+  renderReviews(t);
+}
+
+// ---------- reviews ----------
+
+// The score is painted from the shared cache and the list from the trip's own
+// rows, so posting a review can refresh both without reloading the page.
+function renderReviews(t) {
+  const refreshScore = () => {
+    const { avg, count } = ratingFor(t.slug);
+    const head = el('headRating');
+    if (head) head.innerHTML = starsHtml(avg, count, { size: 15 });
+    el('reviewsScore').innerHTML = starsHtml(avg, count, { size: 20 });
+  };
+
+  const refreshList = async () => {
+    const reviews = await fetchReviews(t.slug);
+    const list = el('reviewsList');
+
+    if (!reviews.length) {
+      list.innerHTML = `<p class="form-note">No reviews yet. If you have been on this trip, you can be the first — <button type="button" class="link-btn" id="rateFromList">rate it</button>.</p>`;
+      list.querySelector('#rateFromList').addEventListener('click', rate);
+      return;
+    }
+
+    list.innerHTML = reviews.map((r) => `
+      <article class="review">
+        <div class="review-head">
+          <strong>${esc(r.author_name || 'Traveller')}</strong>
+          ${starsHtml(r.rating, 1, { size: 14, showCount: false })}
+          <span class="review-rec ${r.recommend ? 'yes' : 'no'}">${r.recommend ? 'Recommends' : 'Does not recommend'}</span>
+          <span class="review-date">${new Date(r.created_at).toLocaleDateString()}</span>
+        </div>
+        ${r.body ? `<p>${esc(r.body)}</p>` : ''}
+      </article>`).join('');
+  };
+
+  const rate = () => openReviewModal(t, { onSaved: () => { refreshScore(); refreshList(); } });
+
+  el('rateBtn')?.addEventListener('click', rate);
+
+  refreshScore();
+  loadRatings().then(refreshScore);
+  refreshList();
 }
 
 function item(kind, mark, { title, note }) {
