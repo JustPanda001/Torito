@@ -1523,3 +1523,107 @@ body.has-offline-banner{padding-bottom:104px}
 .inc-choices strong{display:block;font-size:14px}
 .inc-choices em{display:block;font-style:normal;font-size:12.5px;color:var(--ink-soft)}
 @media (max-width:800px){.inc-choices{grid-template-columns:1fr}}
+
+/* ---------- Star ratings ---------- */
+/* The filled row is stacked on the empty one and clipped by width, so a
+   fractional average shows as a partly filled star rather than rounding. */
+.stars-wrap{display:inline-flex;align-items:center;gap:7px;line-height:1}
+.stars{position:relative;display:inline-block;color:#e8a33d}
+.stars-row{display:inline-flex;gap:1px}
+.stars-fill{
+  position:absolute;inset:0;display:inline-flex;gap:1px;
+  overflow:hidden;white-space:nowrap;pointer-events:none;
+}
+.stars-count{font-size:13px;font-weight:600;color:var(--ink-soft)}
+.stars-count em{font-style:normal;font-weight:500;opacity:.8}
+
+.tour-rating{margin:-2px 0 10px}
+
+/* ---------- Reviews ---------- */
+.reviews-head{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.reviews-head h2{margin:0}
+.rate-btn{width:auto;padding:10px 22px;margin:0}
+.reviews-score{margin:14px 0 18px}
+.reviews-list{list-style:none;margin:0;padding:0;display:grid;gap:14px}
+.review{
+  padding:16px 18px;border:1px solid var(--line);border-radius:var(--radius);
+  background:var(--surface-2);
+}
+.review-top{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.review-top strong{font-size:15px}
+.review-date{font-size:13px;color:var(--ink-soft);margin-left:auto}
+.review-rec{
+  display:inline-block;margin-top:8px;padding:3px 10px;border-radius:999px;
+  font-size:12.5px;font-weight:600;color:var(--green-500);
+  border:1px solid var(--green-500);
+}
+.review-body{margin:10px 0 0;color:var(--ink-soft);line-height:1.6}
+
+/* ---------- Rate this trip dialog ---------- */
+.review-modal .bm-body{display:grid;gap:18px}
+.rv-stars{display:flex;align-items:center;gap:4px}
+.star-btn{
+  border:0;background:none;padding:2px;cursor:pointer;line-height:0;
+  color:var(--line);transition:color .12s,transform .12s;
+}
+.star-btn.on{color:#e8a33d}
+.star-btn:hover{transform:scale(1.08)}
+.rv-word{margin-left:10px;font-size:15px;font-weight:600;color:var(--ink-soft)}
+.rv-rec{display:flex;gap:8px;flex-wrap:wrap}
+.rv-text{
+  font:inherit;font-size:15px;color:var(--ink);resize:vertical;
+  padding:12px 14px;border:1px solid var(--line);border-radius:12px;
+  background:var(--surface-2);
+}
+.rv-text:focus{outline:none;border-color:var(--green-500);background:var(--surface)}
+.rv-done{text-align:center;display:grid;gap:10px}
+
+/* ---------- Hot right now ---------- */
+/* Four tiles on the left, the season's pitch on the right. */
+.hot-section{
+  display:grid;grid-template-columns:1.15fr .85fr;gap:38px;align-items:center;
+}
+.hot-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.hot-tile{
+  position:relative;display:block;overflow:hidden;border-radius:var(--radius);
+  aspect-ratio:1/1;text-decoration:none;
+}
+.hot-tile img{width:100%;height:100%;object-fit:cover;transition:transform .4s}
+.hot-tile:hover img{transform:scale(1.06)}
+.hot-tile-label{
+  position:absolute;left:0;right:0;bottom:0;display:grid;gap:2px;
+  padding:26px 16px 14px;color:#fff;
+  background:linear-gradient(to top,rgba(0,0,0,.72),transparent);
+}
+.hot-tile-label strong{font-size:16px}
+.hot-tile-label em{font-style:normal;font-size:12.5px;opacity:.85}
+
+/* the two tiles in the second column drop down, so the block reads as a
+   staggered mosaic rather than a plain 2x2 */
+.hot-grid > :nth-child(2),
+.hot-grid > :nth-child(4){transform:translateY(26px)}
+
+.hot-kicker{
+  display:inline-flex;align-items:center;gap:8px;
+  font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--green-500);
+}
+.hot-dot{
+  width:8px;height:8px;border-radius:50%;background:var(--green-500);
+  animation:pulse 2s infinite;
+}
+.hot-text h2{margin:14px 0 12px;font-size:40px;line-height:1.15}
+.hot-text p{margin:0 0 22px;color:var(--ink-soft);line-height:1.7}
+.hot-btn{
+  display:inline-flex;align-items:center;gap:10px;
+  padding:13px 26px;border-radius:999px;text-decoration:none;font-weight:600;
+  color:#fff;background:var(--green-500);
+}
+.hot-btn:hover{filter:brightness(1.05)}
+
+@media (max-width:900px){
+  .hot-section{grid-template-columns:1fr;gap:26px}
+  .hot-grid > :nth-child(2),
+  .hot-grid > :nth-child(4){transform:none}
+  .hot-text h2{font-size:30px}
+}

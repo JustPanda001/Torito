@@ -13,10 +13,13 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useT } from '@/lib/i18n';
 
-export default function SignInGate({ title, onClose }) {
+// `reason` says which button was pressed, so the heading and the first perk
+// describe what the visitor was actually trying to do.
+export default function SignInGate({ title, reason = 'book', onClose }) {
   const { t } = useT();
   const pathname = usePathname();
   const next = encodeURIComponent(pathname || '/');
+  const rating = reason === 'rate';
 
   useEffect(() => {
     const esc = (e) => { if (e.key === 'Escape') onClose(); };
@@ -28,7 +31,11 @@ export default function SignInGate({ title, onClose }) {
     };
   }, [onClose]);
 
-  const perks = [
+  const perks = rating ? [
+    ['calendar', t('gate.perkRate')],
+    ['user', t('gate.perkRateName')],
+    ['bell', t('gate.perkRateEdit')],
+  ] : [
     ['calendar', t('gate.perkTrack')],
     ['user', t('gate.perkDetails')],
     ['bell', t('gate.perkUpdates')],
@@ -46,7 +53,7 @@ export default function SignInGate({ title, onClose }) {
 
         <div className="bm-head">
           <div>
-            <h2 id="gateTitle">{t('gate.title')}</h2>
+            <h2 id="gateTitle">{rating ? t('gate.titleRate') : t('gate.title')}</h2>
             <p className="bm-sub">{title}</p>
           </div>
           <button type="button" className="bm-close" aria-label="Close" onClick={onClose}>×</button>

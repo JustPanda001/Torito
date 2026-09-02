@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { seasonLabel } from '@/lib/season';
 import { useT } from '@/lib/i18n';
 import FavoriteButton from './FavoriteButton';
+import Stars from './Stars';
+import { useRatings } from '@/lib/ratings';
 
 const ICONS = {
   distance: <><path d="M4 18h16" /><path d="M7 18l5-12 5 12" /></>,
@@ -20,6 +22,7 @@ const Icon = ({ children }) => (
 export default function TourCard({ tour }) {
   const { t } = useT();
   const router = useRouter();
+  const score = useRatings().ratingFor(tour.slug);
   const full = tour.spots_left === 0;
   const season = seasonLabel(tour);
   const href = `/tours/${tour.slug}`;
@@ -43,6 +46,10 @@ export default function TourCard({ tour }) {
           {tour.title}
           {tour.subtitle && <span className="tour-sub">{tour.subtitle}</span>}
         </h2>
+
+        <div className="tour-rating">
+          <Stars avg={score.avg} count={score.count} size={14} />
+        </div>
 
         <ul className="spec-grid">
           <li><Icon>{ICONS.distance}</Icon><span>{tour.distance || '—'}</span></li>

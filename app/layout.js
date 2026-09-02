@@ -4,6 +4,7 @@ import AccountPrompt from '@/components/AccountPrompt';
 import ChatWidget from '@/components/ChatWidget';
 import { LanguageProvider } from '@/lib/i18n';
 import { FavoritesProvider } from '@/lib/favorites';
+import { RatingsProvider } from '@/lib/ratings';
 
 export const metadata = {
   title: 'Torito — Tours, Hikes, Ski & Camping',
@@ -43,10 +44,12 @@ export default function RootLayout({ children }) {
       <body suppressHydrationWarning>
         <LanguageProvider>
           <FavoritesProvider>
-            {children}
-            <ChatWidget />
-            <AccountPrompt />
-            <OfflineBanner />
+            <RatingsProvider>
+              {children}
+              <ChatWidget />
+              <AccountPrompt />
+              <OfflineBanner />
+            </RatingsProvider>
           </FavoritesProvider>
         </LanguageProvider>
       </body>
