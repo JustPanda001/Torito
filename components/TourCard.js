@@ -47,10 +47,6 @@ export default function TourCard({ tour }) {
           {tour.subtitle && <span className="tour-sub">{tour.subtitle}</span>}
         </h2>
 
-        <div className="tour-rating">
-          <Stars avg={score.avg} count={score.count} size={14} />
-        </div>
-
         <ul className="spec-grid">
           <li><Icon>{ICONS.distance}</Icon><span>{tour.distance || '—'}</span></li>
           <li><Icon>{ICONS.clock}</Icon><span>{tour.duration || '—'}</span></li>
@@ -63,6 +59,10 @@ export default function TourCard({ tour }) {
           {tour.badge === 'new' && <span className="badge badge-new">NEW</span>}
           <span>{tour.region || ''}</span>
           {season && <span className="tour-season">{season}</span>}
+        </div>
+
+        <div className="tour-rating">
+          <Stars avg={score.avg} count={score.count} size={14} />
         </div>
       </div>
 

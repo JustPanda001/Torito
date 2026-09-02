@@ -1537,7 +1537,7 @@ body.has-offline-banner{padding-bottom:104px}
 .stars-count{font-size:13px;font-weight:600;color:var(--ink-soft)}
 .stars-count em{font-style:normal;font-weight:500;opacity:.8}
 
-.tour-rating{margin:-2px 0 10px}
+.tour-rating{margin:10px 0 0}
 
 /* ---------- Reviews ---------- */
 .reviews-head{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
