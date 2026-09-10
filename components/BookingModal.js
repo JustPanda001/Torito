@@ -375,7 +375,9 @@ export default function BookingModal({ tour, onClose }) {
                   <ul className="bm-kit">
                     {mustBring.map((item) => (
                       <li key={item.title}>
-                        <label className="bm-kit-line">
+                        {/* with a note the box lines up with the title; on its
+                            own there is nothing to line up with, so it centres */}
+                        <label className={`bm-kit-line${item.note ? '' : ' solo'}`}>
                           <input
                             type="checkbox"
                             checked={confirmed.has(item.title)}

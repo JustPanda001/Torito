@@ -1701,6 +1701,8 @@ body.has-offline-banner{padding-bottom:104px}
 }
 .bm-kit-line:hover{border-color:#e8a33d}
 .bm-kit-line input{margin-top:2px;width:17px;height:17px;flex-shrink:0;accent-color:var(--green-500)}
+.bm-kit-line.solo{align-items:center}
+.bm-kit-line.solo input{margin-top:0}
 .bm-kit-line strong{display:block;font-size:15px}
 .bm-kit-line em{font-style:normal;font-size:13px;color:var(--ink-soft)}
 
