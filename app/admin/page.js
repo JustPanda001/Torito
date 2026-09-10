@@ -92,6 +92,8 @@ export default function AdminPage() {
   const [excluded, setExcluded] = useState([]);
   // what this trip's booking window asks, beyond a date and a headcount
   const [bookingFields, setBookingFields] = useState([]);
+  // kit the visitor brings themselves, ticked off before they can book
+  const [requiredItems, setRequiredItems] = useState([]);
   // ski's second choice, which decides whether this is a lesson
   const [subtype, setSubtype] = useState('');
   const lessonForm = category === 'ski' && subtype === LESSON;
@@ -141,6 +143,7 @@ export default function AdminPage() {
     setIncluded(asPairs(tour.included));
     setExcluded(asPairs(tour.excluded));
     setBookingFields(Array.isArray(tour.booking_fields) ? tour.booking_fields : []);
+    setRequiredItems(asPairs(tour.required_items));
     setSubtype(tour.subtype ?? '');
     setPhotos(Array.isArray(tour.gallery) ? tour.gallery : []);
     setCover(tour.cover_image ?? '');
@@ -194,6 +197,7 @@ export default function AdminPage() {
     setIncluded([]);
     setExcluded([]);
     setBookingFields([]);
+    setRequiredItems([]);
     form.current?.reset();
     setNote(null);
   }
@@ -230,6 +234,7 @@ export default function AdminPage() {
     row.itinerary = pairs(itinerary);
     row.included = pairs(included);
     row.excluded = pairs(excluded);
+    row.required_items = pairs(requiredItems);
 
     // a question still being typed — no label yet, or a "pick one" with
     // nothing to pick from — is dropped rather than saved half-made
@@ -394,6 +399,18 @@ export default function AdminPage() {
 
             <section className="admin-section">
               <InclusionEditor kind="excluded" category={category} rows={excluded} onChange={setExcluded} />
+            </section>
+
+            <section className="admin-section">
+              <PairListEditor
+                label="What they must bring"
+                hint="Kit without which they cannot come. Shown on the trip page, and every line has to be ticked before the booking window will send a request."
+                rows={requiredItems}
+                onChange={setRequiredItems}
+                titleLabel="Sleeping bag"
+                notePlaceholder="Rated to −5 °C — the huts are cold in September"
+                addLabel="Add an item"
+              />
             </section>
 
             <section className="admin-section">

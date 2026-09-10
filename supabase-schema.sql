@@ -676,3 +676,17 @@ alter table public.tours    add column if not exists booking_fields jsonb;
 
 -- the answers, as a plain { "question label": value } map
 alter table public.bookings add column if not exists answers jsonb;
+
+-- ============================================================
+-- WHAT THEY MUST BRING
+-- Kit the visitor supplies themselves — a tent on a trip that camps, a
+-- sleeping bag rated for the altitude. Not the same as "not included", which
+-- is about money; this is about whether they can come at all.
+--
+-- Shown on the trip page, and every line has to be ticked in the booking
+-- window before a request will send. Shape: [{ title, note }]
+-- ============================================================
+alter table public.tours    add column if not exists required_items  jsonb;
+
+-- the titles they ticked, kept as the record that they were asked
+alter table public.bookings add column if not exists confirmed_items jsonb;

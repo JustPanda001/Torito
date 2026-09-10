@@ -1674,3 +1674,36 @@ body.has-offline-banner{padding-bottom:104px}
 @media (max-width:640px){
   .bq-main{grid-template-columns:1fr}
 }
+
+/* ---------- What you must bring ---------- */
+/* Warmer than the inclusion grid on purpose: this is the block someone has to
+   not miss, or they arrive at the trailhead unable to walk out of it. */
+.must-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.must-item{
+  display:flex;gap:12px;align-items:flex-start;padding:14px 16px;
+  border:1px solid #e8a33d;border-radius:12px;
+  background:color-mix(in srgb, #e8a33d 8%, var(--surface));
+}
+.must-mark{
+  flex-shrink:0;width:24px;height:24px;border-radius:50%;
+  display:grid;place-items:center;font-weight:700;font-size:14px;
+  background:#e8a33d;color:#3a2a10;
+}
+.must-item strong{display:block;font-size:15px}
+.must-item span{font-size:13.5px;color:var(--ink-soft)}
+
+/* the same list inside the booking window, as a tick-list */
+.bm-kit{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.bm-kit-line{
+  display:flex;gap:11px;align-items:flex-start;cursor:pointer;
+  padding:12px 14px;border:1px solid var(--line);border-radius:12px;
+  background:var(--surface-2);
+}
+.bm-kit-line:hover{border-color:#e8a33d}
+.bm-kit-line input{margin-top:2px;width:17px;height:17px;flex-shrink:0;accent-color:var(--green-500)}
+.bm-kit-line strong{display:block;font-size:15px}
+.bm-kit-line em{font-style:normal;font-size:13px;color:var(--ink-soft)}
+
+@media (max-width:700px){
+  .must-grid{grid-template-columns:1fr}
+}

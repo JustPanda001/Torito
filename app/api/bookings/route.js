@@ -26,6 +26,13 @@ const {
 const clean = (value, max = 200) =>
   (typeof value === 'string' ? value.trim().slice(0, max) : null) || null;
 
+/** The kit list the visitor ticked, as plain titles. Bounded like the rest. */
+function cleanItems(value) {
+  if (!Array.isArray(value)) return null;
+  const out = value.slice(0, 30).map((v) => clean(v, 120)).filter(Boolean);
+  return out.length ? out : null;
+}
+
 /**
  * Answers to the trip's own booking questions, as a plain label -> value map.
  *
@@ -69,6 +76,7 @@ export async function POST(request) {
     skill_level: clean(body.skill_level, 40),
     lesson_type: clean(body.lesson_type, 40),
     answers: cleanAnswers(body.answers),
+    confirmed_items: cleanItems(body.confirmed_items),
     name: clean(body.name, 120),
     email: clean(body.email, 160),
     phone: clean(body.phone, 40),
@@ -106,6 +114,7 @@ function lines(row) {
   if (row.lesson_type) out.push(`Lesson: ${row.lesson_type}`);
   // the trip's own questions, so a new one shows up here without a code change
   for (const [label, value] of Object.entries(row.answers ?? {})) out.push(`${label}: ${value}`);
+  if (row.confirmed_items?.length) out.push(`Confirmed kit: ${row.confirmed_items.join(', ')}`);
   if (row.total != null) out.push(`Total: ${row.total} GEL`);
   if (row.name) out.push(`Name: ${row.name}`);
   if (row.email) out.push(`Email: ${row.email}`);

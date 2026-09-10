@@ -13,6 +13,7 @@ import { supabase, currentProfile } from '@/lib/supabaseClient';
 import { DEFAULT_DIAL, phoneDigits } from '@/lib/dial-codes';
 import DialSelect from './DialSelect';
 import { answersComplete, bookingQuestions, initialAnswer, packAnswers } from '@/lib/bookingQuestions';
+import { requiredItems } from '@/lib/requiredItems';
 
 function ContactFields({ profile, phone, setPhone, dial, setDial }) {
   return (
@@ -72,6 +73,18 @@ export default function BookingModal({ tour, onClose }) {
   const setAnswer = (label, value) => setAnswers((prev) => ({ ...prev, [label]: value }));
   const questionsOk = answersComplete(questions, answers);
 
+  // kit they have to bring themselves. Every line has to be ticked: someone
+  // who turns up without a sleeping bag cannot be taken along, so this is a
+  // hard gate rather than a note they can scroll past.
+  const mustBring = useMemo(() => requiredItems(tour), [tour]);
+  const [confirmed, setConfirmed] = useState(() => new Set());
+  const toggleItem = (title) => setConfirmed((prev) => {
+    const next = new Set(prev);
+    if (next.has(title)) next.delete(title); else next.add(title);
+    return next;
+  });
+  const kitOk = mustBring.every((item) => confirmed.has(item.title));
+
   // booking is gated behind an account, so this is where the name, email and
   // phone come from — nobody types them a second time
   useEffect(() => {
@@ -121,6 +134,8 @@ export default function BookingModal({ tour, onClose }) {
           // the trip's own questions; a waitlist request is only a phone
           // number, so it carries none of them
           answers: requestKind === 'waitlist' ? null : packAnswers(questions, answers),
+          // a record that they were shown the kit list and ticked it
+          confirmed_items: requestKind === 'waitlist' ? null : mustBring.map((i) => i.title),
           name: profile?.full_name ?? null,
           email: profile?.email ?? null,
           phone: savedPhone || `${dial} ${phone.trim()}`,
@@ -354,6 +369,33 @@ export default function BookingModal({ tour, onClose }) {
                 </p>
               </section>
 
+              {mustBring.length > 0 && (
+                <section className="bm-section">
+                  <h3>You must bring<span className="bm-req"> *</span></h3>
+                  <ul className="bm-kit">
+                    {mustBring.map((item) => (
+                      <li key={item.title}>
+                        <label className="bm-kit-line">
+                          <input
+                            type="checkbox"
+                            checked={confirmed.has(item.title)}
+                            onChange={() => toggleItem(item.title)}
+                          />
+                          <span>
+                            <strong>{item.title}</strong>
+                            {item.note && <em>{item.note}</em>}
+                          </span>
+                        </label>
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="bm-hint">
+                    Tick each one to confirm you will have it. Without them we
+                    cannot take you on this trip.
+                  </p>
+                </section>
+              )}
+
               {needsContact && (
                 <section className="bm-section">
                   <h3>How can we reach you?</h3>
@@ -376,7 +418,7 @@ export default function BookingModal({ tour, onClose }) {
               <button
                 type="button"
                 className="book-btn"
-                disabled={sending || !date || !phoneOk || !questionsOk
+                disabled={sending || !date || !phoneOk || !questionsOk || !kitOk
                   || (lesson && (!time || !level || !kind))}
                 onClick={() => submit(lesson ? 'lesson' : 'trip')}
               >
@@ -385,7 +427,8 @@ export default function BookingModal({ tour, onClose }) {
                     : lesson && !time ? 'Pick a time'
                       : lesson && !level ? 'Pick your level'
                         : lesson && !kind ? 'Pick a lesson type'
-                          : !questionsOk ? 'Answer the questions marked *'
+                          : !kitOk ? 'Confirm the kit you must bring'
+                            : !questionsOk ? 'Answer the questions marked *'
                             : !profileReady ? 'Checking your account…'
                               : !phoneOk ? 'Add your phone'
                               : `Request ${people} ${people === 1 ? 'place' : 'places'} — ${money(total)}`}

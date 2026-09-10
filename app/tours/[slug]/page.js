@@ -21,6 +21,7 @@ import { money } from '@/lib/season';
 import { isLesson } from '@/lib/lessons';
 import { fetchReviews, useRatings } from '@/lib/ratings';
 import { bumpTourView } from '@/lib/views';
+import { requiredItems } from '@/lib/requiredItems';
 
 const ICONS = {
   distance: <><path d="M4 18h16" /><path d="M7 18l5-12 5 12" /></>,
@@ -145,6 +146,7 @@ export default function TourPage({ params }) {
 
   const facts = allFacts.filter(([, , value]) => filled(value));
   const info = allInfo.filter(([, value]) => filled(value));
+  const mustBring = requiredItems(tour);
 
   return (
     <div className="subpage-shell">
@@ -253,6 +255,29 @@ export default function TourPage({ params }) {
             </>
           )}
         </section>
+
+        {/* Deliberately its own block, above what the price covers: this is
+            not about money but about whether they can come at all. */}
+        {mustBring.length > 0 && (
+          <section className="detail-block">
+            <h2>What you must bring</h2>
+            <p className="lead">
+              This trip cannot go ahead without these. You will be asked to
+              confirm you have them when you book.
+            </p>
+            <div className="must-grid">
+              {mustBring.map((item) => (
+                <div className="must-item" key={item.title}>
+                  <span className="must-mark" aria-hidden="true">!</span>
+                  <div>
+                    <strong>{item.title}</strong>
+                    {item.note && <span>{item.note}</span>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         {(tour.included.length > 0 || tour.excluded.length > 0) && (
         <section className="detail-block">
