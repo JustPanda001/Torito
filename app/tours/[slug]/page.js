@@ -3,7 +3,7 @@
 // Trip detail page. The slug in the URL picks the trip, so every trip has a
 // real page instead of one hard-coded one.
 
-import { use, useCallback, useEffect, useState } from 'react';
+import { Fragment, use, useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import SiteHeader from '@/components/SiteHeader';
 import { openChat } from '@/components/ChatWidget';
@@ -35,6 +35,20 @@ const ICONS = {
 const Icon = ({ children }) => (
   <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.7">{children}</svg>
 );
+
+/**
+ * Whether a field is worth a row of its own.
+ *
+ * A trip only fills in what applies to it — a lesson has no elevation gain, a
+ * transfer has nobody walking anywhere — and the admin form writes an empty
+ * string for anything left blank. A dash in those rows told the visitor
+ * nothing except that the page had a hole in it, so the row is dropped
+ * instead. Blanking a field in the admin panel is what hides it.
+ */
+const filled = (value) => {
+  const text = String(value ?? '').trim();
+  return text !== '' && text !== '—' && text !== '-';
+};
 
 export default function TourPage({ params }) {
   const { slug } = use(params);
@@ -100,9 +114,10 @@ export default function TourPage({ params }) {
   const full = tour.spots_left === 0;
   const lesson = isLesson(tour);
 
-  // A lesson has no distance, no elevation and nowhere to sleep, and its
-  // difficulty is whatever the visitor brings — those rows would all read "—".
-  const facts = lesson ? [
+  // A lesson counts its length rather than a duration, and meets people on the
+  // slope rather than departing from anywhere — so the labels differ. Which
+  // rows actually appear is decided below, by what the trip has filled in.
+  const allFacts = lesson ? [
     [ICONS.clock, 'Lesson length', tour.duration_long || tour.duration],
     [ICONS.calendar, 'Season', tour.season_text],
     [ICONS.globe, 'Languages', tour.languages],
@@ -116,9 +131,7 @@ export default function TourPage({ params }) {
     [ICONS.house, 'Stay', tour.stay],
   ];
 
-  // nobody is being driven anywhere for a lesson: they meet the instructor on
-  // the slope, at the time they asked for
-  const info = lesson ? [
+  const allInfo = lesson ? [
     ['Meeting point', tour.info?.departure_point],
     ['Group size', tour.info?.group_size],
   ] : [
@@ -129,6 +142,9 @@ export default function TourPage({ params }) {
     ['Group size', tour.info?.group_size],
     ['Walking per day', tour.info?.walking_per_day],
   ];
+
+  const facts = allFacts.filter(([, , value]) => filled(value));
+  const info = allInfo.filter(([, value]) => filled(value));
 
   return (
     <div className="subpage-shell">
@@ -147,10 +163,17 @@ export default function TourPage({ params }) {
             <h1>{name}</h1>
             <Stars avg={score.avg} count={score.count} size={16} />
           </div>
+          {/* the separators belong to the parts that survive, or a trip with no
+              region opens with a stray dot */}
           <div className="detail-head-right">
-            <span>{tour.region}</span><span className="dot">·</span>
-            <span>{tour.views} views</span><span className="dot">·</span>
-            <span>{tour.season_text}</span>
+            {[tour.region, `${tour.views} views`, tour.season_text]
+              .filter(filled)
+              .map((part, i) => (
+                <Fragment key={part}>
+                  {i > 0 && <span className="dot">·</span>}
+                  <span>{part}</span>
+                </Fragment>
+              ))}
           </div>
         </div>
 
@@ -180,7 +203,7 @@ export default function TourPage({ params }) {
                 <li key={label}>
                   <Icon>{icon}</Icon>
                   <span className="fact-label">{label}</span>
-                  <span className="fact-value">{value || '—'}</span>
+                  <span className="fact-value">{value}</span>
                 </li>
               ))}
               <li>
@@ -205,14 +228,16 @@ export default function TourPage({ params }) {
           <h2>{lesson ? 'About these lessons' : 'About this trip'}</h2>
           <p className="lead">{tour.summary}</p>
 
-          <div className="info-grid">
-            {info.map(([label, value]) => (
-              <div className="info-item" key={label}>
-                <span className="info-label">{label}</span>
-                <span className="info-value">{value || '—'}</span>
-              </div>
-            ))}
-          </div>
+          {info.length > 0 && (
+            <div className="info-grid">
+              {info.map(([label, value]) => (
+                <div className="info-item" key={label}>
+                  <span className="info-label">{label}</span>
+                  <span className="info-value">{value}</span>
+                </div>
+              ))}
+            </div>
+          )}
 
           {!lesson && tour.itinerary?.length > 0 && (
             <>
@@ -229,6 +254,7 @@ export default function TourPage({ params }) {
           )}
         </section>
 
+        {(tour.included.length > 0 || tour.excluded.length > 0) && (
         <section className="detail-block">
           <h2>What&apos;s included</h2>
           <div className="included-grid">
@@ -244,6 +270,7 @@ export default function TourPage({ params }) {
             ))}
           </div>
         </section>
+        )}
 
         <section className="detail-block reviews-block">
           <div className="reviews-head">

@@ -781,6 +781,10 @@ body.has-offline-banner{padding-bottom:104px}
 .gallery-thumbs{
   display:flex;gap:8px;margin-top:10px;
   overflow-x:auto;padding-bottom:4px;scrollbar-width:thin;
+  /* centred under the photo; "safe" keeps the first thumb reachable rather
+     than centring it out of reach when a long strip overflows */
+  justify-content:center;
+  justify-content:safe center;
 }
 .gal-thumb{
   flex:0 0 92px;height:66px;padding:0;cursor:pointer;
@@ -851,12 +855,19 @@ body.has-offline-banner{padding-bottom:104px}
 .detail-block h3{margin:28px 0 14px;font-size:19px}
 .detail-block .lead{margin:0 0 22px;color:var(--ink-soft);max-width:75ch}
 
+/* The 1px gaps are the dividers, so any track a row does not fill shows as a
+   block of the container's colour. Flex rather than a fixed 3-up grid lets the
+   items in each row grow to close that gap — a trip with two facts gets two
+   half-width cells, not two cells and a coloured hole. */
 .info-grid{
-  display:grid;grid-template-columns:repeat(3,1fr);gap:1px;
+  display:flex;flex-wrap:wrap;gap:1px;
   background:var(--green-100);border:1px solid var(--green-100);
   border-radius:12px;overflow:hidden;
 }
-.info-item{background:var(--surface);padding:14px 16px;display:flex;flex-direction:column;gap:3px}
+.info-item{
+  flex:1 1 220px;
+  background:var(--surface);padding:14px 16px;display:flex;flex-direction:column;gap:3px;
+}
 .info-label{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft)}
 .info-value{font-size:15px;font-weight:600}
 
