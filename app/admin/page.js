@@ -13,6 +13,7 @@ import OptionSelect from '@/components/OptionSelect';
 import PhotoManager from '@/components/PhotoManager';
 import PairListEditor from '@/components/PairListEditor';
 import InclusionEditor from '@/components/InclusionEditor';
+import BookingQuestionsEditor from '@/components/BookingQuestionsEditor';
 import { supabase, currentProfile, friendlyError } from '@/lib/supabaseClient';
 import { slugify } from '@/lib/slug';
 import { LESSON } from '@/lib/lessons';
@@ -89,6 +90,8 @@ export default function AdminPage() {
   const [itinerary, setItinerary] = useState([]);
   const [included, setIncluded] = useState([]);
   const [excluded, setExcluded] = useState([]);
+  // what this trip's booking window asks, beyond a date and a headcount
+  const [bookingFields, setBookingFields] = useState([]);
   // ski's second choice, which decides whether this is a lesson
   const [subtype, setSubtype] = useState('');
   const lessonForm = category === 'ski' && subtype === LESSON;
@@ -137,6 +140,7 @@ export default function AdminPage() {
     setItinerary(asPairs(tour.itinerary));
     setIncluded(asPairs(tour.included));
     setExcluded(asPairs(tour.excluded));
+    setBookingFields(Array.isArray(tour.booking_fields) ? tour.booking_fields : []);
     setSubtype(tour.subtype ?? '');
     setPhotos(Array.isArray(tour.gallery) ? tour.gallery : []);
     setCover(tour.cover_image ?? '');
@@ -189,6 +193,7 @@ export default function AdminPage() {
     setItinerary([]);
     setIncluded([]);
     setExcluded([]);
+    setBookingFields([]);
     form.current?.reset();
     setNote(null);
   }
@@ -225,6 +230,18 @@ export default function AdminPage() {
     row.itinerary = pairs(itinerary);
     row.included = pairs(included);
     row.excluded = pairs(excluded);
+
+    // a question still being typed — no label yet, or a "pick one" with
+    // nothing to pick from — is dropped rather than saved half-made
+    row.booking_fields = bookingFields
+      .map((q) => ({
+        label: (q.label ?? '').trim(),
+        type: q.type ?? 'choice',
+        options: (q.options ?? []).map((o) => String(o).trim()).filter(Boolean),
+        required: Boolean(q.required),
+        hint: (q.hint ?? '').trim(),
+      }))
+      .filter((q) => q.label && (q.type !== 'choice' || q.options.length > 0));
 
     row.gallery = photos;
     // a starred photo wins; otherwise fall back to the first one
@@ -377,6 +394,10 @@ export default function AdminPage() {
 
             <section className="admin-section">
               <InclusionEditor kind="excluded" category={category} rows={excluded} onChange={setExcluded} />
+            </section>
+
+            <section className="admin-section">
+              <BookingQuestionsEditor rows={bookingFields} onChange={setBookingFields} />
             </section>
 
             <label className="check">

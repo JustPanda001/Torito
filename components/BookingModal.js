@@ -5,13 +5,14 @@
 // Dates outside the trip's season are not selectable — it uses the same
 // inSeason() the listing filter does, so the two can never disagree.
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Calendar from './Calendar';
 import { inSeason, MONTHS, money } from '@/lib/season';
 import { isLesson, SKILL_LEVELS, LESSON_TYPES, LESSON_TIMES } from '@/lib/lessons';
 import { supabase, currentProfile } from '@/lib/supabaseClient';
 import { DEFAULT_DIAL, phoneDigits } from '@/lib/dial-codes';
 import DialSelect from './DialSelect';
+import { answersComplete, bookingQuestions, initialAnswer, packAnswers } from '@/lib/bookingQuestions';
 
 function ContactFields({ profile, phone, setPhone, dial, setDial }) {
   return (
@@ -62,6 +63,14 @@ export default function BookingModal({ tour, onClose }) {
   const [sending, setSending] = useState(false);
   const [failed, setFailed] = useState(null);
 
+  // the trip's own questions, written in the admin panel
+  const questions = useMemo(() => bookingQuestions(tour), [tour]);
+  const [answers, setAnswers] = useState(() => Object.fromEntries(
+    bookingQuestions(tour).map((q) => [q.label, initialAnswer(q)]),
+  ));
+  const setAnswer = (label, value) => setAnswers((prev) => ({ ...prev, [label]: value }));
+  const questionsOk = answersComplete(questions, answers);
+
   // booking is gated behind an account, so this is where the name, email and
   // phone come from — nobody types them a second time
   useEffect(() => {
@@ -100,6 +109,9 @@ export default function BookingModal({ tour, onClose }) {
           lesson_time: lesson ? time : null,
           skill_level: lesson ? level : null,
           lesson_type: lesson ? kind : null,
+          // the trip's own questions; a waitlist request is only a phone
+          // number, so it carries none of them
+          answers: requestKind === 'waitlist' ? null : packAnswers(questions, answers),
           name: profile?.full_name ?? null,
           email: profile?.email ?? null,
           phone: savedPhone || `${dial} ${phone.trim()}`,
@@ -188,6 +200,9 @@ export default function BookingModal({ tour, onClose }) {
                 <div className="bm-line"><span>People</span><span>{people}</span></div>
                 {lesson && <div className="bm-line"><span>Level</span><span>{level}</span></div>}
                 {lesson && <div className="bm-line"><span>Lesson</span><span>{kind}</span></div>}
+                {Object.entries(packAnswers(questions, answers)).map(([label, value]) => (
+                  <div className="bm-line" key={label}><span>{label}</span><span>{value}</span></div>
+                ))}
                 <div className="bm-line bm-grand"><span>Total</span><span>{money(total)}</span></div>
               </div>
               <p className="bm-hint">
@@ -258,6 +273,62 @@ export default function BookingModal({ tour, onClose }) {
                 </>
               )}
 
+              {/* whatever this trip was told to ask, in the order it was
+                  written in the admin panel */}
+              {questions.map((q) => (
+                <section className="bm-section" key={q.label}>
+                  <h3>{q.label}{q.required && <span className="bm-req"> *</span>}</h3>
+
+                  {q.type === 'choice' && (
+                    <div className="bm-choices">
+                      {q.options.map((option) => (
+                        <button
+                          key={option}
+                          type="button"
+                          className={`chip${answers[q.label] === option ? ' active' : ''}`}
+                          onClick={() => setAnswer(q.label, option)}
+                        >
+                          {option}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {q.type === 'number' && (
+                    <div className="bm-people">
+                      <button
+                        type="button"
+                        className="bm-step"
+                        aria-label="One fewer"
+                        onClick={() => setAnswer(q.label, Math.max(0, Number(answers[q.label] || 0) - 1))}
+                      >
+                        −
+                      </button>
+                      <span className="bm-count"><strong>{Number(answers[q.label] || 0)}</strong></span>
+                      <button
+                        type="button"
+                        className="bm-step"
+                        aria-label="One more"
+                        onClick={() => setAnswer(q.label, Number(answers[q.label] || 0) + 1)}
+                      >
+                        +
+                      </button>
+                    </div>
+                  )}
+
+                  {q.type === 'text' && (
+                    <input
+                      className="bm-text"
+                      value={answers[q.label] ?? ''}
+                      onChange={(e) => setAnswer(q.label, e.target.value)}
+                      aria-label={q.label}
+                    />
+                  )}
+
+                  {q.hint && <p className="bm-hint">{q.hint}</p>}
+                </section>
+              ))}
+
               <section className="bm-section">
                 <h3>How many people?</h3>
                 <div className="bm-people">
@@ -292,7 +363,8 @@ export default function BookingModal({ tour, onClose }) {
               <button
                 type="button"
                 className="book-btn"
-                disabled={sending || !date || !phoneOk || (lesson && (!time || !level || !kind))}
+                disabled={sending || !date || !phoneOk || !questionsOk
+                  || (lesson && (!time || !level || !kind))}
                 onClick={() => submit(lesson ? 'lesson' : 'trip')}
               >
                 {sending ? 'Sending…'
@@ -300,8 +372,9 @@ export default function BookingModal({ tour, onClose }) {
                     : lesson && !time ? 'Pick a time'
                       : lesson && !level ? 'Pick your level'
                         : lesson && !kind ? 'Pick a lesson type'
-                          : !phoneOk ? 'Add your phone'
-                            : `Request ${people} ${people === 1 ? 'place' : 'places'} — ${money(total)}`}
+                          : !questionsOk ? 'Answer the questions marked *'
+                            : !phoneOk ? 'Add your phone'
+                              : `Request ${people} ${people === 1 ? 'place' : 'places'} — ${money(total)}`}
               </button>
               {failed && <p className="bm-note error">{failed}</p>}
             </>

@@ -374,3 +374,17 @@ create policy "view counts are public" on public.tour_views
   for select using (true);
 create policy "admins manage views" on public.tour_views
   for all using (public.is_admin()) with check (public.is_admin());
+
+-- ============================================================
+-- BOOKING QUESTIONS
+-- What a trip's booking window asks beyond a date and a headcount.
+--
+-- Written in the admin panel (components/BookingQuestionsEditor.js) and
+-- rendered by components/BookingModal.js, so a new question is a row edit
+-- rather than a code change. Shape, per entry:
+--   { label, type: 'choice'|'number'|'text', options: [], required, hint }
+-- ============================================================
+alter table public.tours    add column if not exists booking_fields jsonb;
+
+-- the answers, as a plain { "question label": value } map
+alter table public.bookings add column if not exists answers jsonb;

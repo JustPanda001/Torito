@@ -26,6 +26,30 @@ const {
 const clean = (value, max = 200) =>
   (typeof value === 'string' ? value.trim().slice(0, max) : null) || null;
 
+/**
+ * Answers to the trip's own booking questions, as a plain label -> value map.
+ *
+ * The labels come from the admin panel rather than from a fixed list, so both
+ * sides are capped and the whole thing is bounded at twenty entries — this is
+ * a public endpoint, and nothing else here would stop a crafted post from
+ * writing a megabyte of json into the row.
+ */
+function cleanAnswers(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+
+  const out = {};
+  for (const [label, answer] of Object.entries(value).slice(0, 20)) {
+    const key = clean(label, 80);
+    if (!key) continue;
+    if (typeof answer === 'number' && Number.isFinite(answer)) out[key] = answer;
+    else {
+      const text = clean(answer, 300);
+      if (text) out[key] = text;
+    }
+  }
+  return Object.keys(out).length ? out : null;
+}
+
 export async function POST(request) {
   let body;
   try {
@@ -44,6 +68,7 @@ export async function POST(request) {
     lesson_time: clean(body.lesson_time, 20),
     skill_level: clean(body.skill_level, 40),
     lesson_type: clean(body.lesson_type, 40),
+    answers: cleanAnswers(body.answers),
     name: clean(body.name, 120),
     email: clean(body.email, 160),
     phone: clean(body.phone, 40),
@@ -79,6 +104,8 @@ function lines(row) {
   ];
   if (row.skill_level) out.push(`Level: ${row.skill_level}`);
   if (row.lesson_type) out.push(`Lesson: ${row.lesson_type}`);
+  // the trip's own questions, so a new one shows up here without a code change
+  for (const [label, value] of Object.entries(row.answers ?? {})) out.push(`${label}: ${value}`);
   if (row.total != null) out.push(`Total: ${row.total} GEL`);
   if (row.name) out.push(`Name: ${row.name}`);
   if (row.email) out.push(`Email: ${row.email}`);
