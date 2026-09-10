@@ -58,6 +58,7 @@ export default function BookingModal({ tour, onClose }) {
   const [kind, setKind] = useState('');
   // we have to be able to answer the person, and most visitors are not signed in
   const [profile, setProfile] = useState(null);
+  const [profileReady, setProfileReady] = useState(false);
   const [phone, setPhone] = useState('');
   const [dial, setDial] = useState(DEFAULT_DIAL);
   const [sending, setSending] = useState(false);
@@ -77,13 +78,21 @@ export default function BookingModal({ tour, onClose }) {
     let alive = true;
     currentProfile()
       .then((p) => { if (alive) setProfile(p); })
-      .catch(() => {});
+      .catch(() => {})
+      // "no phone yet" and "we have not asked yet" look identical until this
+      // resolves, and the difference decides whether a whole section renders
+      .finally(() => { if (alive) setProfileReady(true); });
     return () => { alive = false; };
   }, []);
 
   // six is the shortest national number in use anywhere; anything under that
   // is a slip rather than a number we could ring back
   const savedPhone = profile?.phone ?? '';
+  // Booking is gated behind an account, so the name and email are already
+  // known and echoing them back is just chrome. The block earns its place only
+  // when the account has no phone on it — then it is a real input, and the
+  // number is written back to the profile so it is asked exactly once.
+  const needsContact = profileReady && !savedPhone;
   const phoneOk = savedPhone
     ? true
     : phoneDigits(phone).length >= 6;
@@ -174,18 +183,20 @@ export default function BookingModal({ tour, onClose }) {
                   This trip is fully booked. Leave your details and we will contact
                   you the moment a place frees up.
                 </p>
-                <ContactFields
-                  profile={profile}
-                  phone={phone} setPhone={setPhone}
-                  dial={dial} setDial={setDial}
-                />
+                {needsContact && (
+                  <ContactFields
+                    profile={profile}
+                    phone={phone} setPhone={setPhone}
+                    dial={dial} setDial={setDial}
+                  />
+                )}
                 <button
                   type="button"
                   className="book-btn"
                   disabled={sending || !phoneOk}
                   onClick={() => submit('waitlist')}
                 >
-                  {sending ? 'Sending…' : !phoneOk ? 'Add your phone' : 'Join waitlist'}
+                  {sending ? 'Sending…' : !profileReady ? 'Checking your account…' : !phoneOk ? 'Add your phone' : 'Join waitlist'}
                 </button>
                 {failed && <p className="bm-note error">{failed}</p>}
               </>
@@ -343,14 +354,16 @@ export default function BookingModal({ tour, onClose }) {
                 </p>
               </section>
 
-              <section className="bm-section">
-                <h3>Who is it for?</h3>
-                <ContactFields
-                  profile={profile}
-                  phone={phone} setPhone={setPhone}
-                  dial={dial} setDial={setDial}
-                />
-              </section>
+              {needsContact && (
+                <section className="bm-section">
+                  <h3>How can we reach you?</h3>
+                  <ContactFields
+                    profile={profile}
+                    phone={phone} setPhone={setPhone}
+                    dial={dial} setDial={setDial}
+                  />
+                </section>
+              )}
 
               <section className="bm-section bm-total">
                 <div className="bm-line">
@@ -373,7 +386,8 @@ export default function BookingModal({ tour, onClose }) {
                       : lesson && !level ? 'Pick your level'
                         : lesson && !kind ? 'Pick a lesson type'
                           : !questionsOk ? 'Answer the questions marked *'
-                            : !phoneOk ? 'Add your phone'
+                            : !profileReady ? 'Checking your account…'
+                              : !phoneOk ? 'Add your phone'
                               : `Request ${people} ${people === 1 ? 'place' : 'places'} — ${money(total)}`}
               </button>
               {failed && <p className="bm-note error">{failed}</p>}
