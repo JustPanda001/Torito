@@ -1127,13 +1127,6 @@ body.has-offline-banner{padding-bottom:104px}
   .site-header:not(.solid) .mobile-search .search-box input{color:#fff}
   .site-header:not(.solid) .mobile-search .search-box input::placeholder{color:rgba(255,255,255,.8)}
 }
-@media (max-width:430px){
-  .header-inner{gap:6px;padding:0 10px}
-  .header-left{gap:6px}
-  .head-toggle,.icon-btn.round{width:36px;height:36px}
-  .ai-btn{padding:9px 12px}
-  .account-btn{padding:9px 6px}
-}
 
 @media (max-width:640px){
   .header-inner{gap:10px;padding:0 16px}
@@ -1431,7 +1424,13 @@ body.has-offline-banner{padding-bottom:104px}
 .wx-tile svg{color:var(--green-500);flex-shrink:0}
 .place-tile-main{display:flex;flex-direction:column;min-width:0;flex:0 1 auto}
 .place-tile-main strong{font-size:17px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.place-tile-main span{font-size:12.5px;color:var(--ink-soft)}
+/* the subtitle gets the same treatment as the title above it: on a narrow
+   phone "Where it starts" is a few pixels wider than the space left beside
+   the thumbnail, and a clipped word reads as a rendering fault */
+.place-tile-main span{
+  font-size:12.5px;color:var(--ink-soft);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
 /* pinned right: on the map tile there is no facts column to push it there */
 .place-tile-more{font-size:12px;color:var(--green-700);white-space:nowrap;flex-shrink:0;margin-left:auto}
 /* the middle of the weather tile: three short facts, one per line, small
@@ -1875,3 +1874,47 @@ body.has-offline-banner{padding-bottom:104px}
 
 /* a rating is a single figure, in any layout — never a phrase broken in half */
 .stars-count{white-space:nowrap}
+
+/* ---------- Form fields that refuse to shrink ---------- */
+/*
+ * A grid or flex item will not go below its content's minimum width unless it
+ * is told it may, and a field's minimum is whatever its widest control needs —
+ * a dropdown with an "add" and an "edit" button beside it needs a good deal.
+ * On a phone that is wider than the column it sits in, so the field pushed out
+ * past the edge of its own card, taking the buttons with it.
+ */
+.field{min-width:0}
+.field input,.field select,.field textarea{width:100%;min-width:0}
+
+/* ---------- Narrow phones ---------- */
+/*
+ * This has to sit after the 640px block, not before it. Both match a 320px
+ * screen, and the later one wins on source order — so while these rules were
+ * written above it, the wider query kept resetting the gap and padding and the
+ * account button hung 4px off the right edge of the screen.
+ */
+@media (max-width:430px){
+  .header-inner{gap:6px;padding:0 10px}
+  .header-left{gap:6px}
+  .head-toggle,.icon-btn.round{width:36px;height:36px}
+  .ai-btn{padding:9px 12px}
+  .account-btn{padding:9px 6px}
+}
+
+/* The temperature is the point of the weather tile, so it is the one part that
+   must never be what gets truncated — "1…" and "Cl…" is worse than no facts at
+   all. It keeps its width; the facts beside it give way instead. The map tile
+   is left alone: its region name is long and ellipsis is right there. */
+@media (max-width:560px){
+  .wx-tile .place-tile-main{flex-shrink:0}
+}
+/* Below this the icon, the temperature, three facts and a link cannot share a
+   line without one of them being crushed, so the facts take their own. */
+@media (max-width:380px){
+  .place-tile{flex-wrap:wrap}
+  .wx-facts{
+    flex:1 1 100%;order:3;
+    align-items:flex-start;text-align:left;margin:0;padding:0;
+  }
+  .wx-tile .place-tile-more{margin-left:auto}
+}
