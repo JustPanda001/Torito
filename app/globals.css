@@ -1797,9 +1797,23 @@ body.has-offline-banner{padding-bottom:104px}
  *    whatever is currently covering the screen, so the panel shrinks to fit
  *    instead. The vh line stays first as the fallback for browsers without it.
  */
+/*
+ * 16px is the threshold, so this is every text control on the site rather than
+ * the handful noticed so far: each one was 14 or 15px, and each one zoomed the
+ * page the moment it was tapped. Written as a blanket rule so a control added
+ * later does not quietly bring the bug back. Checkboxes, radios and ranges are
+ * exempt — they have no text to size, and their dimensions are set explicitly.
+ */
+/*
+ * The doubled :root is a specificity bump, not a typo. A bare `textarea` loses
+ * to `.admin-form textarea` wherever it sits in the file, and this rule has to
+ * win against every one of them — the page zooming is not a style choice any
+ * single component gets to override.
+ */
 @media (max-width:760px){
-  .chat-form input,
-  .chat-thread .chat-form input{font-size:16px}
+  :root:root input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  :root:root textarea,
+  :root:root select{font-size:16px}
 }
 
 @media (max-width:480px){
