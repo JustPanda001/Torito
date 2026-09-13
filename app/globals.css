@@ -1780,3 +1780,48 @@ body.has-offline-banner{padding-bottom:104px}
   .filters.open .sub-filter .chip{margin:0 8px 8px 0}
   .filters.open .filter-row{gap:0}
 }
+
+/* ---------- Chat widget on a phone ---------- */
+/*
+ * Two separate iOS behaviours were breaking this.
+ *
+ * 1. Safari zooms the whole page in whenever a focused input is smaller than
+ *    16px, and does not zoom back out when the keyboard goes away — which is
+ *    why the panel came back oversized with its right edge off screen. The
+ *    fix is the font size, not anything about the panel.
+ *
+ * 2. `vh` on iOS means the full viewport, counting the space behind the
+ *    keyboard and the browser chrome. A panel sized in vh therefore stays at
+ *    its full height when the keyboard opens and is pushed off the top, taking
+ *    its header and close button with it. `dvh` is the same measurement minus
+ *    whatever is currently covering the screen, so the panel shrinks to fit
+ *    instead. The vh line stays first as the fallback for browsers without it.
+ */
+@media (max-width:760px){
+  .chat-form input,
+  .chat-thread .chat-form input{font-size:16px}
+}
+
+@media (max-width:480px){
+  .chat-widget{
+    right:16px;
+    bottom:16px;
+    /* clear of the home indicator on a notched phone */
+    bottom:max(16px,env(safe-area-inset-bottom));
+    /* never wider than the screen, whatever the panel asks for */
+    left:16px;
+    align-items:flex-end;
+    /* stretching the container full width would otherwise put an invisible
+       strip across the bottom of every page, swallowing taps meant for what
+       is under it — only the bubble and the panel should be touchable */
+    pointer-events:none;
+  }
+  .chat-widget > *{pointer-events:auto}
+  .chat-panel{
+    width:100%;
+    height:70vh;
+    height:min(60dvh,460px);
+    max-height:70vh;
+    max-height:calc(100dvh - 96px);
+  }
+}
