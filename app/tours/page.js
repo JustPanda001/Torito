@@ -157,6 +157,11 @@ function ToursListing() {
         </div>
 
         <div className={`filters${filtersOpen ? ' open' : ''}`}>
+        {/* These name the three groups inside the panel, where the chips would
+            otherwise run together as one block. They are drawn only on a
+            phone: the wide layout already separates the rows by placing
+            them. */}
+        <span className="filter-group-label">{t('listing.groupActivity')}</span>
         <div className="filter-bar">
           {CHIPS.map(([key, text]) => (
             <button
@@ -174,6 +179,7 @@ function ToursListing() {
         <div className="filter-row">
           {subFilter ? (
             <div className="sub-filter">
+              <span className="filter-group-label">{subFilter.group}</span>
               {/* the same chips as the row above, one level down: clearing is
                   a chip of its own rather than a hidden "none" option */}
               <button
@@ -196,7 +202,10 @@ function ToursListing() {
             </div>
           ) : <span />}
 
-          <DateFilter from={range.from} to={range.to} onChange={setRange} />
+          <div className="filter-dates">
+            <span className="filter-group-label">{t('listing.groupWhen')}</span>
+            <DateFilter from={range.from} to={range.to} onChange={setRange} />
+          </div>
         </div>
         </div>
 
