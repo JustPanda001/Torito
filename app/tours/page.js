@@ -12,6 +12,7 @@ import SiteHeader from '@/components/SiteHeader';
 import SiteFooter from '@/components/SiteFooter';
 import TourCard from '@/components/TourCard';
 import DateFilter from '@/components/DateFilter';
+import FilterIcon from '@/components/FilterIcon';
 import { TOURS } from '@/lib/tours-data';
 import { seasonCovers } from '@/lib/season';
 import { supabase } from '@/lib/supabaseClient';
@@ -63,6 +64,20 @@ function ToursListing() {
   // the second filter belongs to the category, so switching category clears it
   const [sub, setSub] = useState('');
   const subFilter = SUB_FILTERS[category] ?? null;
+
+  // closed on a phone, where it is a disclosure; the CSS keeps it open on a
+  // wide screen regardless of this
+  const [filtersOpen, setFiltersOpen] = useState(false);
+
+  // what the count on the button means: a narrowed category, its own second
+  // filter, and a date range are each one thing the visitor has chosen
+  const activeFilters = (category !== 'all' ? 1 : 0) + (sub ? 1 : 0) + (range.from ? 1 : 0);
+
+  function clearFilters() {
+    setCategory('all');
+    setSub('');
+    setRange({ from: null, to: null });
+  }
 
   function pickCategory(key) {
     setCategory(key);
@@ -119,6 +134,29 @@ function ToursListing() {
           )}
         </div>
 
+        {/* On a phone the three chip rows fill the screen before a single trip
+            is visible, so they fold behind this. It is the same controls
+            either way — the panel is simply always open on a wide screen. */}
+        <div className="filters-head">
+          <button
+            type="button"
+            className={`filter-toggle${activeFilters ? ' has-value' : ''}`}
+            aria-expanded={filtersOpen}
+            onClick={() => setFiltersOpen((v) => !v)}
+          >
+            <FilterIcon />
+            <span>{t('listing.filters')}</span>
+            {activeFilters > 0 && <span className="filter-count">{activeFilters}</span>}
+          </button>
+
+          {activeFilters > 0 && (
+            <button type="button" className="filter-clear" onClick={clearFilters}>
+              {t('listing.clearFilters')}
+            </button>
+          )}
+        </div>
+
+        <div className={`filters${filtersOpen ? ' open' : ''}`}>
         <div className="filter-bar">
           {CHIPS.map(([key, text]) => (
             <button
@@ -159,6 +197,7 @@ function ToursListing() {
           ) : <span />}
 
           <DateFilter from={range.from} to={range.to} onChange={setRange} />
+        </div>
         </div>
 
         <div className="listing">

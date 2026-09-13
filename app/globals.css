@@ -1709,3 +1709,47 @@ body.has-offline-banner{padding-bottom:104px}
 @media (max-width:700px){
   .must-grid{grid-template-columns:1fr}
 }
+
+/* ---------- Listing filters ---------- */
+/* The button is a phone-only disclosure: on a wide screen the panel is always
+   open and the button has nothing to do, so it is not drawn at all. */
+.filters-head{display:none}
+
+@media (max-width:760px){
+  .filters-head{
+    display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;
+  }
+  .filter-toggle{
+    display:inline-flex;align-items:center;gap:9px;
+    border:1.5px solid var(--green-300);background:var(--surface);color:var(--ink);
+    font:inherit;font-size:15px;font-weight:600;padding:10px 18px;
+    border-radius:999px;cursor:pointer;transition:.2s;
+  }
+  .filter-toggle:hover{background:var(--green-100)}
+  .filter-toggle[aria-expanded="true"],
+  .filter-toggle.has-value{border-color:var(--green-500)}
+  /* how many things the visitor has narrowed by, so a collapsed panel never
+     hides the fact that the listing is filtered */
+  .filter-count{
+    min-width:21px;height:21px;padding:0 6px;border-radius:999px;
+    display:grid;place-items:center;
+    background:var(--green-500);color:#10231f;font-size:12.5px;font-weight:700;
+  }
+  .filter-clear{
+    border:0;background:none;padding:6px 2px;cursor:pointer;
+    font:inherit;font-size:14px;color:var(--ink-soft);text-decoration:underline;
+  }
+  .filter-clear:hover{color:var(--ink)}
+
+  .filters{display:none}
+  .filters.open{
+    display:block;margin-bottom:14px;padding:16px;
+    border:1px solid var(--line);border-radius:16px;background:var(--surface-2);
+  }
+  /* stacked rather than justified: on a narrow panel the date button pushed
+     itself to a line of its own anyway, just without the spacing to show it */
+  .filters.open .filter-row{
+    flex-direction:column;align-items:stretch;gap:12px;margin-bottom:0;
+  }
+  .filters.open .filter-bar{margin-bottom:12px}
+}
