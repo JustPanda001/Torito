@@ -1610,9 +1610,14 @@ body.has-offline-banner{padding-bottom:104px}
 /* Four tiles on the left, the season's pitch on the right. */
 /* Two even columns, each capped and centred in its half, so the mosaic stays
    the size of a feature block rather than growing with the viewport. */
+/* Sized to the two blocks and centred as a pair. Splitting the section into
+   two halves and centring each block inside its own half left a corridor of
+   empty space down the middle and pushed the mosaic and the words apart, so
+   they read as two things that happened to land on the same row rather than
+   one composition. */
 .hot-section{
-  display:grid;grid-template-columns:1fr 1fr;gap:48px;
-  align-items:center;justify-items:center;
+  display:grid;grid-template-columns:minmax(0,520px) minmax(0,460px);
+  justify-content:center;gap:56px;align-items:center;
 }
 .hot-grid{
   display:grid;grid-template-columns:1fr 1fr;gap:12px;
@@ -1632,10 +1637,9 @@ body.has-offline-banner{padding-bottom:104px}
 .hot-tile-label strong{font-size:15px}
 .hot-tile-label em{font-style:normal;font-size:12.5px;opacity:.85}
 
-/* the two tiles in the second column drop down, so the block reads as a
-   staggered mosaic rather than a plain 2x2 */
-.hot-grid > :nth-child(2),
-.hot-grid > :nth-child(4){transform:translateY(20px)}
+/* No stagger. Dropping the whole second column by a fixed amount is not a
+   mosaic — it is the same square grid with ragged top and bottom edges, and it
+   reads as something that failed to line up rather than as a design. */
 
 .hot-kicker{
   display:inline-flex;align-items:center;gap:8px;
@@ -1646,7 +1650,7 @@ body.has-offline-banner{padding-bottom:104px}
   width:8px;height:8px;border-radius:50%;background:var(--green-500);
   animation:pulse 2s infinite;
 }
-.hot-text{width:100%;max-width:480px}
+.hot-text{width:100%;max-width:460px}
 .hot-text h2{margin:14px 0 12px;font-size:clamp(26px,2.2vw,34px);line-height:1.2}
 .hot-text p{margin:0 0 22px;color:var(--ink-soft);line-height:1.7}
 .hot-btn{
@@ -1657,9 +1661,7 @@ body.has-offline-banner{padding-bottom:104px}
 .hot-btn:hover{filter:brightness(1.05)}
 
 @media (max-width:900px){
-  .hot-section{grid-template-columns:1fr;gap:26px}
-  .hot-grid > :nth-child(2),
-  .hot-grid > :nth-child(4){transform:none}
+  .hot-section{grid-template-columns:minmax(0,520px);gap:26px}
   .hot-text h2{font-size:30px}
 }
 
