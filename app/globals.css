@@ -1468,8 +1468,14 @@ body.has-offline-banner{padding-bottom:104px}
 .map-modal .auth-link{display:inline-block;margin-top:10px;font-size:14px}
 
 @media (max-width:560px){
+  /* one per row, so each tile has the whole width to itself */
   .place-row{grid-template-columns:1fr}
-  .place-tile-more{display:none}
+  /* and with the whole width there is room for what a half-width tile could
+     not fit. Both were hidden for the middle band, where the tiles are still
+     side by side and genuinely too narrow — not because a phone cannot show
+     them. */
+  .wx-facts{display:flex}
+  .place-tile-more{display:inline}
 }
 /* ================= ADMIN FORM SECTIONS ================= */
 /* the form is grouped in the order the trip page reads, so filling it in top
