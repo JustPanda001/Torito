@@ -1059,7 +1059,12 @@ body.has-offline-banner{padding-bottom:104px}
 }
 @media (max-width:600px){
   .admin-grid{grid-template-columns:1fr}
-  .admin-row{flex-wrap:wrap}
+  /* The trip and its buttons each take a full row. Sharing one left the title
+     a column a few characters wide — it broke a word per line and the buttons
+     sat on top of it, because they are the part that refuses to shrink. */
+  .admin-row{flex-wrap:wrap;gap:10px}
+  .admin-row-link{flex:1 1 100%}
+  .admin-row-btns{width:100%;justify-content:flex-end}
 }
 
 /* ================= FOOTER ================= */
