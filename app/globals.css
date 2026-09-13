@@ -1839,3 +1839,26 @@ body.has-offline-banner{padding-bottom:104px}
     max-height:calc(100dvh - 96px);
   }
 }
+
+/* ---------- Trip page header on a phone ---------- */
+/* It was laid out as a row and never given anything else, so on a narrow
+   screen the title wrapped to two lines and the stars squeezed into whatever
+   was left beside it, breaking "No ratings yet" across two lines of its own.
+   Stacked, each part gets the full width and is read in order. */
+@media (max-width:760px){
+  .detail-head{
+    flex-direction:column;align-items:stretch;gap:10px;margin-bottom:20px;
+  }
+  .detail-head-left{
+    flex-direction:column;align-items:flex-start;gap:9px;
+  }
+  .detail-head-left h1{
+    font-size:clamp(23px,6.2vw,30px);line-height:1.22;
+  }
+  /* the badge reads as a label over the title rather than a word jammed in
+     front of it */
+  .detail-head-left .badge{align-self:flex-start}
+}
+
+/* a rating is a single figure, in any layout — never a phrase broken in half */
+.stars-count{white-space:nowrap}
