@@ -23,6 +23,7 @@ import { fetchReviews, useRatings } from '@/lib/ratings';
 import { bumpTourView } from '@/lib/views';
 import { requiredItems } from '@/lib/requiredItems';
 import { itineraryMode, stepLabel } from '@/lib/itinerary';
+import { filled } from '@/lib/filled';
 
 const ICONS = {
   distance: <><path d="M4 18h16" /><path d="M7 18l5-12 5 12" /></>,
@@ -37,20 +38,6 @@ const ICONS = {
 const Icon = ({ children }) => (
   <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.7">{children}</svg>
 );
-
-/**
- * Whether a field is worth a row of its own.
- *
- * A trip only fills in what applies to it — a lesson has no elevation gain, a
- * transfer has nobody walking anywhere — and the admin form writes an empty
- * string for anything left blank. A dash in those rows told the visitor
- * nothing except that the page had a hole in it, so the row is dropped
- * instead. Blanking a field in the admin panel is what hides it.
- */
-const filled = (value) => {
-  const text = String(value ?? '').trim();
-  return text !== '' && text !== '—' && text !== '-';
-};
 
 export default function TourPage({ params }) {
   const { slug } = use(params);

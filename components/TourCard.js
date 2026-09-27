@@ -7,6 +7,7 @@ import { useT } from '@/lib/i18n';
 import FavoriteButton from './FavoriteButton';
 import Stars from './Stars';
 import { useRatings } from '@/lib/ratings';
+import { filled } from '@/lib/filled';
 
 const ICONS = {
   distance: <><path d="M4 18h16" /><path d="M7 18l5-12 5 12" /></>,
@@ -23,6 +24,13 @@ export default function TourCard({ tour }) {
   const { t } = useT();
   const router = useRouter();
   const score = useRatings().ratingFor(tour.slug);
+
+  const specs = [
+    [ICONS.distance, tour.distance],
+    [ICONS.clock, tour.duration],
+    [ICONS.peak, tour.difficulty],
+    [ICONS.house, tour.stay],
+  ].filter(([, value]) => filled(value));
   const full = tour.spots_left === 0;
   const season = seasonLabel(tour);
   const href = `/tours/${tour.slug}`;
@@ -47,12 +55,15 @@ export default function TourCard({ tour }) {
           {tour.subtitle && <span className="tour-sub">{tour.subtitle}</span>}
         </h2>
 
-        <ul className="spec-grid">
-          <li><Icon>{ICONS.distance}</Icon><span>{tour.distance || '—'}</span></li>
-          <li><Icon>{ICONS.clock}</Icon><span>{tour.duration || '—'}</span></li>
-          <li><Icon>{ICONS.peak}</Icon><span>{tour.difficulty || '—'}</span></li>
-          <li><Icon>{ICONS.house}</Icon><span>{tour.stay || '—'}</span></li>
-        </ul>
+        {/* only the facts this trip actually has — the same rule the trip page
+            follows, so a card and the page it opens agree */}
+        {specs.length > 0 && (
+          <ul className="spec-grid">
+            {specs.map(([icon, value]) => (
+              <li key={value}><Icon>{icon}</Icon><span>{value}</span></li>
+            ))}
+          </ul>
+        )}
 
         <div className="tour-meta">
           {tour.badge === 'top' && <span className="badge badge-top">TOP</span>}
