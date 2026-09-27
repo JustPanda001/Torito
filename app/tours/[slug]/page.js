@@ -228,7 +228,8 @@ export default function TourPage({ params }) {
 
         <section className="detail-block">
           <h2>{lesson ? 'About these lessons' : 'About this trip'}</h2>
-          <p className="lead">{tour.summary}</p>
+          {/* typed in a textarea, so the line breaks in it are meant */}
+          <p className="lead trip-summary">{tour.summary}</p>
 
           {info.length > 0 && (
             <div className="info-grid">

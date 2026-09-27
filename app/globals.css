@@ -1918,3 +1918,14 @@ body.has-offline-banner{padding-bottom:104px}
   }
   .wx-tile .place-tile-more{margin-left:auto}
 }
+
+/* ---------- Text typed into a textarea ---------- */
+/*
+ * HTML folds every run of whitespace, newlines included, into one space — so a
+ * summary written as headings, blank lines and a ticked list came out as one
+ * unbroken paragraph on the page. `pre-line` keeps the line breaks that were
+ * typed and still collapses runs of spaces and wraps long lines normally,
+ * which is exactly what a textarea's contents mean.
+ */
+.trip-summary,
+.review-body{white-space:pre-line}
