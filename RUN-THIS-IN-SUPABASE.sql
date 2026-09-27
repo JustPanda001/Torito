@@ -402,3 +402,14 @@ alter table public.tours    add column if not exists required_items  jsonb;
 
 -- the titles they ticked, kept as the record that they were asked
 alter table public.bookings add column if not exists confirmed_items jsonb;
+
+-- ============================================================
+-- ITINERARY MODE
+-- Whether "Where we go" is counted in days or in places visited in one day.
+-- A day tour's second entry is a stop, not "Day 2" — which would tell the
+-- visitor they are away overnight when they are home by evening.
+--   'days'  -> Day 1, Day 2 …   'stops' -> Stop 1, Stop 2 …
+-- Left null on existing rows: the page then falls back to what it always
+-- assumed, a single row being a one-day plan.
+-- ============================================================
+alter table public.tours add column if not exists itinerary_mode text;

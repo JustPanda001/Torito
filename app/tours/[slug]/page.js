@@ -22,6 +22,7 @@ import { isLesson } from '@/lib/lessons';
 import { fetchReviews, useRatings } from '@/lib/ratings';
 import { bumpTourView } from '@/lib/views';
 import { requiredItems } from '@/lib/requiredItems';
+import { itineraryMode, stepLabel } from '@/lib/itinerary';
 
 const ICONS = {
   distance: <><path d="M4 18h16" /><path d="M7 18l5-12 5 12" /></>,
@@ -147,6 +148,7 @@ export default function TourPage({ params }) {
   const facts = allFacts.filter(([, , value]) => filled(value));
   const info = allInfo.filter(([, value]) => filled(value));
   const mustBring = requiredItems(tour);
+  const itinMode = itineraryMode(tour);
 
   return (
     <div className="subpage-shell">
@@ -248,7 +250,7 @@ export default function TourPage({ params }) {
               <ol className="itinerary">
                 {tour.itinerary.map(([title, text], i) => (
                   <li key={title}>
-                    <span className="day">{tour.itinerary.length === 1 ? 'Plan' : `Day ${i + 1}`}</span>
+                    <span className="day">{stepLabel(itinMode, i)}</span>
                     <div><strong>{title}</strong><p>{text}</p></div>
                   </li>
                 ))}

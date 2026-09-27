@@ -1929,3 +1929,6 @@ body.has-offline-banner{padding-bottom:104px}
  */
 .trip-summary,
 .review-body{white-space:pre-line}
+
+/* the days / one-day switch, sitting in the "Where we go" heading row */
+.pair-mode{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}

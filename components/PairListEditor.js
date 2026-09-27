@@ -8,7 +8,9 @@
 // of the admin panel is that nobody should have to know the storage format.
 
 export default function PairListEditor({
-  label, hint, rows, onChange, titleLabel = 'Title', notePlaceholder, numbered = false, addLabel = 'Add',
+  label, hint, rows, onChange, titleLabel = 'Title', notePlaceholder, addLabel = 'Add',
+  // what to call each row — "Day 2" on a trek, "Stop 2" on a day tour
+  numberLabel = null, headExtra = null,
 }) {
   const set = (i, key, value) => {
     const next = rows.map((r, j) => (j === i ? { ...r, [key]: value } : r));
@@ -20,6 +22,7 @@ export default function PairListEditor({
       <div className="pair-head">
         <h3>{label}</h3>
         {hint && <span className="field-hint">{hint}</span>}
+        {headExtra}
       </div>
 
       {rows.length === 0 && (
@@ -31,7 +34,7 @@ export default function PairListEditor({
       {rows.map((row, i) => (
         // eslint-disable-next-line react/no-array-index-key
         <div className="pair-row" key={i}>
-          {numbered && <span className="pair-n">Day {i + 1}</span>}
+          {numberLabel && <span className="pair-n">{numberLabel(i)}</span>}
 
           <div className="pair-fields">
             <input

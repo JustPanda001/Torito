@@ -17,6 +17,7 @@ import BookingQuestionsEditor from '@/components/BookingQuestionsEditor';
 import { supabase, currentProfile, friendlyError } from '@/lib/supabaseClient';
 import { slugify } from '@/lib/slug';
 import { LESSON } from '@/lib/lessons';
+import { ITINERARY_MODES, itineraryMode, stepLabel } from '@/lib/itinerary';
 import { CATEGORIES } from '@/lib/catalog';
 import { parseCoord, parsePair } from '@/lib/coords';
 
@@ -94,6 +95,9 @@ export default function AdminPage() {
   const [bookingFields, setBookingFields] = useState([]);
   // kit the visitor brings themselves, ticked off before they can book
   const [requiredItems, setRequiredItems] = useState([]);
+  // whether the plan is counted in days or in places visited in one day
+  const [itinMode, setItinMode] = useState('days');
+  const dayTrip = itinMode === 'stops';
   // ski's second choice, which decides whether this is a lesson
   const [subtype, setSubtype] = useState('');
   const lessonForm = category === 'ski' && subtype === LESSON;
@@ -144,6 +148,7 @@ export default function AdminPage() {
     setExcluded(asPairs(tour.excluded));
     setBookingFields(Array.isArray(tour.booking_fields) ? tour.booking_fields : []);
     setRequiredItems(asPairs(tour.required_items));
+    setItinMode(itineraryMode({ ...tour, itinerary: asPairs(tour.itinerary) }));
     setSubtype(tour.subtype ?? '');
     setPhotos(Array.isArray(tour.gallery) ? tour.gallery : []);
     setCover(tour.cover_image ?? '');
@@ -198,6 +203,7 @@ export default function AdminPage() {
     setExcluded([]);
     setBookingFields([]);
     setRequiredItems([]);
+    setItinMode('days');
     form.current?.reset();
     setNote(null);
   }
@@ -235,6 +241,7 @@ export default function AdminPage() {
     row.included = pairs(included);
     row.excluded = pairs(excluded);
     row.required_items = pairs(requiredItems);
+    row.itinerary_mode = itinMode;
 
     // a question still being typed — no label yet, or a "pick one" with
     // nothing to pick from — is dropped rather than saved half-made
@@ -382,13 +389,30 @@ export default function AdminPage() {
               <section className="admin-section">
                 <PairListEditor
                   label="Where we go"
-                  hint="One row per day, in order"
+                  hint={dayTrip
+                    ? 'One row per place, in the order you reach them'
+                    : 'One row per day, in order'}
                   rows={itinerary}
                   onChange={setItinerary}
-                  titleLabel="Tbilisi → Mestia"
-                  notePlaceholder="What happens that day"
-                  numbered
-                  addLabel="Add a day"
+                  titleLabel={dayTrip ? 'Jvari Pass' : 'Tbilisi → Mestia'}
+                  notePlaceholder={dayTrip ? 'What you see there' : 'What happens that day'}
+                  numberLabel={(i) => stepLabel(itinMode, i)}
+                  addLabel={dayTrip ? 'Add a place' : 'Add a day'}
+                  headExtra={(
+                    <div className="pair-mode">
+                      {ITINERARY_MODES.map(([value, label, note]) => (
+                        <button
+                          key={value}
+                          type="button"
+                          title={note}
+                          className={`chip small${itinMode === value ? ' active' : ''}`}
+                          onClick={() => setItinMode(value)}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 />
               </section>
             )}
