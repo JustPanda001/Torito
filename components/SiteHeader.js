@@ -151,25 +151,21 @@ export default function SiteHeader({ solid = false }) {
         <div className="mega-menu opening">
           <div className="mega-inner">
             <div><h4>{t('nav.catalog')}</h4>
-              <Link href="/tours?cat=tours">{t('cat.tours')}</Link>
-              <Link href="/tours?cat=hiking">{t('cat.hiking')}</Link>
               <Link href="/tours?cat=ski">{t('cat.ski')}</Link>
+              <Link href="/tours?cat=hiking">{t('cat.hiking')}</Link>
+              <Link href="/tours?cat=camping">{t('cat.camping')}</Link>
+              <Link href="/tours?cat=mountaineering">{t('cat.mountaineering')}</Link>
               <Link href="/tours?cat=transfer">{t('cat.transfer')}</Link>
-              {/* no category of its own yet, so this one searches instead */}
-              <Link href="/tours?q=rafting">Rafting</Link>
             </div>
-            <div><h4>Regions</h4>
-              <Link href="/tours?q=svaneti">Svaneti</Link><Link href="/tours?q=kazbegi">Kazbegi</Link>
-              <Link href="/tours?q=tusheti">Tusheti</Link><Link href="/tours?q=mtskheta">Mtskheta</Link>
-              <Link href="/tours?q=kakheti">Kakheti</Link>
-            </div>
-            <div><h4>Instructors</h4>
-              <Link href="/tours?cat=ski">Ski instructors</Link><Link href="/tours?cat=ski">Snowboard instructors</Link>
-              <Link href="/tours">Mountain guides</Link><Link href="/signup">Become an instructor</Link>
+            <div><h4>Winter</h4>
+              <Link href="/tours?cat=ski&type=lessons">Ski &amp; snowboard instructors</Link>
+              <Link href="/tours?cat=ski&type=freeride">Freeride</Link>
+              <Link href="/tours?cat=ski&type=snowmobile">Snowmobile rides</Link>
+              <Link href="/tours?cat=ski&type=paragliding">Paragliding in Gudauri</Link>
             </div>
             <div><h4>Info</h4>
-              <Link href="/">Home</Link><Link href="/tours">About us</Link>
-              <Link href="/tours">FAQ</Link><Link href="/tours">Contact</Link>
+              <Link href="/">Home</Link><Link href="/about">About us</Link>
+              <Link href="/faq">FAQ</Link><Link href="/contact">Contact</Link>
             </div>
           </div>
         </div>

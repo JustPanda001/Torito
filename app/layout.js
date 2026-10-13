@@ -7,8 +7,8 @@ import { FavoritesProvider } from '@/lib/favorites';
 import { RatingsProvider } from '@/lib/ratings';
 
 export const metadata = {
-  title: 'Torito — Tours, Hikes, Ski & Camping',
-  description: 'Tours, hikes, ski instructors and camping across Georgia.',
+  title: 'Torito — Ski, Hikes, Camping & Climbs in Georgia',
+  description: 'Ski and snowboard instructors, snowmobiles and paragliding in Gudauri, plus hikes, camping and mountaineering across Georgia.',
   icons: { icon: '/assets/torito-logo.png' },
 };
 

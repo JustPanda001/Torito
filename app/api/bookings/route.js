@@ -87,6 +87,11 @@ export async function POST(request) {
   }
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  // The dialog already greys out what is taken, but two people can have it
+  // open at once, so the check is repeated here against the live table.
+  const clash = await alreadyTaken(supabase, row);
+  if (clash) return Response.json({ error: clash }, { status: 409 });
   // no .select() on the way back: reading the new row would need a select
   // policy, and a guest is deliberately not allowed to read bookings — asking
   // for it turns a successful insert into an RLS violation
@@ -101,6 +106,35 @@ export async function POST(request) {
   await Promise.allSettled([notifyTelegram(row), appendToSheet(row)]);
 
   return Response.json({ ok: true });
+}
+
+/**
+ * Why this request cannot be taken, or null when it can. A timed booking
+ * (lesson, snowmobile, paragliding) owns its slot outright; a trip is refused
+ * once the departure would go over capacity. Without booked_slots() in the
+ * database this lets everything through, as before.
+ */
+async function alreadyTaken(supabase, row) {
+  if (row.kind === 'waitlist' || !row.wanted_date) return null;
+
+  const { data, error } = await supabase.rpc('booked_slots', { p_slug: row.tour_slug });
+  if (error || !Array.isArray(data)) return null;
+  const sameDay = data.filter((r) => r.wanted_date === row.wanted_date);
+
+  if (row.lesson_time) {
+    return sameDay.some((r) => r.lesson_time === row.lesson_time)
+      ? 'Sorry — that time was just booked by someone else. Please pick another.'
+      : null;
+  }
+
+  const { data: trip } = await supabase
+    .from('tours').select('capacity').eq('slug', row.tour_slug).maybeSingle();
+  if (!trip?.capacity) return null;
+
+  const booked = sameDay.reduce((sum, r) => sum + (r.people ?? 0), 0);
+  return booked + row.people > trip.capacity
+    ? `Sorry — only ${Math.max(0, trip.capacity - booked)} places are left on that date.`
+    : null;
 }
 
 function lines(row) {

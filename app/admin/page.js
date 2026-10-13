@@ -55,7 +55,7 @@ const FIELDS = [
   ['category', 'Category *', { required: true, options: CATEGORIES }],
   // ski only: what the visitor is actually booking. A lesson has no journey,
   // so choosing it strips the form down the same way the category used to.
-  ['subtype', 'Type *', { options: ['', 'lessons', 'freeride', 'freestyle'], onlyFor: 'ski' }],
+  ['subtype', 'Type *', { options: ['', 'lessons', 'freeride', 'freestyle', 'snowmobile', 'paragliding'], onlyFor: 'ski' }],
   ['slug', 'URL slug *', { required: true, placeholder: 'mestia-ushguli-trek', hint: 'Fills itself from the title — edit it if you want a different address' }],
   ['subtitle', 'Subtitle', { placeholder: '4 days' }],
   ['region', 'Region', { placeholder: 'Svaneti' }],
@@ -87,7 +87,7 @@ export default function AdminPage() {
   const [photos, setPhotos] = useState([]);
   const [cover, setCover] = useState('');
   // drives which fields the form shows; lessons need far fewer
-  const [category, setCategory] = useState('tours');
+  const [category, setCategory] = useState('ski');
   const [itinerary, setItinerary] = useState([]);
   const [included, setIncluded] = useState([]);
   const [excluded, setExcluded] = useState([]);
@@ -139,7 +139,7 @@ export default function AdminPage() {
   function edit(tour) {
     setEditingId(tour.id);
     slugTouched.current = true;
-    setCategory(tour.category ?? 'tours');
+    setCategory(tour.category ?? 'ski');
     const asPairs = (list) => (Array.isArray(list) ? list : []).map((item) => (
       Array.isArray(item) ? { title: item[0], note: item[1] } : item
     ));
@@ -196,7 +196,7 @@ export default function AdminPage() {
     setPhotos([]);
     setCover('');
     slugTouched.current = false;
-    setCategory('tours');
+    setCategory('ski');
     setSubtype('');
     setItinerary([]);
     setIncluded([]);

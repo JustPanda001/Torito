@@ -10,7 +10,7 @@
   --ink:#2f4a55;
   --ink-soft:#5c7784;
   --white:#fff;
-  --radius:16px;
+  --radius:20px;
   --radius-lg:28px;
   --shadow:0 8px 24px rgba(47,74,85,.08);
   --max:1440px;
@@ -183,7 +183,7 @@ a{color:inherit;text-decoration:none}
 @keyframes dropdown{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:none}}
 .mega-inner{
   max-width:var(--max);margin:0 auto;padding:28px;
-  display:grid;grid-template-columns:repeat(4,1fr);gap:28px;color:var(--ink);
+  display:grid;grid-template-columns:repeat(3,1fr);gap:28px;color:var(--ink);
 }
 .mega-inner h4{margin:0 0 10px;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--green-700)}
 .mega-inner a{display:block;padding:5px 0;color:var(--ink-soft);font-size:15px;transition:.2s}
@@ -662,7 +662,7 @@ body.has-offline-banner{padding-bottom:104px}
 }
 .tour-card:hover{box-shadow:0 10px 26px rgba(47,74,85,.13);transform:translateY(-2px)}
 
-.tour-photo{display:block;border-radius:12px;overflow:hidden;background:var(--blue-50)}
+.tour-photo{display:block;border-radius:var(--radius);overflow:hidden;background:var(--blue-50)}
 .tour-photo img{width:100%;aspect-ratio:4/3;object-fit:cover;transition:transform .5s}
 .tour-photo:hover img{transform:scale(1.05)}
 
@@ -1723,11 +1723,9 @@ body.has-offline-banner{padding-bottom:104px}
 }
 
 /* ---------- Listing filters ---------- */
-/* The button is a phone-only disclosure: on a wide screen the panel is always
-   open and the button has nothing to do, so it is not drawn at all. */
-.filters-head{display:none}
-
-@media (max-width:760px){
+/* One "Filters" button at every width: the full chip rows were too much to
+   take in at once even on a wide screen, so they live behind it. */
+@media all{
   .filters-head{
     display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;
   }
@@ -1766,11 +1764,11 @@ body.has-offline-banner{padding-bottom:104px}
   .filters.open .filter-bar{margin-bottom:12px}
 }
 
-/* Group headings inside the phone filter panel. Drawn nowhere else: the wide
-   layout separates these by laying them out, so it needs no labels. */
+/* Group headings inside the filter panel. */
 .filter-group-label{display:none}
 
-@media (max-width:760px){
+@media all{
+  .filters.open{max-width:760px}
   .filters.open .filter-group-label{
     display:block;position:relative;
     font-size:11.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
@@ -1932,3 +1930,183 @@ body.has-offline-banner{padding-bottom:104px}
 
 /* the days / one-day switch, sitting in the "Where we go" heading row */
 .pair-mode{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+
+/* ---------- Softer corners ---------- */
+/* Photos used to sit square inside their rows, which read as sharp next to the
+   rounded cards around them. Every standalone photo now carries the same large
+   radius as the activity cards. */
+.feature-img{border-radius:var(--radius-lg);overflow:hidden;box-shadow:0 14px 34px rgba(47,74,85,.16)}
+.feature-img img{display:block;width:100%;aspect-ratio:4/3;object-fit:cover}
+.gal-thumb{border-radius:12px}
+
+/* ---------- Winter first ---------- */
+.hero-kicker{
+  display:inline-block;margin-bottom:16px;padding:6px 14px;border-radius:999px;
+  font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.4);
+  backdrop-filter:blur(6px);
+}
+.hero-ctas{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.btn-pill.btn-winter{background:var(--green-500);color:#fff}
+.btn-pill.btn-winter:hover{background:var(--green-700)}
+.btn-ghost{
+  display:inline-block;padding:14px 32px;border-radius:999px;font-weight:600;font-size:16px;
+  color:#fff;border:1.5px solid rgba(255,255,255,.7);transition:.25s;
+}
+.btn-ghost:hover{background:rgba(255,255,255,.15)}
+
+/* the strip directly under the hero: the season's money, one click away */
+.winter-spot{padding-top:56px}
+.winter-head{
+  display:flex;justify-content:space-between;align-items:flex-end;gap:28px;
+  margin-bottom:26px;flex-wrap:wrap;
+}
+.winter-head h2{margin:12px 0 8px;font-size:clamp(26px,2.6vw,38px);line-height:1.15}
+.winter-head p{margin:0;color:var(--ink-soft);max-width:60ch}
+.winter-kicker{
+  display:inline-flex;align-items:center;gap:8px;
+  font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--green-500);
+}
+.winter-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+.winter-card{
+  position:relative;display:block;overflow:hidden;border-radius:var(--radius-lg);
+  aspect-ratio:3/4;box-shadow:var(--shadow);text-decoration:none;
+}
+.winter-card img{width:100%;height:100%;object-fit:cover;transition:transform .6s cubic-bezier(.2,.7,.3,1)}
+.winter-card:hover img{transform:scale(1.07)}
+.winter-card-label{
+  position:absolute;left:0;right:0;bottom:0;display:grid;gap:4px;
+  padding:48px 22px 22px;color:#fff;
+  background:linear-gradient(to top,rgba(15,35,45,.82),rgba(15,35,45,0));
+}
+.winter-card-label strong{font-size:clamp(17px,1.5vw,22px);line-height:1.2}
+.winter-card-label em{font-style:normal;font-size:14px;opacity:.88}
+
+
+@media (max-width:900px){
+  .winter-grid{grid-template-columns:repeat(2,1fr);gap:12px}
+  .winter-card{aspect-ratio:4/5}
+}
+@media (max-width:640px){
+  .winter-card-label{padding:36px 14px 14px}
+  .winter-card-label em{font-size:12.5px}
+  .btn-ghost{padding:13px 24px}
+}
+
+/* ---------- Phone header ---------- */
+/* Language and theme move into the account dropdown on a phone; the header row
+   keeps only the menu, search and account. */
+.drop-prefs{display:none}
+.login-phone{display:none}
+@media (max-width:640px){
+  .header-actions > .head-toggle{display:none}
+  .drop-prefs{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    padding:8px 12px;margin-top:0;
+    font-size:14px;color:var(--ink-soft);
+  }
+  .drop-prefs > span{flex:1;white-space:nowrap}
+  .account-drop{min-width:240px}
+  .drop-prefs .head-toggle{color:var(--ink)}
+  .login-desktop{display:none}
+  .login-phone{display:inline-flex}
+}
+
+/* a time slot someone already holds */
+.chip.taken,.chip:disabled{opacity:.38;cursor:not-allowed;text-decoration:line-through}
+.chip.taken:hover{background:var(--surface)}
+
+/* ---------- About / FAQ / Contact ---------- */
+.info-page{max-width:980px;margin:0 auto;padding:32px 24px 72px}
+.info-hero{position:relative;border-radius:var(--radius-lg);overflow:hidden;aspect-ratio:21/9;margin-bottom:36px}
+.info-hero img{width:100%;height:100%;object-fit:cover;display:block}
+.info-hero::after{content:"";position:absolute;inset:0;background:linear-gradient(to top,rgba(15,35,45,.78),rgba(15,35,45,0) 60%)}
+.info-hero-text{position:absolute;left:32px;right:32px;bottom:28px;z-index:1;color:#fff}
+.info-hero-text h1{margin:0;font-size:clamp(26px,3.4vw,42px);line-height:1.15}
+.info-title{margin:0 0 12px;font-size:clamp(28px,3.2vw,40px)}
+.info-lead{font-size:18px;line-height:1.7;color:var(--ink);margin:0 0 18px}
+.info-body > p{color:var(--ink-soft);line-height:1.75;max-width:70ch}
+.info-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:32px 0}
+.info-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:22px}
+.info-card h3{margin:0 0 8px;font-size:17px}
+.info-card p{margin:0;color:var(--ink-soft);line-height:1.6}
+.info-card a{color:var(--green-500);font-weight:600}
+.info-cta{display:flex;gap:18px;align-items:center;flex-wrap:wrap;margin-top:28px}
+
+.faq-list{display:grid;gap:12px;margin-top:28px}
+.faq-item{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:0 22px}
+.faq-item summary{
+  cursor:pointer;list-style:none;padding:18px 28px 18px 0;font-weight:600;font-size:16px;position:relative;
+}
+.faq-item summary::-webkit-details-marker{display:none}
+.faq-item summary::after{content:"+";position:absolute;right:0;top:50%;transform:translateY(-50%);font-size:22px;color:var(--green-500)}
+.faq-item[open] summary::after{content:"−"}
+.faq-item p{margin:0 0 18px;color:var(--ink-soft);line-height:1.7}
+
+.contact-grid{display:grid;grid-template-columns:1fr 1.3fr;gap:20px;margin-top:28px;align-items:start}
+.contact-ways{grid-template-columns:1fr;margin:0}
+.contact-form{display:grid;gap:14px}
+.contact-form .field{display:grid;gap:6px}
+.contact-form textarea{resize:vertical;font:inherit}
+.contact-form .hot-btn{justify-self:start;border:0;cursor:pointer;font:inherit;font-weight:600}
+.contact-form .hot-btn:disabled{opacity:.5;cursor:not-allowed}
+
+@media (max-width:760px){
+  .info-cards,.contact-grid{grid-template-columns:1fr}
+  .info-hero{aspect-ratio:4/3}
+  .info-hero-text{left:20px;right:20px;bottom:20px}
+}
+
+/* ---------- Buttons light up on hover ---------- */
+/* One rule for every button: keep its colour and brighten it slightly, rather
+   than each one darkening in its own way. */
+.btn-pill,.btn-ghost,.hot-btn,.tour-btn,.book-btn,.link-more,.chip,.filter-toggle,
+.icon-btn,.head-toggle{transition:filter .2s,background-color .2s,transform .2s,box-shadow .2s}
+.btn-pill:hover,.btn-pill.btn-winter:hover,.hot-btn:hover,.tour-btn:hover,.book-btn:hover,
+.chip.active:hover{
+  filter:brightness(1.12);
+}
+.btn-pill.btn-winter:hover,.tour-btn:hover,.book-btn:hover{background:var(--green-500)}
+.chip.active:hover{background:var(--green-500);border-color:var(--green-500)}
+.btn-pill:not(.btn-winter):hover{background:var(--surface);filter:brightness(1.06)}
+.btn-ghost:hover,.chip:not(.active):hover,.filter-toggle:hover,.icon-btn:hover,.head-toggle:hover{filter:brightness(1.15)}
+.book-btn:disabled:hover,.chip:disabled:hover{filter:none}
+
+/* "See winter activities" and friends: an outlined pill like the others */
+.link-more{
+  display:inline-flex;align-items:center;gap:6px;margin-top:10px;
+  padding:10px 22px;border:1.5px solid var(--green-500);border-radius:999px;
+  color:var(--green-500);
+}
+.link-more:hover{color:var(--green-500);background:color-mix(in srgb,var(--green-500) 12%,transparent);filter:brightness(1.12)}
+
+/* the photo opens the same place as its button */
+a.feature-img{display:block;cursor:pointer}
+a.feature-img img{transition:transform .5s cubic-bezier(.2,.7,.3,1)}
+a.feature-img:hover img{transform:scale(1.04)}
+
+@media (max-width:760px){
+  /* the "What we do" cards: smaller so each fits well inside one screen */
+  .feature,.feature.reverse{padding:14px;gap:14px;margin-bottom:22px;border-radius:22px}
+  .feature-img{border-radius:16px}
+  .feature-img img{aspect-ratio:16/9}
+  .feature-text h3{font-size:21px;margin-bottom:8px}
+  .feature-text p{font-size:14.5px;line-height:1.6;margin-bottom:6px}
+  .feature-text .tag{font-size:11px;margin-bottom:8px}
+  .link-more{padding:8px 18px;font-size:14px}
+
+  /* footer: everything centred */
+  .footer-inner{grid-template-columns:1fr;text-align:center;gap:26px}
+  .site-footer p{margin-left:auto;margin-right:auto}
+
+  /* hero text sat straight on bright snow; a stronger shade behind it and a
+     tighter shadow make it readable without hiding the photo */
+  .hero-scrim{
+    background:linear-gradient(180deg,rgba(15,35,45,.55) 0%,rgba(15,35,45,.35) 35%,rgba(15,35,45,.7) 100%);
+  }
+  .hero p{text-shadow:0 1px 3px rgba(0,0,0,.75),0 0 18px rgba(0,0,0,.45);font-weight:500}
+  .hero h1{text-shadow:0 2px 6px rgba(0,0,0,.55),0 0 24px rgba(0,0,0,.35)}
+  .hero-kicker{background:rgba(15,35,45,.45)}
+  .btn-ghost{background:rgba(15,35,45,.35)}
+}

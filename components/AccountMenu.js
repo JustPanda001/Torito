@@ -8,6 +8,23 @@ import Link from 'next/link';
 import { currentProfile, signOut } from '@/lib/supabaseClient';
 import { useT } from '@/lib/i18n';
 import { useFavorites } from '@/lib/favorites';
+import { ThemeToggle, LanguageToggle } from './HeaderToggles';
+
+// phone only (CSS): the header has no room for these, so they live here
+function Prefs() {
+  return (
+    <div className="drop-prefs">
+      <LanguageToggle />
+      <ThemeToggle />
+    </div>
+  );
+}
+
+const PersonIcon = () => (
+  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8">
+    <circle cx="12" cy="8" r="4" /><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7" />
+  </svg>
+);
 
 export default function AccountMenu() {
   const { t } = useT();
@@ -50,13 +67,32 @@ export default function AccountMenu() {
   }, [open]);
 
   if (!profile) {
+    // a plain link on a wide screen; on a phone a small menu, since language
+    // and theme have nowhere else to go there
     return (
-      <Link className="icon-btn" href="/login" title={t('nav.login')}>
-        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8">
-          <circle cx="12" cy="8" r="4" /><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7" />
-        </svg>
-        <span className="hide-sm">{t('nav.login')}</span>
-      </Link>
+      <div className="account-menu" ref={wrap}>
+        <Link className="icon-btn login-desktop" href="/login" title={t('nav.login')}>
+          <PersonIcon />
+          <span className="hide-sm">{t('nav.login')}</span>
+        </Link>
+        <button
+          className="icon-btn login-phone"
+          type="button"
+          aria-expanded={open}
+          aria-haspopup="menu"
+          aria-label={t('nav.login')}
+          onClick={() => setOpen((v) => !v)}
+        >
+          <PersonIcon />
+        </button>
+        {open && (
+          <div className="account-drop" role="menu">
+            <Link href="/login" className="admin-link" onClick={() => setOpen(false)}>{t('nav.login')}</Link>
+            <Link href="/signup" onClick={() => setOpen(false)}>{t('auth.createAccount')}</Link>
+            <Prefs />
+          </div>
+        )}
+      </div>
     );
   }
 
@@ -107,6 +143,8 @@ export default function AccountMenu() {
 
           <Link href="/tours" onClick={() => setOpen(false)}>{t('account.myBookings')}</Link>
           <Link href="/reset" onClick={() => setOpen(false)}>{t('account.changePassword')}</Link>
+
+          <Prefs />
 
           <button type="button" className="signout" onClick={signOut}>
             {t('account.signOut')}

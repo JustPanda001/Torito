@@ -18,7 +18,7 @@ import Stars from '@/components/Stars';
 import ReviewModal from '@/components/ReviewModal';
 import { findTour, fromRow } from '@/lib/tours-data';
 import { money } from '@/lib/season';
-import { isLesson } from '@/lib/lessons';
+import { isLesson, isTimed } from '@/lib/lessons';
 import { fetchReviews, useRatings } from '@/lib/ratings';
 import { bumpTourView } from '@/lib/views';
 import { requiredItems } from '@/lib/requiredItems';
@@ -209,7 +209,7 @@ export default function TourPage({ params }) {
               className={`book-btn${full ? ' secondary' : ''}`}
               onClick={() => (profile ? setBooking(true) : setGate('book'))}
             >
-              {full ? 'Join waitlist' : lesson ? 'Book a lesson' : 'Book a spot'}
+              {full ? 'Join waitlist' : lesson ? 'Book a lesson' : isTimed(tour) ? 'Book a time' : 'Book a spot'}
             </button>
             <button type="button" className="book-btn secondary" onClick={() => openChat(tour)}>Ask a question</button>
           </aside>

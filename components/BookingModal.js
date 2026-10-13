@@ -8,7 +8,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import Calendar from './Calendar';
 import { inSeason, MONTHS, money } from '@/lib/season';
-import { isLesson, SKILL_LEVELS, LESSON_TYPES, LESSON_TIMES } from '@/lib/lessons';
+import { isLesson, isTimed, SKILL_LEVELS, LESSON_TYPES, LESSON_TIMES } from '@/lib/lessons';
+import { useAvailability } from '@/lib/availability';
 import { supabase, currentProfile } from '@/lib/supabaseClient';
 import { DEFAULT_DIAL, phoneDigits } from '@/lib/dial-codes';
 import DialSelect from './DialSelect';
@@ -51,6 +52,9 @@ export default function BookingModal({ tour, onClose }) {
   const full = seats === 0;
 
   const lesson = isLesson(tour);
+  // lessons, snowmobile and paragliding are booked as an hour on a day
+  const timed = isTimed(tour);
+  const avail = useAvailability(tour);
   const [date, setDate] = useState(null);
   const [people, setPeople] = useState(1);
   // lesson requests only: when, and what they want out of it
@@ -128,7 +132,7 @@ export default function BookingModal({ tour, onClose }) {
             : null,
           people,
           total: requestKind === 'waitlist' ? null : total,
-          lesson_time: lesson ? time : null,
+          lesson_time: timed ? time : null,
           skill_level: lesson ? level : null,
           lesson_type: lesson ? kind : null,
           // the trip's own questions; a waitlist request is only a phone
@@ -141,7 +145,15 @@ export default function BookingModal({ tour, onClose }) {
           phone: savedPhone || `${dial} ${phone.trim()}`,
         }),
       });
+      if (res.status === 409) {
+        // someone else got there first: show it as taken and let them repick
+        await avail.refresh();
+        setTime('');
+        setFailed((await res.json().catch(() => ({}))).error ?? 'That time was just booked.');
+        return;
+      }
       if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? 'Request failed');
+      avail.refresh();
 
       // an account made before sign-up asked for a phone keeps the one given
       // here, so it is asked for exactly once rather than on every booking
@@ -174,7 +186,20 @@ export default function BookingModal({ tour, onClose }) {
   }, [onClose]);
 
   const total = tour.price * people;
-  const step = (n) => setPeople((p) => Math.min(seats, Math.max(1, p + n)));
+  // places still open on the chosen departure, once other bookings count
+  const daySeats = date && !timed && tour.capacity
+    ? Math.max(0, Math.min(seats, tour.capacity - avail.bookedOn(date)))
+    : seats;
+  const step = (n) => setPeople((p) => Math.min(daySeats, Math.max(1, p + n)));
+
+  function pickDate(d) {
+    setDate(d);
+    if (time && avail.timeTaken(d, time)) setTime('');
+    if (!timed && tour.capacity) {
+      const left = Math.max(1, Math.min(seats, tour.capacity - avail.bookedOn(d)));
+      setPeople((p) => Math.min(p, left));
+    }
+  }
 
   return (
     <div className="modal-backdrop" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
@@ -182,7 +207,7 @@ export default function BookingModal({ tour, onClose }) {
 
         <div className="bm-head">
           <div>
-            <h2 id="bmTitle">{full ? 'Join the waitlist' : lesson ? 'Book a lesson' : 'Book a spot'}</h2>
+            <h2 id="bmTitle">{full ? 'Join the waitlist' : lesson ? 'Book a lesson' : timed ? 'Book a time' : 'Book a spot'}</h2>
             <p className="bm-sub">{tour.full_title || tour.title}</p>
           </div>
           <button type="button" className="bm-close" aria-label="Close" onClick={onClose}>×</button>
@@ -222,7 +247,7 @@ export default function BookingModal({ tour, onClose }) {
               <div className="bm-summary">
                 <div className="bm-line"><span>Trip</span><span>{tour.full_title || tour.title}</span></div>
                 <div className="bm-line"><span>Date</span><span>{date.getDate()} {MONTHS[date.getMonth()]} {date.getFullYear()}</span></div>
-                {lesson && <div className="bm-line"><span>Time</span><span>{time}</span></div>}
+                {timed && <div className="bm-line"><span>Time</span><span>{time}</span></div>}
                 <div className="bm-line"><span>People</span><span>{people}</span></div>
                 {lesson && <div className="bm-line"><span>Level</span><span>{level}</span></div>}
                 {lesson && <div className="bm-line"><span>Lesson</span><span>{kind}</span></div>}
@@ -238,32 +263,41 @@ export default function BookingModal({ tour, onClose }) {
           ) : (
             <>
               <section className="bm-section">
-                <h3>{lesson ? 'Which day?' : 'When do you want to go?'}</h3>
+                <h3>{timed ? 'Which day?' : 'When do you want to go?'}</h3>
                 <Calendar
                   value={date}
-                  onPick={setDate}
-                  isDisabled={(d) => !inSeason(tour, d)}
+                  onPick={pickDate}
+                  isDisabled={(d) => !inSeason(tour, d) || avail.dayFull(d, timed)}
                   className="bm-cal"
                 />
               </section>
 
-              {lesson && (
-                <>
-                  <section className="bm-section">
-                    <h3>What time?</h3>
-                    <div className="bm-choices">
-                      {LESSON_TIMES.map((slot) => (
+              {timed && (
+                <section className="bm-section">
+                  <h3>What time?</h3>
+                  <div className="bm-choices">
+                    {LESSON_TIMES.map((slot) => {
+                      const taken = avail.timeTaken(date, slot);
+                      return (
                         <button
                           key={slot}
                           type="button"
-                          className={`chip${time === slot ? ' active' : ''}`}
+                          className={`chip${time === slot ? ' active' : ''}${taken ? ' taken' : ''}`}
+                          disabled={taken}
+                          title={taken ? 'Already booked' : undefined}
                           onClick={() => setTime(slot)}
                         >
                           {slot}
                         </button>
-                      ))}
-                    </div>
-                  </section>
+                      );
+                    })}
+                  </div>
+                  {!date && <p className="bm-hint">Pick a day to see which times are free</p>}
+                </section>
+              )}
+
+              {lesson && (
+                <>
 
                   <section className="bm-section">
                     <h3>How much can you already do?</h3>
@@ -365,7 +399,9 @@ export default function BookingModal({ tour, onClose }) {
                 <p className="bm-hint">
                   {lesson
                     ? 'Everyone in the group is taught together'
-                    : `${seats} ${seats === 1 ? 'place' : 'places'} left on this departure`}
+                    : timed
+                      ? 'The whole slot is yours'
+                      : `${daySeats} ${daySeats === 1 ? 'place' : 'places'} left on this departure`}
                 </p>
               </section>
 
@@ -421,12 +457,12 @@ export default function BookingModal({ tour, onClose }) {
                 type="button"
                 className="book-btn"
                 disabled={sending || !date || !phoneOk || !questionsOk || !kitOk
-                  || (lesson && (!time || !level || !kind))}
-                onClick={() => submit(lesson ? 'lesson' : 'trip')}
+                  || (timed && !time) || (lesson && (!level || !kind))}
+                onClick={() => submit(timed ? 'lesson' : 'trip')}
               >
                 {sending ? 'Sending…'
                   : !date ? 'Choose a date first'
-                    : lesson && !time ? 'Pick a time'
+                    : timed && !time ? 'Pick a time'
                       : lesson && !level ? 'Pick your level'
                         : lesson && !kind ? 'Pick a lesson type'
                           : !kitOk ? 'Confirm the kit you must bring'

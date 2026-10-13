@@ -164,7 +164,8 @@ export default function ChatWidget() {
     if (error || !data?.length) { setMessages([greeting]); return; }
 
     data.forEach((m) => seen.current.add(m.id));
-    autoReplied.current = data.some((m) => m.sender === 'bot' && m.body === t('chat.autoReply'));
+    autoReplied.current = data.some((m) => m.sender === 'bot'
+      && (m.body === t('chat.autoReply') || m.body === t('chat.askDetails')));
     setMessages([greeting, ...data]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [t]);
@@ -224,7 +225,7 @@ export default function ChatWidget() {
    * for the visitor rather than by them, and promising a reply before they have
    * actually asked anything reads as a bot talking to itself.
    */
-  const post = useCallback(async (body, { autoReply = true } = {}) => {
+  const post = useCallback(async (body, { autoReply = true, replyKey = 'chat.autoReply' } = {}) => {
     append({ id: `local-${Date.now()}`, sender: 'user', body, created_at: new Date().toISOString() });
 
     try {
@@ -236,7 +237,7 @@ export default function ChatWidget() {
 
       if (autoReply && !autoReplied.current) {
         autoReplied.current = true;
-        const reply = t('chat.autoReply');
+        const reply = t(replyKey);
         setTimeout(async () => {
           append({ id: `auto-${Date.now()}`, sender: 'bot', body: reply, created_at: new Date().toISOString() });
           // stored too, so the thread reads the same way when it is reopened
@@ -266,7 +267,8 @@ export default function ChatWidget() {
 
     // pressing the button twice should not repeat the same line
     if (messages.some((m) => m.sender === 'user' && m.body === body)) return;
-    post(body, { autoReply: false });
+    // our side answers straight away, asking for what we need to help
+    post(body, { replyKey: 'chat.askDetails' });
   }, [open, askAbout, messages, post, t]);
 
   async function send(e) {

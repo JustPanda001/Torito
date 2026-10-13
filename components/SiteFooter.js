@@ -13,12 +13,12 @@ export default function SiteFooter() {
           <p>{t('footer.tagline')}</p>
         </div>
         <div><h4>{t('footer.explore')}</h4>
-          <Link href="/tours">Tours</Link><Link href="/tours">Hikes</Link>
-          <Link href="/tours">Ski &amp; snowboard</Link><Link href="/tours">Camping</Link>
+          <Link href="/tours?cat=ski">Winter</Link><Link href="/tours?cat=hiking">Hikes</Link>
+          <Link href="/tours?cat=camping">Camping</Link><Link href="/tours?cat=mountaineering">Mountaineering</Link>
         </div>
         <div><h4>{t('nav.info')}</h4>
-          <Link href="/">{t('nav.home')}</Link><Link href="/tours">About us</Link>
-          <Link href="/tours">FAQ</Link><Link href="/tours">Terms</Link>
+          <Link href="/">{t('nav.home')}</Link><Link href="/about">About us</Link>
+          <Link href="/faq">FAQ</Link><Link href="/contact">Contact</Link>
         </div>
         <div><h4>{t('nav.contact')}</h4>
           <a href="mailto:hello@torito.ge">hello@torito.ge</a>

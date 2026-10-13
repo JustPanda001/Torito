@@ -13,12 +13,14 @@ import SiteFooter from '@/components/SiteFooter';
 import TourCard from '@/components/TourCard';
 import DateFilter from '@/components/DateFilter';
 import FilterIcon from '@/components/FilterIcon';
-import { TOURS } from '@/lib/tours-data';
+import { TOURS, withDemos } from '@/lib/tours-data';
 import { seasonCovers } from '@/lib/season';
 import { supabase } from '@/lib/supabaseClient';
 import { useT } from '@/lib/i18n';
 import { useFavorites } from '@/lib/favorites';
-import { CATEGORIES, SUB_FILTERS, categoryOf, matchesSubFilter } from '@/lib/catalog';
+import {
+  CATEGORIES, SUB_FILTERS, byCatalogOrder, categoryOf, isOffered, matchesSubFilter,
+} from '@/lib/catalog';
 
 const CHIPS = [['all', 'cat.all'], ...CATEGORIES.map((c) => [c, `cat.${c}`])];
 
@@ -57,12 +59,14 @@ function ToursListing() {
   const query = (params.get('q') ?? '').trim();
   // ?cat=… comes from the menu and the home page activity cards
   const wanted = params.get('cat');
+  // ?type=… narrows inside the category, e.g. the winter cards on the home page
+  const wantedType = params.get('type') ?? '';
 
   const [tours, setTours] = useState(TOURS);
   const [category, setCategory] = useState(CHIPS.some(([k]) => k === wanted) ? wanted : 'all');
   const [range, setRange] = useState({ from: null, to: null });
   // the second filter belongs to the category, so switching category clears it
-  const [sub, setSub] = useState('');
+  const [sub, setSub] = useState(wantedType);
   const subFilter = SUB_FILTERS[category] ?? null;
 
   // closed on a phone, where it is a disclosure; the CSS keeps it open on a
@@ -87,8 +91,8 @@ function ToursListing() {
   // following another menu link while already on the listing has to move the
   // chip too, and that is a prop change rather than a fresh mount
   useEffect(() => {
-    if (wanted && CHIPS.some(([k]) => k === wanted)) { setCategory(wanted); setSub(''); }
-  }, [wanted]);
+    if (wanted && CHIPS.some(([k]) => k === wanted)) { setCategory(wanted); setSub(wantedType); }
+  }, [wanted, wantedType]);
 
   useEffect(() => {
     let alive = true;
@@ -102,18 +106,19 @@ function ToursListing() {
       // nothing published yet, or the database is unreachable — the
       // placeholders already on screen are a better answer than an error
       if (!alive || error || !data?.length) return;
-      setTours(data);
+      setTours(withDemos(data));
     })();
     return () => { alive = false; };
   }, []);
 
   const shown = useMemo(() => tours.filter((tour) => (
-    (category === 'all' || categoryOf(tour) === category)
+    isOffered(tour)
+    && (category === 'all' || categoryOf(tour) === category)
     && matchesSubFilter(tour, category, sub)
     && seasonCovers(tour, range.from, range.to)
     && (!savedOnly || isFavorite(tour.slug))
     && matches(tour, query)
-  )), [tours, category, sub, range, savedOnly, isFavorite, favorites, query]);
+  )).sort(byCatalogOrder), [tours, category, sub, range, savedOnly, isFavorite, favorites, query]);
 
   return (
     <div className="subpage-shell">
