@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase, friendlyError } from '@/lib/supabaseClient';
@@ -17,6 +17,13 @@ export default function LoginPage() {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState(null);
+  // read after mount, so the server and browser render the same links first
+  const [next, setNext] = useState('');
+  useEffect(() => {
+    const n = nextUrl();
+    setNext(n === '/' ? '' : n);
+  }, []);
+  const withNext = (path) => (next ? `${path}?next=${encodeURIComponent(next)}` : path);
 
   async function onSubmit(e) {
     e.preventDefault();
@@ -34,7 +41,8 @@ export default function LoginPage() {
     setBusy(false);
 
     if (error) { setNote({ error: true, text: friendlyError(error) }); return; }
-    router.push(nextUrl());
+    // replace, so Back does not return to the sign-in form
+    router.replace(nextUrl());
   }
 
   return (
@@ -62,7 +70,7 @@ export default function LoginPage() {
             <label className="check">
               <input type="checkbox" name="remember" /><span>Remember me</span>
             </label>
-            <Link className="auth-link" href="/reset">Forgot password?</Link>
+            <Link className="auth-link" href={withNext('/reset')}>Forgot password?</Link>
           </div>
 
           <button className="auth-btn" type="submit" disabled={busy}>
@@ -72,7 +80,7 @@ export default function LoginPage() {
           {note && <p className={`form-note${note.error ? ' error' : ''}`}>{note.text}</p>}
         </form>
 
-        <p className="auth-foot">New here? <Link className="auth-link" href="/signup">Create your account</Link></p>
+        <p className="auth-foot">New here? <Link className="auth-link" href={withNext('/signup')}>Create your account</Link></p>
       </div>
     </main>
   );

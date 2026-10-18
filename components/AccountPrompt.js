@@ -5,12 +5,14 @@
 
 import { useEffect } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useFavorites } from '@/lib/favorites';
 import { useT } from '@/lib/i18n';
 
 export default function AccountPrompt() {
   const { prompt, closePrompt } = useFavorites();
   const { t } = useT();
+  const pathname = usePathname();
 
   useEffect(() => {
     if (!prompt) return undefined;
@@ -24,6 +26,11 @@ export default function AccountPrompt() {
   }, [prompt, closePrompt]);
 
   if (!prompt) return null;
+
+  // come back to this page (and its filters) after signing in; only rendered
+  // once the heart is pressed, so reading the address here is safe
+  const here = `${pathname || '/'}${typeof window !== 'undefined' ? window.location.search : ''}`;
+  const next = encodeURIComponent(here);
 
   const perks = [
     ['heart', t('prompt.perkSave')],
@@ -61,12 +68,12 @@ export default function AccountPrompt() {
             ))}
           </ul>
 
-          <Link className="book-btn" href="/signup" onClick={closePrompt}>
+          <Link className="book-btn" href={`/signup?next=${next}`} onClick={closePrompt}>
             {t('prompt.create')}
           </Link>
           <p className="prompt-foot">
             {t('prompt.haveAccount')}{' '}
-            <Link className="auth-link" href="/login" onClick={closePrompt}>{t('prompt.signIn')}</Link>
+            <Link className="auth-link" href={`/login?next=${next}`} onClick={closePrompt}>{t('prompt.signIn')}</Link>
           </p>
         </div>
       </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase, friendlyError } from '@/lib/supabaseClient';
@@ -20,6 +20,12 @@ export default function SignupPage() {
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState(null);
   const [dial, setDial] = useState(DEFAULT_DIAL);
+  // read after mount, so the server and browser render the same links first
+  const [next, setNext] = useState('');
+  useEffect(() => {
+    const n = nextUrl();
+    setNext(n === '/' ? '' : n);
+  }, []);
 
   async function onSubmit(e) {
     e.preventDefault();
@@ -37,6 +43,14 @@ export default function SignupPage() {
       setNote({ error: true, text: 'Password must be at least 8 characters.' });
       return;
     }
+    if (!String(data.get('name')).trim()) {
+      setNote({ error: true, text: 'Enter your full name.' });
+      return;
+    }
+    if (!data.get('terms')) {
+      setNote({ error: true, text: 'Please agree to the terms and privacy policy to continue.' });
+      return;
+    }
     const phone = String(data.get('phone')).trim();
     if (phoneDigits(phone).length < 6) {
       setNote({ error: true, text: 'Enter a phone number we can reach you on.' });
@@ -50,6 +64,8 @@ export default function SignupPage() {
       // both land on the profile row through the handle_new_user trigger, so
       // the booking form can read them back instead of asking again
       options: {
+        // the confirmation link brings them back to where they started
+        emailRedirectTo: `${window.location.origin}${nextUrl()}`,
         data: {
           full_name: String(data.get('name')).trim(),
           phone: `${dial} ${phone}`,
@@ -61,9 +77,13 @@ export default function SignupPage() {
     if (error) { setNote({ error: true, text: friendlyError(error) }); return; }
 
     // with email confirmation on there is no session until the link is clicked
-    if (result.session) router.push(nextUrl());
+    if (result.session) router.replace(nextUrl());
     else {
-      setNote({ error: false, text: 'Account created. Check your email to confirm it, then sign in.' });
+      const trip = nextUrl().startsWith('/tours/');
+      setNote({
+        error: false,
+        text: `Account created. Check your email and confirm it. The link in that email ${trip ? 'brings you back to your trip' : 'brings you back here'}.`,
+      });
       form.reset();
     }
   }
@@ -121,7 +141,7 @@ export default function SignupPage() {
           {note && <p className={`form-note${note.error ? ' error' : ''}`}>{note.text}</p>}
         </form>
 
-        <p className="auth-foot">Already have an account? <Link className="auth-link" href="/login">Sign in</Link></p>
+        <p className="auth-foot">Already have an account? <Link className="auth-link" href={next ? `/login?next=${encodeURIComponent(next)}` : '/login'}>Sign in</Link></p>
       </div>
     </main>
   );

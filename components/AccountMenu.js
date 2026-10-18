@@ -141,7 +141,7 @@ export default function AccountMenu() {
             {favorites.size > 0 && <span className="drop-count">{favorites.size}</span>}
           </Link>
 
-          <Link href="/tours" onClick={() => setOpen(false)}>{t('account.myBookings')}</Link>
+          <Link href="/bookings" onClick={() => setOpen(false)}>{t('account.myBookings')}</Link>
           <Link href="/reset" onClick={() => setOpen(false)}>{t('account.changePassword')}</Link>
 
           <Prefs />

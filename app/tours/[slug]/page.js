@@ -5,6 +5,7 @@
 
 import { Fragment, use, useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
 import SiteHeader from '@/components/SiteHeader';
 import { openChat } from '@/components/ChatWidget';
 import SiteFooter from '@/components/SiteFooter';
@@ -56,6 +57,8 @@ export default function TourPage({ params }) {
       .then(({ data }) => { if (alive && data) setTour(fromRow(data)); });
     return () => { alive = false; };
   }, [slug]);
+  const router = useRouter();
+  const pathname = usePathname();
   const [booking, setBooking] = useState(false);
   // which of the service's options is picked; the first one to begin with
   const [optIdx, setOptIdx] = useState(0);
@@ -72,10 +75,35 @@ export default function TourPage({ params }) {
     return () => { alive = false; };
   }, []);
 
+  // arriving from an email confirmation link, the session is parsed after the
+  // first check above has already said "signed out" — so look again on sign-in
+  useEffect(() => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+      if (event !== 'SIGNED_IN') return;
+      // deferred: supabase advises against calling back into it from this callback
+      setTimeout(() => { currentProfile().then(setProfile).catch(() => {}); }, 0);
+    });
+    return () => sub.subscription.unsubscribe();
+  }, []);
+
   const { ratingFor, refresh: refreshRatings } = useRatings();
   const score = ratingFor(slug);
   const [reviews, setReviews] = useState([]);
   const [rating, setRating] = useState(false);
+
+  // coming back from sign-in with ?book=1 / ?rate=1: reopen the dialog they
+  // were in, then drop the param so a refresh does not open it again. A full
+  // tour opens the same dialog, which is the waitlist form.
+  useEffect(() => {
+    if (!profile || !tour) return;
+    const params = new URLSearchParams(window.location.search);
+    const wantBook = params.get('book') === '1';
+    const wantRate = params.get('rate') === '1';
+    if (!wantBook && !wantRate) return;
+    if (wantBook) setBooking(true);
+    else setRating(true);
+    router.replace(pathname, { scroll: false });
+  }, [profile, tour, router, pathname]);
 
   // one open, one view — this is what ranks the "Hot right now" strip
   useEffect(() => { bumpTourView(slug); }, [slug]);
@@ -249,7 +277,8 @@ export default function TourPage({ params }) {
             <button
               type="button"
               className={`book-btn${full ? ' secondary' : ''}`}
-              onClick={() => (profile ? setBooking(true) : setGate('book'))}
+              // still checking the account: wait rather than wrongly asking them to sign in
+              onClick={() => (profile ? setBooking(true) : profile === null && setGate('book'))}
             >
               {full ? 'Join waitlist' : lesson ? 'Book a lesson' : isTimed(tour) ? 'Book a time' : 'Book a spot'}
             </button>
@@ -386,7 +415,7 @@ export default function TourPage({ params }) {
             <button
               type="button"
               className="book-btn secondary rate-btn"
-              onClick={() => (profile ? setRating(true) : setGate('rate'))}
+              onClick={() => (profile ? setRating(true) : profile === null && setGate('rate'))}
             >
               Rate this trip
             </button>

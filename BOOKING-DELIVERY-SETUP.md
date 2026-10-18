@@ -167,6 +167,49 @@ function dressRow(sheet, r) {
 
 ---
 
+## 4. Customer confirmation email (10 minutes)
+
+Every booking and waitlist request emails the customer a "request received"
+message with their reference (for example `TOR-3F9A1C2B`), the details and a
+link to **My bookings**. It goes only to the email on the customer's account.
+It is sent through [Resend](https://resend.com); without it, bookings still
+work and the dialog simply does not mention an email.
+
+1. Create a Resend account and add your domain (e.g. `torito.ge`) under
+   **Domains**, then add the DNS records it shows. Until the domain is
+   verified, Resend only delivers to your own address.
+2. **API Keys -> Create API key** (sending access is enough).
+3. In Vercel -> **Settings -> Environment Variables**, add:
+
+   | Name | Value |
+   |---|---|
+   | `RESEND_API_KEY` | the key from step 2 |
+   | `BOOKING_EMAIL_FROM` | e.g. `Torito <bookings@torito.ge>` — must be on the verified domain |
+   | `BOOKING_EMAIL_REPLY_TO` | optional: where customer replies go, e.g. `hello@torito.ge` |
+
+4. **Redeploy.** A failed send shows in Runtime Logs as `Confirmation email failed`.
+
+## 5. Sign-up brings people back to their trip (2 minutes)
+
+After someone creates an account from the Book button, the confirmation link
+in Supabase's email brings them back to that trip with the booking dialog
+open. Supabase only allows return addresses you list:
+
+1. Supabase -> **Authentication -> URL Configuration**.
+2. **Site URL**: your live address, e.g. `https://torito.ge`.
+3. **Redirect URLs**: add `https://torito.ge/**` (and your `*.vercel.app`
+   address, and `http://localhost:3000/**` for local testing).
+
+Without this, the link still confirms the account but lands on the Site URL.
+
+## 6. My bookings (1 minute, once)
+
+Run `BOOKINGS-ACCOUNT.sql` in the Supabase SQL editor. It links requests made
+before this change to their accounts by email, so they show on My bookings
+too. New requests are linked automatically.
+
+---
+
 ## Locally
 
 Put the same values in `.env.local` (already gitignored) if you want to test on

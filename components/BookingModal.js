@@ -6,6 +6,7 @@
 // inSeason() the listing filter does, so the two can never disagree.
 
 import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import Calendar from './Calendar';
 import { inSeason, MONTHS, money } from '@/lib/season';
 import { isLesson, isTimed, timeQuestion, SKILL_LEVELS, LESSON_TYPES } from '@/lib/lessons';
@@ -48,6 +49,22 @@ function ContactFields({ profile, phone, setPhone, dial, setDial }) {
 }
 
 // option: the version picked on the trip page, if the service has several
+// What happens next, after the request is in. Only says an email went out when
+// the route says it did — email is optional, and promising one that never
+// arrives is worse than not mentioning it.
+function Receipt({ receipt, email }) {
+  return (
+    <>
+      <p className="bm-hint">
+        {receipt?.emailed && email
+          ? `We have emailed a copy to ${email}${receipt.ref ? ` (reference ${receipt.ref})` : ''}. We will check the date with the guide and email you again to confirm.`
+          : 'We will check the date with the guide and email you to confirm.'}
+      </p>
+      <Link className="book-btn secondary" href="/bookings">See my bookings</Link>
+    </>
+  );
+}
+
 export default function BookingModal({ tour, option = null, onClose }) {
   const price = option ? option.price : tour.price;
   const seats = tour.spots_left ?? tour.capacity;
@@ -126,9 +143,15 @@ export default function BookingModal({ tour, option = null, onClose }) {
     setSending(true);
     setFailed(null);
     try {
+      // the route ties the request to this account and emails its address
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        setFailed('You have been signed out. Please sign in again to book.');
+        return;
+      }
       const res = await fetch('/api/bookings', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
         body: JSON.stringify({
           tour_slug: tour.slug,
           tour_title: `${tour.full_title || tour.title}${option ? ` — ${option.name}` : ''}`,
@@ -160,7 +183,12 @@ export default function BookingModal({ tour, option = null, onClose }) {
         setFailed((await res.json().catch(() => ({}))).error ?? 'That time was just booked.');
         return;
       }
+      if (res.status === 401) {
+        setFailed((await res.json().catch(() => ({}))).error ?? 'Please sign in again to book.');
+        return;
+      }
       if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? 'Request failed');
+      setReceipt(await res.json().catch(() => ({})));
       avail.refresh();
 
       // an account made before sign-up asked for a phone keeps the one given
@@ -182,6 +210,8 @@ export default function BookingModal({ tour, option = null, onClose }) {
   }
   const [done, setDone] = useState(false);
   const [waitlisted, setWaitlisted] = useState(false);
+  // what the route sent back: the reference, and whether the email went out
+  const [receipt, setReceipt] = useState(null);
 
   useEffect(() => {
     const esc = (e) => { if (e.key === 'Escape') onClose(); };
@@ -224,7 +254,10 @@ export default function BookingModal({ tour, option = null, onClose }) {
         <div className="bm-body">
           {full ? (
             waitlisted ? (
-              <p className="bm-note ok">You are on the waitlist. We will be in touch.</p>
+              <>
+                <p className="bm-note ok">You are on the waitlist. We will be in touch.</p>
+                <Receipt receipt={receipt} email={profile?.email} />
+              </>
             ) : (
               <>
                 <p className="bm-note">
@@ -251,8 +284,9 @@ export default function BookingModal({ tour, option = null, onClose }) {
             )
           ) : done ? (
             <>
-              <p className="bm-note ok">Request sent.</p>
+              <p className="bm-note ok">Your booking request has gone through.</p>
               <div className="bm-summary">
+                {receipt?.ref && <div className="bm-line"><span>Reference</span><span>{receipt.ref}</span></div>}
                 <div className="bm-line"><span>Trip</span><span>{tour.full_title || tour.title}</span></div>
                 <div className="bm-line"><span>Date</span><span>{date.getDate()} {MONTHS[date.getMonth()]} {date.getFullYear()}</span></div>
                 {timeQ && <div className="bm-line"><span>Time</span><span>{time}</span></div>}
@@ -264,9 +298,7 @@ export default function BookingModal({ tour, option = null, onClose }) {
                 ))}
                 <div className="bm-line bm-grand"><span>Total</span><span>{money(total)}</span></div>
               </div>
-              <p className="bm-hint">
-                We have your request and will confirm by email shortly.
-              </p>
+              <Receipt receipt={receipt} email={profile?.email} />
             </>
           ) : (
             <>

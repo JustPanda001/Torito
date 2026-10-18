@@ -14,14 +14,28 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase, friendlyError } from '@/lib/supabaseClient';
 
+/** Where they were headed before they hit "forgot password", if anywhere. */
+function nextUrl() {
+  const raw = new URLSearchParams(window.location.search).get('next');
+  // only same-site paths, so the parameter cannot be used to bounce someone
+  // off to another domain
+  return raw && raw.startsWith('/') && !raw.startsWith('//') ? raw : '/';
+}
+
 export default function ResetPage() {
   const router = useRouter();
+  // read after mount, so the server and browser render the same links first
+  const [next, setNext] = useState('');
   const [mode, setMode] = useState('checking');   // checking | request | update | done
   const [intro, setIntro] = useState('');
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState(null);
 
+  const loginHref = next ? `/login?next=${encodeURIComponent(next)}` : '/login';
+
   useEffect(() => {
+    const n = nextUrl();
+    setNext(n === '/' ? '' : n);
     // the recovery token arrives in the URL fragment; supabase consumes it
     // asynchronously, so listen for the event rather than reading the hash once
     const recovery = typeof window !== 'undefined' && window.location.hash.includes('type=recovery');
@@ -56,7 +70,8 @@ export default function ResetPage() {
 
     setBusy(true);
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset`,
+      // keep `next` through the emailed link too
+      redirectTo: `${window.location.origin}/reset${next ? `?next=${encodeURIComponent(next)}` : ''}`,
     });
     setBusy(false);
 
@@ -88,7 +103,7 @@ export default function ResetPage() {
 
     setMode('done');
     setIntro('Your password has been changed. Taking you to sign in…');
-    setTimeout(() => router.push('/login'), 2500);
+    setTimeout(() => router.push(loginHref), 2500);
   }
 
   return (
@@ -133,7 +148,7 @@ export default function ResetPage() {
           </form>
         )}
 
-        <p className="auth-foot"><Link className="auth-link" href="/login">Back to sign in</Link></p>
+        <p className="auth-foot"><Link className="auth-link" href={loginHref}>Back to sign in</Link></p>
       </div>
     </main>
   );

@@ -18,8 +18,10 @@ import { useT } from '@/lib/i18n';
 export default function SignInGate({ title, reason = 'book', onClose }) {
   const { t } = useT();
   const pathname = usePathname();
-  const next = encodeURIComponent(pathname || '/');
   const rating = reason === 'rate';
+  // the flag tells the trip page which dialog to reopen once they are back
+  const flag = rating ? 'rate' : reason === 'book' ? 'book' : '';
+  const next = encodeURIComponent(`${pathname || '/'}${flag ? `?${flag}=1` : ''}`);
 
   useEffect(() => {
     const esc = (e) => { if (e.key === 'Escape') onClose(); };

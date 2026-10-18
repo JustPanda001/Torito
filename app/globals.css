@@ -2330,3 +2330,30 @@ a.feature-img:hover img{transform:scale(1.04)}
 .account-drop .drop-prefs .flag{box-shadow:none}
 /* never wider than the screen */
 .account-drop{max-width:calc(100vw - 24px)}
+
+/* ---- My bookings (/bookings) ---- */
+.mybk-note{color:var(--ink-soft);line-height:1.7;margin:0 0 20px}
+.mybk-heading{margin:28px 0 12px;font-size:20px;color:var(--ink)}
+.mybk-list{display:grid;gap:14px}
+.mybk-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px 20px}
+.mybk-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.mybk-title{margin:0;font-size:18px;line-height:1.35;color:var(--ink)}
+.mybk-title a{color:inherit}
+.mybk-title a:hover{color:var(--green-700);text-decoration:underline}
+.mybk-ref{margin:4px 0 12px;font-size:13px;letter-spacing:.04em;color:var(--ink-soft)}
+.mybk-status{flex:none;font-size:13px;font-weight:600;padding:4px 10px;border-radius:999px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);white-space:nowrap}
+.mybk-status.is-confirmed{background:var(--green-50);border-color:var(--green-300)}
+.mybk-status.is-declined{color:var(--ink-soft)}
+.mybk-meta{display:flex;flex-wrap:wrap;gap:8px 28px;margin:0}
+.mybk-meta div{min-width:0}
+.mybk-meta dt{font-size:12px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em}
+.mybk-meta dd{margin:2px 0 0;font-weight:600;color:var(--ink)}
+.mybk-requested{margin:12px 0 0;font-size:13px;color:var(--ink-soft)}
+.mybk-empty{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:24px;color:var(--ink)}
+.mybk-empty p{margin:0 0 16px;line-height:1.6}
+.mybk-actions{display:flex;flex-wrap:wrap;align-items:center;gap:16px}
+@media (max-width:640px){
+  .mybk-card{padding:16px}
+  .mybk-top{flex-direction:column;gap:8px}
+  .mybk-meta{gap:8px 20px}
+}
