@@ -14,6 +14,8 @@ import PhotoManager from '@/components/PhotoManager';
 import PairListEditor from '@/components/PairListEditor';
 import InclusionEditor from '@/components/InclusionEditor';
 import BookingQuestionsEditor from '@/components/BookingQuestionsEditor';
+import { isTimed, isTimeQuestion, defaultTimeQuestion } from '@/lib/lessons';
+import { NO_TIMES } from '@/lib/bookingQuestions';
 import { supabase, currentProfile, friendlyError } from '@/lib/supabaseClient';
 import { slugify } from '@/lib/slug';
 import { LESSON } from '@/lib/lessons';
@@ -117,6 +119,20 @@ export default function AdminPage() {
   const [excluded, setExcluded] = useState([]);
   // what this trip's booking window asks, beyond a date and a headcount
   const [bookingFields, setBookingFields] = useState([]);
+  // set once a timed service's time question is removed on purpose, so the
+  // default times are not put back when the trip is saved or reopened
+  const [noTimes, setNoTimes] = useState(false);
+  function editQuestions(next) {
+    if (bookingFields.some(isTimeQuestion) && !next.some(isTimeQuestion)) setNoTimes(true);
+    if (next.some(isTimeQuestion)) setNoTimes(false);
+    setBookingFields(next);
+  }
+  // a timed service shows its time picker here as an ordinary question, so it
+  // can be edited or removed like any other
+  function withTimeQuestion(list, cat, sub, optedOut) {
+    if (optedOut || !isTimed({ category: cat, subtype: sub }) || list.some(isTimeQuestion)) return list;
+    return [defaultTimeQuestion(), ...list];
+  }
   // kit the visitor brings themselves, ticked off before they can book
   const [requiredItems, setRequiredItems] = useState([]);
   // whether the plan is counted in days or in places visited in one day
@@ -170,7 +186,12 @@ export default function AdminPage() {
     setItinerary(asPairs(tour.itinerary));
     setIncluded(asPairs(tour.included));
     setExcluded(asPairs(tour.excluded));
-    setBookingFields(Array.isArray(tour.booking_fields) ? tour.booking_fields : []);
+    {
+      const raw = Array.isArray(tour.booking_fields) ? tour.booking_fields : [];
+      const optedOut = raw.some((q) => q?.type === NO_TIMES);
+      setNoTimes(optedOut);
+      setBookingFields(withTimeQuestion(raw.filter((q) => q?.type !== NO_TIMES), tour.category, tour.subtype, optedOut));
+    }
     setRequiredItems(asPairs(tour.required_items));
     setItinMode(itineraryMode({ ...tour, itinerary: asPairs(tour.itinerary) }));
     setSubtype(tour.subtype ?? '');
@@ -226,6 +247,7 @@ export default function AdminPage() {
     setIncluded([]);
     setExcluded([]);
     setBookingFields([]);
+    setNoTimes(false);
     setRequiredItems([]);
     setItinMode('days');
     form.current?.reset();
@@ -278,6 +300,9 @@ export default function AdminPage() {
         hint: (q.hint ?? '').trim(),
       }))
       .filter((q) => q.label && (q.type !== 'choice' || q.options.length > 0));
+    if (noTimes && isTimed(row) && !row.booking_fields.some(isTimeQuestion)) {
+      row.booking_fields.push({ label: 'no times', type: NO_TIMES });
+    }
 
     row.gallery = photos;
     // a starred photo wins; otherwise fall back to the first one
@@ -349,7 +374,10 @@ export default function AdminPage() {
                       defaultValue=""
                       onChange={
                         name === 'category' ? (e) => { setCategory(e.target.value); setSubtype(''); }
-                          : name === 'subtype' ? (e) => setSubtype(e.target.value)
+                          : name === 'subtype' ? (e) => {
+                            setSubtype(e.target.value);
+                            setBookingFields((list) => withTimeQuestion(list, category, e.target.value, noTimes));
+                          }
                             : undefined
                       }
                     >
@@ -462,7 +490,7 @@ export default function AdminPage() {
             </section>
 
             <section className="admin-section">
-              <BookingQuestionsEditor rows={bookingFields} onChange={setBookingFields} />
+              <BookingQuestionsEditor rows={bookingFields} onChange={editQuestions} />
             </section>
 
             <label className="check">

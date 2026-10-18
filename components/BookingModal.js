@@ -8,7 +8,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Calendar from './Calendar';
 import { inSeason, MONTHS, money } from '@/lib/season';
-import { isLesson, isTimed, SKILL_LEVELS, LESSON_TYPES, LESSON_TIMES } from '@/lib/lessons';
+import { isLesson, isTimed, timeQuestion, SKILL_LEVELS, LESSON_TYPES } from '@/lib/lessons';
 import { useAvailability } from '@/lib/availability';
 import { supabase, currentProfile } from '@/lib/supabaseClient';
 import { DEFAULT_DIAL, phoneDigits } from '@/lib/dial-codes';
@@ -70,7 +70,13 @@ export default function BookingModal({ tour, onClose }) {
   const [failed, setFailed] = useState(null);
 
   // the trip's own questions, written in the admin panel
-  const questions = useMemo(() => bookingQuestions(tour), [tour]);
+  const allQuestions = useMemo(() => bookingQuestions(tour), [tour]);
+  // the time question is drawn as the time picker, not with the others
+  const timeQ = useMemo(() => timeQuestion(tour, allQuestions), [tour, allQuestions]);
+  const questions = useMemo(
+    () => allQuestions.filter((q) => !timeQ || q.label !== timeQ.label),
+    [allQuestions, timeQ],
+  );
   const [answers, setAnswers] = useState(() => Object.fromEntries(
     bookingQuestions(tour).map((q) => [q.label, initialAnswer(q)]),
   ));
@@ -132,7 +138,7 @@ export default function BookingModal({ tour, onClose }) {
             : null,
           people,
           total: requestKind === 'waitlist' ? null : total,
-          lesson_time: timed ? time : null,
+          lesson_time: timeQ ? time : null,
           skill_level: lesson ? level : null,
           lesson_type: lesson ? kind : null,
           // the trip's own questions; a waitlist request is only a phone
@@ -247,7 +253,7 @@ export default function BookingModal({ tour, onClose }) {
               <div className="bm-summary">
                 <div className="bm-line"><span>Trip</span><span>{tour.full_title || tour.title}</span></div>
                 <div className="bm-line"><span>Date</span><span>{date.getDate()} {MONTHS[date.getMonth()]} {date.getFullYear()}</span></div>
-                {timed && <div className="bm-line"><span>Time</span><span>{time}</span></div>}
+                {timeQ && <div className="bm-line"><span>Time</span><span>{time}</span></div>}
                 <div className="bm-line"><span>People</span><span>{people}</span></div>
                 {lesson && <div className="bm-line"><span>Level</span><span>{level}</span></div>}
                 {lesson && <div className="bm-line"><span>Lesson</span><span>{kind}</span></div>}
@@ -272,11 +278,11 @@ export default function BookingModal({ tour, onClose }) {
                 />
               </section>
 
-              {timed && (
+              {timeQ && (
                 <section className="bm-section">
-                  <h3>What time?</h3>
+                  <h3>{timeQ.label}{timeQ.required && <span className="bm-req"> *</span>}</h3>
                   <div className="bm-choices">
-                    {LESSON_TIMES.map((slot) => {
+                    {timeQ.options.map((slot) => {
                       const taken = avail.timeTaken(date, slot);
                       return (
                         <button
@@ -293,6 +299,7 @@ export default function BookingModal({ tour, onClose }) {
                     })}
                   </div>
                   {!date && <p className="bm-hint">Pick a day to see which times are free</p>}
+                  {timeQ.hint && <p className="bm-hint">{timeQ.hint}</p>}
                 </section>
               )}
 
@@ -457,12 +464,12 @@ export default function BookingModal({ tour, onClose }) {
                 type="button"
                 className="book-btn"
                 disabled={sending || !date || !phoneOk || !questionsOk || !kitOk
-                  || (timed && !time) || (lesson && (!level || !kind))}
+                  || (timeQ?.required && !time) || (lesson && (!level || !kind))}
                 onClick={() => submit(timed ? 'lesson' : 'trip')}
               >
                 {sending ? 'Sending…'
                   : !date ? 'Choose a date first'
-                    : timed && !time ? 'Pick a time'
+                    : timeQ?.required && !time ? 'Pick a time'
                       : lesson && !level ? 'Pick your level'
                         : lesson && !kind ? 'Pick a lesson type'
                           : !kitOk ? 'Confirm the kit you must bring'
