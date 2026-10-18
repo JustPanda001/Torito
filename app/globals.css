@@ -2300,3 +2300,33 @@ a.feature-img:hover img{transform:scale(1.04)}
 .search-suggest-all:hover{filter:brightness(1.15)}
 /* on a phone the box spans the screen, so the list does too */
 .mobile-search .search-suggest{min-width:0}
+
+/* ---------- Phone header, one colour ---------- */
+/* The search panel hangs below the header's own box, so it was not sitting on
+   the header's background at all: two see-through layers of different depth
+   over the photo, which never matched. Both are one solid colour now. */
+@media (max-width:820px){
+  /* over the photo: black, panel included */
+  .site-header:not(.solid),
+  .site-header:not(.solid) .mobile-search{background:#0f171a;backdrop-filter:none}
+  /* scrolled, and on every other page: the theme's own surface, panel included */
+  .site-header.solid,
+  .site-header.solid .mobile-search{background:var(--surface);backdrop-filter:none}
+  .site-header .mobile-search{border-top:0}
+}
+
+/* ---------- Language & theme inside the account menu ---------- */
+/* The menu's rule for its own buttons (full width, left-aligned) was also
+   catching these two, stretching them past the menu's right edge; and the
+   header's see-through tint gave the flag a pale box. Back to two round
+   buttons sitting side by side. */
+.account-drop .drop-prefs{justify-content:flex-start;gap:10px}
+.account-drop .drop-prefs .head-toggle,
+.site-header:not(.solid) .account-drop .drop-prefs .head-toggle{
+  display:flex;width:40px;height:40px;padding:0;flex:0 0 auto;border-radius:999px;
+  background:var(--surface-2);border:1px solid var(--line);color:var(--ink);
+}
+.account-drop .drop-prefs .head-toggle:hover{background:var(--green-50)}
+.account-drop .drop-prefs .flag{box-shadow:none}
+/* never wider than the screen */
+.account-drop{max-width:calc(100vw - 24px)}
