@@ -2255,3 +2255,18 @@ a.feature-img:hover img{transform:scale(1.04)}
   .detail-page.admin-page{max-width:none}
   .admin-page .admin-main{width:100%;max-width:1300px;margin:0 auto}
 }
+
+/* ---------- Phone header ---------- */
+/* Over the hero the bar used to be see-through, so the search panel that
+   drops below it looked like a separate strip floating on the photo. On a
+   phone the bar is now always a dark band, the search panel is the same
+   colour with no line between them, and the two read as one header. */
+@media (max-width:820px){
+  .site-header:not(.solid){
+    background:rgba(14,22,26,.94);backdrop-filter:blur(12px);
+    border-bottom:1px solid rgba(255,255,255,.08);
+  }
+  .site-header:not(.solid) .mobile-search{background:transparent;border-top:0;padding-top:4px}
+  .site-header:not(.solid) .icon-btn.round,
+  .site-header:not(.solid) .search-toggle{background:rgba(255,255,255,.12)}
+}
