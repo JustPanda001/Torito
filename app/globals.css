@@ -2178,3 +2178,16 @@ a.feature-img:hover img{transform:scale(1.04)}
 .inc-choice-line{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .inc-choice-line .check{flex:1;min-width:0}
 .inc-edit{margin:8px 0 4px 30px}
+
+/* admin: "Find a place" above the latitude and longitude */
+.place-search{position:relative;margin-bottom:16px;max-width:620px}
+.place-results{
+  position:absolute;z-index:20;left:0;right:0;top:calc(100% - 22px);margin:0;padding:6px;list-style:none;
+  background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);
+}
+.place-results button{
+  display:grid;gap:2px;width:100%;text-align:left;padding:10px 12px;border:0;border-radius:10px;
+  background:none;cursor:pointer;font:inherit;color:var(--ink);
+}
+.place-results button:hover{background:var(--green-50)}
+.place-results span{font-size:13px;color:var(--ink-soft)}

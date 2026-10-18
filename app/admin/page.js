@@ -15,6 +15,7 @@ import PairListEditor from '@/components/PairListEditor';
 import InclusionEditor from '@/components/InclusionEditor';
 import BookingQuestionsEditor from '@/components/BookingQuestionsEditor';
 import OptionsEditor from '@/components/OptionsEditor';
+import PlaceSearch from '@/components/PlaceSearch';
 import { isTimed, isTimeQuestion, defaultTimeQuestion } from '@/lib/lessons';
 import { NO_TIMES } from '@/lib/bookingQuestions';
 import { supabase, currentProfile, friendlyError } from '@/lib/supabaseClient';
@@ -392,6 +393,18 @@ export default function AdminPage() {
                     <h3>{sectionTitle}</h3>
                     <span className="field-hint">{sectionHint}</span>
                   </div>
+                  {sectionTitle === 'On the map' && (
+                    <PlaceSearch
+                      onPick={({ lat, lng, name }) => {
+                        const el = form.current?.elements;
+                        if (!el) return;
+                        el.lat.value = lat;
+                        el.lng.value = lng;
+                        // a blank region takes the place's name too
+                        if (el.region && !el.region.value.trim()) el.region.value = name;
+                      }}
+                    />
+                  )}
                   <div className="admin-grid">
                     {fields.map(([name, label, opts = {}]) => (
                 <label className="field" key={name}>
