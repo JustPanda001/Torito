@@ -63,10 +63,10 @@ const LESSON_FIELDS = new Set([
 // [section title, note, field names] — the form is built from this, so the
 // order here is the order of the page it produces
 const SECTIONS = [
-  ['The basics', 'Title and category decide everything else', ['title', 'category', 'subtype', 'slug', 'subtitle', 'region', 'price']],
+  ['The basics', 'Title and category decide everything else', ['title', 'category', 'subtype', 'slug', 'subtitle', 'price']],
   ['The facts panel', 'The list beside the photos on the trip page', ['distance', 'duration', 'difficulty', 'capacity', 'slot_limit', 'spots_left', 'elevation_gain', 'season', 'season_from', 'season_to', 'stay', 'languages', 'badge']],
   ['Getting there', 'The grid under "About this trip"', ['departure_point', 'departure_time', 'return_info', 'transport', 'group_size', 'walking_per_day']],
-  ['On the map', 'Drives the little map and the weather tile', ['lat', 'lng', 'strava']],
+  ['On the map', 'Drives the little map and the weather tile', ['region', 'lat', 'lng', 'strava']],
 ];
 
 const FIELDS = [
