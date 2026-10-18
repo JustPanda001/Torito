@@ -47,10 +47,23 @@ export default function AdminNav({ rootRef }) {
     return () => { obs.disconnect(); cancelAnimationFrame(frame); };
   }, [rootRef, scan]);
 
-  // the active section: the last one whose top has passed under the bars
+  // How far down the page a section should land. On a wide screen the bar is
+  // a column at the side, so only the site header covers the page; on a phone
+  // it is a row under the header and covers the page too. Measured where the
+  // bar sits once stuck, not where it is now — before the first scroll it is
+  // still further down.
+  const landing = () => {
+    const el = bar.current;
+    if (!el) return 0;
+    const style = getComputedStyle(el);
+    const stuckTop = parseFloat(style.top) || 0;
+    return style.flexDirection === 'column' ? stuckTop : stuckTop + el.offsetHeight + 12;
+  };
+
+  // the active section: the last one whose top has passed the landing line
   useEffect(() => {
     const onScroll = () => {
-      const line = (bar.current?.getBoundingClientRect().bottom ?? 0) + 24;
+      const line = landing() + 24;
       let current = items[0]?.id ?? null;
       for (const item of items) {
         const el = document.getElementById(item.id);
@@ -71,10 +84,7 @@ export default function AdminNav({ rootRef }) {
   function go(id) {
     const el = document.getElementById(id);
     if (!el) return;
-    // where the bar sits once stuck under the header, not where it is now —
-    // before the first scroll it is still further down the page
-    const stuckTop = parseFloat(getComputedStyle(bar.current).top) || 0;
-    const offset = stuckTop + (bar.current?.offsetHeight ?? 0) + 12;
+    const offset = landing();
     setActive(id);
     window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - offset, behavior: 'smooth' });
   }

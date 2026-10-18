@@ -363,7 +363,10 @@ export default function AdminPage() {
           <p className="listing-count">{tours.length} tours</p>
         </div>
 
+        {/* the section list down the left, the form beside it */}
+        <div className="admin-layout">
         <AdminNav rootRef={pageRef} />
+        <div className="admin-main">
 
         <section className="detail-block">
           <h2>{editingId ? 'Editing tour' : 'Add a tour'}</h2>
@@ -590,6 +593,8 @@ export default function AdminPage() {
             </div>
           ))}
         </section>
+        </div>
+        </div>
       </main>
     </div>
   );
