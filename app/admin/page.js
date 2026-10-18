@@ -298,6 +298,7 @@ export default function AdminPage() {
         options: (q.options ?? []).map((o) => String(o).trim()).filter(Boolean),
         required: Boolean(q.required),
         hint: (q.hint ?? '').trim(),
+        hintStrong: Boolean(q.hintStrong),
       }))
       .filter((q) => q.label && (q.type !== 'choice' || q.options.length > 0));
     if (noTimes && isTimed(row) && !row.booking_fields.some(isTimeQuestion)) {

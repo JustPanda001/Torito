@@ -92,6 +92,16 @@ export default function BookingQuestionsEditor({ rows, onChange }) {
               <span>Must be answered</span>
             </label>
 
+            {/* for notes a customer must not miss, like a weather warning */}
+            <label className="bq-check">
+              <input
+                type="checkbox"
+                checked={Boolean(row.hintStrong)}
+                onChange={(e) => set(i, 'hintStrong', e.target.checked)}
+              />
+              <span>Bold note</span>
+            </label>
+
             <div className="pair-btns">
               {i > 0 && <button type="button" className="chip small" onClick={() => move(i, -1)}>↑</button>}
               {i < rows.length - 1 && <button type="button" className="chip small" onClick={() => move(i, 1)}>↓</button>}

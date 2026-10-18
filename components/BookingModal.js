@@ -299,7 +299,7 @@ export default function BookingModal({ tour, onClose }) {
                       );
                     })}
                   </div>
-                  {timeQ.hint && <p className="bm-hint">{timeQ.hint}</p>}
+                  {timeQ.hint && <p className={`bm-hint${timeQ.hintStrong ? ' strong' : ''}`}>{timeQ.hint}</p>}
                 </section>
               )}
 
@@ -392,7 +392,7 @@ export default function BookingModal({ tour, onClose }) {
                     />
                   )}
 
-                  {q.hint && <p className="bm-hint">{q.hint}</p>}
+                  {q.hint && <p className={`bm-hint${q.hintStrong ? ' strong' : ''}`}>{q.hint}</p>}
                 </section>
               ))}
 
