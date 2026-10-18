@@ -400,8 +400,12 @@ export default function AdminPage() {
                         if (!el) return;
                         el.lat.value = lat;
                         el.lng.value = lng;
-                        // a blank region takes the place's name too
-                        if (el.region && !el.region.value.trim()) el.region.value = name;
+                        // a blank region takes the place's name too, and so does one
+                        // an earlier pick filled in — a typed region is left alone
+                        if (el.region && (!el.region.value.trim() || el.region.value === el.region.dataset.picked)) {
+                          el.region.value = name;
+                          el.region.dataset.picked = name;
+                        }
                       }}
                     />
                   )}

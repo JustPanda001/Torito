@@ -2191,3 +2191,20 @@ a.feature-img:hover img{transform:scale(1.04)}
 }
 .place-results button:hover{background:var(--green-50)}
 .place-results span{font-size:13px;color:var(--ink-soft)}
+
+/* the map and weather tiles stacked, map first: side by side they left a gap
+   under the gallery, which is shorter than the booking panel beside it */
+.place-row{grid-template-columns:1fr;gap:10px}
+.place-row .map-tile{order:-1}
+
+/* option cards, tighter */
+.opt-cards{gap:7px;margin:2px 0 12px}
+.opt-title{font-size:12px}
+.opt-card{padding:10px 14px;border-radius:14px;gap:10px}
+.opt-dot{width:16px;height:16px;margin-top:1px}
+.opt-card.on .opt-dot::after{width:7px;height:7px}
+.opt-body{gap:1px}
+.opt-top strong{font-size:14.5px}
+.opt-price{font-size:14.5px}
+.opt-dur,.opt-note{font-size:12.5px;line-height:1.4}
+.opt-more{font-size:13px;padding:2px}
