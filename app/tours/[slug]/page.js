@@ -186,7 +186,7 @@ export default function TourPage({ params }) {
                 <circle cx="17.5" cy="9" r="2.6" /><path d="M17.5 14c2.6 0 4 1.8 4 4" />
               </svg>
               <strong>{tour.capacity}</strong>
-              <span>people max <em>· {full ? 'no spots left' : `${tour.spots_left} spots left`}</em></span>
+              <span>people max {full ? <em>· no spots left</em> : tour.spots_left != null && <em>· {tour.spots_left} spots left</em>}</span>
             </div>
 
             <ul className="fact-list">

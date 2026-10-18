@@ -84,7 +84,13 @@ const FIELDS = [
   // team-only: never shown on the trip page. How many separate bookings one
   // time slot takes — one per free instructor or pilot.
   ['slot_limit', 'Bookings per time slot', { options: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '15', '20', 'unlimited'], hint: 'Team only, not shown to customers. For lessons, snowmobile and paragliding' }],
-  ['spots_left', 'Spots left', { type: 'number', min: 0, placeholder: '5' }],
+  // Empty = open, no number shown. 0 = fully booked, only the waitlist is
+  // offered. A number = shown as "N spots left" and caps one booking's size.
+  ['spots_left', 'Spots left', {
+    options: ['', '0', ...Array.from({ length: 20 }, (_, i) => String(i + 1))],
+    labels: { '': 'Yes — open (no number shown)', 0: 'No — fully booked (waitlist only)' },
+    hint: 'Pick a number only if you want customers to see "N spots left"',
+  }],
   ['elevation_gain', 'Elevation gain', { placeholder: '2,400 m' }],
   ['season', 'Season', { placeholder: 'June – October' }],
   ['season_from', 'Season starts', { placeholder: '06-01', hint: 'MM-DD — used by the date filter' }],
@@ -176,7 +182,7 @@ export default function AdminPage() {
 
       if (input.type === 'checkbox') { input.checked = Boolean(value); continue; }
 
-      const v = value ?? '';
+      const v = value == null ? '' : String(value);
       // A dropdown can only take a value it already lists. A tour saved with an
       // option that has since been removed would otherwise blank the field on
       // edit and quietly wipe it on save, so add it back for this row.
@@ -348,7 +354,7 @@ export default function AdminPage() {
                       }
                     >
                       {opts.options.map((o) => (
-                        <option value={o} key={o || 'none'}>{OPTION_LABELS[o] ?? (o === '' ? 'None' : o)}</option>
+                        <option value={o} key={o || 'none'}>{opts.labels?.[o] ?? OPTION_LABELS[o] ?? (o === '' ? 'None' : o)}</option>
                       ))}
                     </select>
                   ) : (
