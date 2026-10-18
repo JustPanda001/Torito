@@ -2208,3 +2208,22 @@ a.feature-img:hover img{transform:scale(1.04)}
 .opt-price{font-size:14.5px}
 .opt-dur,.opt-note{font-size:12.5px;line-height:1.4}
 .opt-more{font-size:13px;padding:2px}
+
+/* ---------- Admin section navigator ---------- */
+/* sticky under the site header; one button per section, the current one lit */
+.admin-nav{
+  position:sticky;top:var(--header-h);z-index:15;
+  display:flex;gap:8px;overflow-x:auto;scrollbar-width:thin;
+  margin:0 0 18px;padding:10px 4px;
+  background:var(--page-bg);border-bottom:1px solid var(--line);
+}
+.admin-nav-btn{
+  flex-shrink:0;white-space:nowrap;cursor:pointer;font:inherit;font-size:13.5px;
+  padding:7px 14px;border-radius:999px;
+  border:1.5px solid var(--line);background:var(--surface);color:var(--ink-soft);
+  transition:background-color .2s,color .2s,border-color .2s,filter .2s;
+}
+.admin-nav-btn.top{font-weight:700;color:var(--ink)}
+.admin-nav-btn:hover{filter:brightness(1.15)}
+/* the text colour as a fill: near-white in the dark theme, dark in the light */
+.admin-nav-btn.on{background:var(--ink);color:var(--surface);border-color:var(--ink);font-weight:700}

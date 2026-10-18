@@ -16,6 +16,7 @@ import InclusionEditor from '@/components/InclusionEditor';
 import BookingQuestionsEditor from '@/components/BookingQuestionsEditor';
 import OptionsEditor from '@/components/OptionsEditor';
 import PlaceSearch from '@/components/PlaceSearch';
+import AdminNav from '@/components/AdminNav';
 import { isTimed, isTimeQuestion, defaultTimeQuestion } from '@/lib/lessons';
 import { NO_TIMES } from '@/lib/bookingQuestions';
 import { supabase, currentProfile, friendlyError } from '@/lib/supabaseClient';
@@ -121,6 +122,8 @@ export default function AdminPage() {
   const [excluded, setExcluded] = useState([]);
   // what this trip's booking window asks, beyond a date and a headcount
   const [bookingFields, setBookingFields] = useState([]);
+  // the page body, for the section navigator to read its headings from
+  const pageRef = useRef(null);
   // versions of the service (10 min / 20 min flight) and the table comparing them
   const [options, setOptions] = useState([]);
   const [compare, setCompare] = useState([]);
@@ -354,11 +357,13 @@ export default function AdminPage() {
   return (
     <div className="subpage-shell">
       <SiteHeader solid />
-      <main className="detail-page">
+      <main className="detail-page" ref={pageRef}>
         <div className="listing-head">
           <h1>Manage tours</h1>
           <p className="listing-count">{tours.length} tours</p>
         </div>
+
+        <AdminNav rootRef={pageRef} />
 
         <section className="detail-block">
           <h2>{editingId ? 'Editing tour' : 'Add a tour'}</h2>
