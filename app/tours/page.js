@@ -18,6 +18,7 @@ import { seasonCovers } from '@/lib/season';
 import { supabase } from '@/lib/supabaseClient';
 import { useT } from '@/lib/i18n';
 import { useFavorites } from '@/lib/favorites';
+import { searchTours } from '@/lib/search';
 import {
   CATEGORIES, SUB_FILTERS, byCatalogOrder, categoryOf, isOffered, matchesSubFilter,
 } from '@/lib/catalog';
@@ -34,20 +35,6 @@ export default function ToursPage() {
   );
 }
 
-/**
- * Loose text match across the fields a visitor would actually type: the trip
- * name, where it is and what kind of thing it is. Every word has to appear
- * somewhere, so "svaneti trek" narrows rather than widens.
- */
-function matches(tour, query) {
-  if (!query) return true;
-  const haystack = [
-    tour.title, tour.subtitle, tour.region, tour.category,
-    tour.difficulty, tour.summary, tour.season,
-  ].filter(Boolean).join(' ').toLowerCase();
-
-  return query.toLowerCase().split(/\s+/).every((word) => haystack.includes(word));
-}
 
 function ToursListing() {
   const { t } = useT();
@@ -111,14 +98,27 @@ function ToursListing() {
     return () => { alive = false; };
   }, []);
 
-  const shown = useMemo(() => tours.filter((tour) => (
+  const filtered = useMemo(() => tours.filter((tour) => (
     isOffered(tour)
     && (category === 'all' || categoryOf(tour) === category)
     && matchesSubFilter(tour, category, sub)
     && seasonCovers(tour, range.from, range.to)
     && (!savedOnly || isFavorite(tour.slug))
-    && matches(tour, query)
-  )).sort(byCatalogOrder), [tours, category, sub, range, savedOnly, isFavorite, favorites, query]);
+  )), [tours, category, sub, range, savedOnly, isFavorite, favorites]);
+
+  // with a search, best match first (typos forgiven, see lib/search.js);
+  // without one, winter first as usual
+  const search = useMemo(() => (query ? searchTours(filtered, query) : null), [filtered, query]);
+  const shown = useMemo(() => (search
+    ? search.results.map((r) => r.tour)
+    : [...filtered].sort(byCatalogOrder)), [search, filtered]);
+  const similar = search && !shown.length ? search.similar.map((r) => r.tour) : [];
+
+  // a new search starts from the whole catalogue rather than inside whatever
+  // category was picked before it
+  useEffect(() => {
+    if (query && !wanted) { setCategory('all'); setSub(''); }
+  }, [query, wanted]);
 
   return (
     <div className="subpage-shell">
@@ -136,6 +136,12 @@ function ToursListing() {
           )}
           {query && (
             <Link className="auth-link saved-back" href="/tours">{t('listing.clearSearch')}</Link>
+          )}
+          {search?.corrected && search.corrected !== query.toLowerCase() && (
+            <p className="did-you-mean">
+              {t('listing.didYouMean')}{' '}
+              <Link href={`/tours?q=${encodeURIComponent(search.corrected)}`}>{search.corrected}</Link>
+            </p>
           )}
         </div>
 
@@ -227,6 +233,11 @@ function ToursListing() {
                 {signedIn ? t('saved.browse') : t('auth.signInBtn')}
               </Link>
             </div>
+          ) : query && similar.length ? (
+            <>
+              <p className="form-note">{t('listing.similar', { q: query })}</p>
+              {similar.map((tour) => <TourCard key={tour.slug} tour={tour} />)}
+            </>
           ) : query ? (
             <p className="form-note">{t('listing.noSearch', { q: query })}</p>
           ) : (

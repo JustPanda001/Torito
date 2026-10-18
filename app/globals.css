@@ -2270,3 +2270,33 @@ a.feature-img:hover img{transform:scale(1.04)}
   .site-header:not(.solid) .icon-btn.round,
   .site-header:not(.solid) .search-toggle{background:rgba(255,255,255,.12)}
 }
+
+/* "Did you mean …" under a search with a typo */
+.did-you-mean{flex-basis:100%;margin:0;font-size:15px;color:var(--ink-soft)}
+.did-you-mean a{color:var(--green-500);font-weight:700}
+.listing-head{flex-wrap:wrap}
+
+/* ---------- Search suggestions under the header box ---------- */
+.search-box{position:relative}
+.search-suggest{
+  position:absolute;left:0;right:0;top:calc(100% + 8px);z-index:120;
+  min-width:320px;padding:6px;border-radius:16px;
+  background:var(--surface);border:1px solid var(--line);
+  box-shadow:0 16px 40px rgba(0,0,0,.28);color:var(--ink);text-align:left;
+}
+.search-suggest-item{
+  display:flex;align-items:center;gap:12px;padding:8px 10px;border-radius:12px;color:var(--ink);
+}
+.search-suggest-item:hover{background:var(--surface-2)}
+.search-suggest-item img{width:52px;height:40px;border-radius:8px;object-fit:cover;flex-shrink:0}
+.search-suggest-item span{display:grid;gap:2px;min-width:0}
+.search-suggest-item strong{font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.search-suggest-item em{font-style:normal;font-size:12.5px;color:var(--ink-soft)}
+.search-suggest-none{margin:0;padding:10px 12px;font-size:13.5px;color:var(--ink-soft)}
+.search-suggest-all{
+  display:block;width:100%;margin-top:4px;padding:10px 12px;border:0;border-top:1px solid var(--line);
+  background:none;cursor:pointer;text-align:left;font:inherit;font-size:14px;font-weight:600;color:var(--green-500);
+}
+.search-suggest-all:hover{filter:brightness(1.15)}
+/* on a phone the box spans the screen, so the list does too */
+.mobile-search .search-suggest{min-width:0}

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import AccountMenu from './AccountMenu';
+import SearchSuggest from './SearchSuggest';
 import { ThemeToggle, LanguageToggle } from './HeaderToggles';
 import { useT } from '@/lib/i18n';
 import { useFavorites } from '@/lib/favorites';
@@ -23,6 +24,8 @@ export default function SiteHeader({ solid = false }) {
   const router = useRouter();
   const pathname = usePathname();
   const [query, setQuery] = useState('');
+  // the suggestion list shows while a search field has focus
+  const [typing, setTyping] = useState(false);
 
   // arriving on /tours?q=… (a reload, or the back button) should leave the term
   // in the box rather than showing filtered results next to an empty field
@@ -35,7 +38,14 @@ export default function SiteHeader({ solid = false }) {
     e.preventDefault();
     const q = query.trim();
     setSearchOpen(false);
+    setTyping(false);
     router.push(q ? `/tours?q=${encodeURIComponent(q)}` : '/tours');
+  }
+
+  function pickSuggestion(href) {
+    setTyping(false);
+    setSearchOpen(false);
+    router.push(href);
   }
 
   useEffect(() => {
@@ -102,9 +112,13 @@ export default function SiteHeader({ solid = false }) {
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
+            onFocus={() => setTyping(true)}
+            onBlur={() => setTyping(false)}
             placeholder={t('nav.search')}
             aria-label={t('nav.search')}
+            autoComplete="off"
           />
+          <SearchSuggest query={query} open={typing} onPick={pickSuggestion} onSeeAll={() => submitSearch({ preventDefault() {} })} />
         </form>
 
         <div className="header-actions">
@@ -140,9 +154,13 @@ export default function SiteHeader({ solid = false }) {
               autoFocus
               value={query}
               onChange={(e) => setQuery(e.target.value)}
+              onFocus={() => setTyping(true)}
+              onBlur={() => setTyping(false)}
               placeholder={t('nav.search')}
               aria-label={t('nav.search')}
+              autoComplete="off"
             />
+            <SearchSuggest query={query} open={typing} onPick={pickSuggestion} onSeeAll={() => submitSearch({ preventDefault() {} })} />
           </form>
         </div>
       )}
