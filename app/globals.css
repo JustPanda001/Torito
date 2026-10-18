@@ -2113,4 +2113,4 @@ a.feature-img:hover img{transform:scale(1.04)}
 
 /* a booking-question note the admin marked as one not to miss: a little
    heavier and in full ink, not shouting */
-.bm-hint.strong{font-weight:600;color:var(--ink)}
+.bm-hint.strong{font-weight:600;color:var(--ink);font-size:15px;line-height:1.55}
