@@ -276,6 +276,7 @@ export default function BookingModal({ tour, onClose }) {
                   isDisabled={(d) => !inSeason(tour, d) || avail.dayFull(d, timed)}
                   className="bm-cal"
                 />
+                {timeQ && !date && <p className="bm-hint">Pick a day to see which times are free</p>}
               </section>
 
               {timeQ && (
@@ -298,7 +299,6 @@ export default function BookingModal({ tour, onClose }) {
                       );
                     })}
                   </div>
-                  {!date && <p className="bm-hint">Pick a day to see which times are free</p>}
                   {timeQ.hint && <p className="bm-hint">{timeQ.hint}</p>}
                 </section>
               )}
