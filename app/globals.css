@@ -2248,3 +2248,10 @@ a.feature-img:hover img{transform:scale(1.04)}
   }
   .admin-nav-btn.on{border-color:var(--ink);background:var(--ink)}
 }
+
+/* the admin page spans the full width so the section column can sit at the
+   left edge; the form keeps its usual width, centred in the space beside it */
+@media (min-width:901px){
+  .detail-page.admin-page{max-width:none}
+  .admin-page .admin-main{width:100%;max-width:1300px;margin:0 auto}
+}

@@ -357,7 +357,7 @@ export default function AdminPage() {
   return (
     <div className="subpage-shell">
       <SiteHeader solid />
-      <main className="detail-page" ref={pageRef}>
+      <main className="detail-page admin-page" ref={pageRef}>
         <div className="listing-head">
           <h1>Manage tours</h1>
           <p className="listing-count">{tours.length} tours</p>
