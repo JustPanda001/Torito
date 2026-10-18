@@ -2114,3 +2114,62 @@ a.feature-img:hover img{transform:scale(1.04)}
 /* a booking-question note the admin marked as one not to miss: a little
    heavier and in full ink, not shouting */
 .bm-hint.strong{font-weight:600;color:var(--ink);font-size:15px;line-height:1.55}
+
+/* ---------- Service options ---------- */
+/* Cards above the booking button: pick one, the price follows it. */
+.opt-cards{display:grid;gap:10px;margin:4px 0 16px}
+.opt-title{font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft)}
+.opt-card{
+  display:flex;gap:12px;align-items:flex-start;text-align:left;width:100%;
+  padding:14px 16px;border-radius:16px;cursor:pointer;font:inherit;color:var(--ink);
+  background:var(--surface-2);border:1.5px solid var(--line);transition:border-color .2s,background-color .2s,filter .2s;
+}
+.opt-card:hover{filter:brightness(1.08)}
+.opt-card.on{border-color:var(--green-500);background:color-mix(in srgb,var(--green-500) 10%,var(--surface))}
+.opt-dot{
+  flex-shrink:0;width:18px;height:18px;margin-top:2px;border-radius:50%;
+  border:2px solid var(--green-300);display:grid;place-items:center;
+}
+.opt-card.on .opt-dot{border-color:var(--green-500)}
+.opt-card.on .opt-dot::after{content:"";width:8px;height:8px;border-radius:50%;background:var(--green-500)}
+.opt-body{display:grid;gap:3px;flex:1;min-width:0}
+.opt-top{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.opt-top strong{font-size:15.5px}
+.opt-price{font-weight:700;color:var(--green-500);white-space:nowrap}
+.opt-dur{font-size:13.5px;color:var(--ink-soft)}
+.opt-note{font-size:13.5px;color:var(--ink-soft);line-height:1.45}
+.opt-more{
+  justify-self:start;background:none;border:0;padding:4px 2px;cursor:pointer;
+  font:inherit;font-size:14px;font-weight:600;color:var(--green-500);
+}
+.opt-more:hover{filter:brightness(1.15);text-decoration:underline}
+
+/* the comparison table, before Reviews */
+#compare{scroll-margin-top:calc(var(--header-h) + 16px)}
+.cmp-wrap{overflow-x:auto;margin-top:8px;border:1px solid var(--line);border-radius:var(--radius)}
+.cmp-table{width:100%;border-collapse:collapse}
+.cmp-table th,.cmp-table td{padding:14px 16px;text-align:center;border-bottom:1px solid var(--line)}
+.cmp-table tbody tr:last-child th,.cmp-table tbody tr:last-child td{border-bottom:0}
+.cmp-table tbody th{text-align:left;font-weight:600;color:var(--ink-soft);font-size:14.5px}
+.cmp-table thead th{vertical-align:bottom}
+.cmp-table thead button{
+  display:grid;gap:4px;justify-items:center;width:100%;background:none;border:0;cursor:pointer;
+  font:inherit;font-weight:700;font-size:15.5px;color:var(--ink);
+}
+.cmp-table thead button span{font-size:12px;font-weight:600;color:var(--ink-soft)}
+.cmp-table th.on button span{color:var(--green-500)}
+.cmp-table .on{background:color-mix(in srgb,var(--green-500) 8%,transparent)}
+.cmp-yes{color:var(--green-500);font-weight:700;font-size:17px}
+.cmp-no{color:var(--ink-soft);opacity:.6}
+.cmp-price td{font-weight:700;color:var(--ink)}
+
+/* admin */
+.opt-edit-grid{display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px}
+.opt-cells{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
+.opt-compare-edit{margin-top:22px}
+@media (max-width:640px){
+  .opt-edit-grid{grid-template-columns:1fr}
+  .cmp-table th,.cmp-table td{padding:11px 8px;font-size:13.5px}
+  .cmp-table tbody th{font-size:13px}
+  .cmp-table thead button{font-size:14px}
+}

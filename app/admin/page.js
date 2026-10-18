@@ -14,6 +14,7 @@ import PhotoManager from '@/components/PhotoManager';
 import PairListEditor from '@/components/PairListEditor';
 import InclusionEditor from '@/components/InclusionEditor';
 import BookingQuestionsEditor from '@/components/BookingQuestionsEditor';
+import OptionsEditor from '@/components/OptionsEditor';
 import { isTimed, isTimeQuestion, defaultTimeQuestion } from '@/lib/lessons';
 import { NO_TIMES } from '@/lib/bookingQuestions';
 import { supabase, currentProfile, friendlyError } from '@/lib/supabaseClient';
@@ -119,6 +120,9 @@ export default function AdminPage() {
   const [excluded, setExcluded] = useState([]);
   // what this trip's booking window asks, beyond a date and a headcount
   const [bookingFields, setBookingFields] = useState([]);
+  // versions of the service (10 min / 20 min flight) and the table comparing them
+  const [options, setOptions] = useState([]);
+  const [compare, setCompare] = useState([]);
   // set once a timed service's time question is removed on purpose, so the
   // default times are not put back when the trip is saved or reopened
   const [noTimes, setNoTimes] = useState(false);
@@ -193,6 +197,8 @@ export default function AdminPage() {
       setBookingFields(withTimeQuestion(raw.filter((q) => q?.type !== NO_TIMES), tour.category, tour.subtype, optedOut));
     }
     setRequiredItems(asPairs(tour.required_items));
+    setOptions(Array.isArray(tour.options) ? tour.options.map((o) => ({ ...o, price: o.price ?? '' })) : []);
+    setCompare(Array.isArray(tour.compare) ? tour.compare : []);
     setItinMode(itineraryMode({ ...tour, itinerary: asPairs(tour.itinerary) }));
     setSubtype(tour.subtype ?? '');
     setPhotos(Array.isArray(tour.gallery) ? tour.gallery : []);
@@ -249,6 +255,8 @@ export default function AdminPage() {
     setBookingFields([]);
     setNoTimes(false);
     setRequiredItems([]);
+    setOptions([]);
+    setCompare([]);
     setItinMode('days');
     form.current?.reset();
     setNote(null);
@@ -269,6 +277,26 @@ export default function AdminPage() {
     row.capacity = Number(row.capacity);
     row.spots_left = row.spots_left === '' ? null : Number(row.spots_left);
     row.price = row.price === '' ? null : Number(row.price);
+
+    // options: drop half-written rows; the cheapest one becomes the service's
+    // own price, so anything still reading tour.price shows "from" that
+    row.options = options
+      .map((o) => ({
+        name: (o.name ?? '').trim(),
+        price: Number(o.price),
+        duration: (o.duration ?? '').trim(),
+        note: (o.note ?? '').trim(),
+      }))
+      .filter((o) => o.name && o.price !== null && String(o.price) !== '' && Number.isFinite(o.price));
+    row.compare = row.options.length
+      ? compare
+        .map((r) => ({
+          feature: (r.feature ?? '').trim(),
+          values: row.options.map((_, i) => String(r.values?.[i] ?? '').trim()),
+        }))
+        .filter((r) => r.feature)
+      : [];
+    if (row.options.length) row.price = Math.min(...row.options.map((o) => o.price));
     // empty means "no map on this trip", which is not the same as zero
     row.lat = parseCoord(row.lat);
     row.lng = parseCoord(row.lng);
@@ -487,6 +515,14 @@ export default function AdminPage() {
                 titleLabel="Sleeping bag"
                 notePlaceholder="Rated to −5 °C — the huts are cold in September"
                 addLabel="Add an item"
+              />
+            </section>
+
+            <section className="admin-section">
+              <OptionsEditor
+                options={options}
+                compare={compare}
+                onChange={(o, c) => { setOptions(o); setCompare(c); }}
               />
             </section>
 

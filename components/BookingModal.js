@@ -47,7 +47,9 @@ function ContactFields({ profile, phone, setPhone, dial, setDial }) {
   );
 }
 
-export default function BookingModal({ tour, onClose }) {
+// option: the version picked on the trip page, if the service has several
+export default function BookingModal({ tour, option = null, onClose }) {
+  const price = option ? option.price : tour.price;
   const seats = tour.spots_left ?? tour.capacity;
   const full = seats === 0;
 
@@ -129,7 +131,7 @@ export default function BookingModal({ tour, onClose }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           tour_slug: tour.slug,
-          tour_title: tour.full_title || tour.title,
+          tour_title: `${tour.full_title || tour.title}${option ? ` — ${option.name}` : ''}`,
           kind: requestKind,
           // a plain YYYY-MM-DD, built locally: toISOString() would shift the
           // date backwards for anyone east of UTC, which is everyone here
@@ -191,7 +193,7 @@ export default function BookingModal({ tour, onClose }) {
     };
   }, [onClose]);
 
-  const total = tour.price * people;
+  const total = price * people;
   // places still open on the chosen departure, once other bookings count
   const daySeats = date && !timed && tour.capacity
     ? Math.max(0, Math.min(seats, tour.capacity - avail.bookedOn(date)))
@@ -214,7 +216,7 @@ export default function BookingModal({ tour, onClose }) {
         <div className="bm-head">
           <div>
             <h2 id="bmTitle">{full ? 'Join the waitlist' : lesson ? 'Book a lesson' : timed ? 'Book a time' : 'Book a spot'}</h2>
-            <p className="bm-sub">{tour.full_title || tour.title}</p>
+            <p className="bm-sub">{tour.full_title || tour.title}{option && <> · <strong>{option.name}</strong></>}</p>
           </div>
           <button type="button" className="bm-close" aria-label="Close" onClick={onClose}>×</button>
         </div>
@@ -454,7 +456,7 @@ export default function BookingModal({ tour, onClose }) {
 
               <section className="bm-section bm-total">
                 <div className="bm-line">
-                  <span>{money(tour.price)} × {people}</span><span>{money(total)}</span>
+                  <span>{money(price)} × {people}</span><span>{money(total)}</span>
                 </div>
                 <div className="bm-line bm-grand"><span>Total</span><span>{money(total)}</span></div>
                 <p className="bm-hint">Per person, all inclusions listed below. Paid on the day.</p>

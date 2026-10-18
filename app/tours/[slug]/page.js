@@ -19,6 +19,7 @@ import ReviewModal from '@/components/ReviewModal';
 import { findTour, fromRow } from '@/lib/tours-data';
 import { money } from '@/lib/season';
 import { isLesson, isTimed } from '@/lib/lessons';
+import { tourOptions, compareRows, cellKind } from '@/lib/options';
 import { fetchReviews, useRatings } from '@/lib/ratings';
 import { bumpTourView } from '@/lib/views';
 import { requiredItems } from '@/lib/requiredItems';
@@ -56,6 +57,8 @@ export default function TourPage({ params }) {
     return () => { alive = false; };
   }, [slug]);
   const [booking, setBooking] = useState(false);
+  // which of the service's options is picked; the first one to begin with
+  const [optIdx, setOptIdx] = useState(0);
   // which button a signed-out visitor pressed: 'book', 'rate', or null
   const [gate, setGate] = useState(null);
   // undefined while we are still asking; null means signed out
@@ -132,6 +135,12 @@ export default function TourPage({ params }) {
     ['Walking per day', tour.info?.walking_per_day],
   ];
 
+  const options = tourOptions(tour);
+  const chosen = options[Math.min(optIdx, options.length - 1)] ?? null;
+  const rows = compareRows(tour, options.length);
+  const showCompare = options.length > 1;
+  const learnMore = () => document.getElementById('compare')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
   const facts = allFacts.filter(([, , value]) => filled(value));
   const info = allInfo.filter(([, value]) => filled(value));
   const mustBring = requiredItems(tour);
@@ -200,9 +209,42 @@ export default function TourPage({ params }) {
               <li>
                 <Icon>{ICONS.clock}</Icon>
                 <span className="fact-label">Price</span>
-                <span className="fact-value">{money(tour.price)} per person</span>
+                <span className="fact-value">
+                  {options.length > 1
+                    ? `from ${money(Math.min(...options.map((o) => o.price)))}`
+                    : money(chosen ? chosen.price : tour.price)} per person
+                </span>
               </li>
             </ul>
+
+            {options.length > 0 && (
+              <div className="opt-cards" role="radiogroup" aria-label="Choose an option">
+                <span className="opt-title">Choose an option</span>
+                {options.map((o, i) => (
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={chosen === o}
+                    key={o.name}
+                    className={`opt-card${chosen === o ? ' on' : ''}`}
+                    onClick={() => setOptIdx(i)}
+                  >
+                    <span className="opt-dot" aria-hidden="true" />
+                    <span className="opt-body">
+                      <span className="opt-top">
+                        <strong>{o.name}</strong>
+                        <span className="opt-price">{money(o.price)}</span>
+                      </span>
+                      {o.duration && <span className="opt-dur">{o.duration}</span>}
+                      {o.note && <span className="opt-note">{o.note}</span>}
+                    </span>
+                  </button>
+                ))}
+                {showCompare && (
+                  <button type="button" className="opt-more" onClick={learnMore}>Learn more ↓</button>
+                )}
+              </div>
+            )}
 
             <button
               type="button"
@@ -287,6 +329,56 @@ export default function TourPage({ params }) {
         </section>
         )}
 
+        {showCompare && (
+          <section className="detail-block" id="compare">
+            <h2>Compare options</h2>
+            <div className="cmp-wrap">
+              <table className="cmp-table">
+                <thead>
+                  <tr>
+                    <th aria-label="Feature" />
+                    {options.map((o, i) => (
+                      <th key={o.name} className={chosen === o ? 'on' : ''}>
+                        <button type="button" onClick={() => setOptIdx(i)}>
+                          {o.name}
+                          <span>{chosen === o ? 'Selected' : 'Select'}</span>
+                        </button>
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {options.some((o) => o.duration) && (
+                    <tr>
+                      <th scope="row">Duration</th>
+                      {options.map((o) => <td key={o.name} className={chosen === o ? 'on' : ''}>{o.duration || '—'}</td>)}
+                    </tr>
+                  )}
+                  {rows.map((r) => (
+                    <tr key={r.feature}>
+                      <th scope="row">{r.feature}</th>
+                      {r.values.map((v, i) => {
+                        const kind = cellKind(v);
+                        return (
+                          <td key={options[i].name} className={chosen === options[i] ? 'on' : ''}>
+                            {kind === 'yes' ? <span className="cmp-yes">✓</span>
+                              : kind === 'no' ? <span className="cmp-no">—</span>
+                                : v}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                  <tr className="cmp-price">
+                    <th scope="row">Price per person</th>
+                    {options.map((o) => <td key={o.name} className={chosen === o ? 'on' : ''}>{money(o.price)}</td>)}
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+        )}
+
         <section className="detail-block reviews-block">
           <div className="reviews-head">
             <h2>Reviews</h2>
@@ -328,7 +420,7 @@ export default function TourPage({ params }) {
         </section>
       </main>
 
-      {booking && <BookingModal tour={tour} onClose={() => setBooking(false)} />}
+      {booking && <BookingModal tour={tour} option={chosen} onClose={() => setBooking(false)} />}
       {rating && (
         <ReviewModal
           tour={tour}
