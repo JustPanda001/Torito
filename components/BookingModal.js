@@ -8,7 +8,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Calendar from './Calendar';
 import { inSeason, MONTHS, money } from '@/lib/season';
-import { isLesson, isTimed, SKILL_LEVELS, LESSON_TYPES, LESSON_TIMES } from '@/lib/lessons';
+import { isLesson, isTimed, SKILL_LEVELS, LESSON_TYPES, timeSlots } from '@/lib/lessons';
 import { useAvailability } from '@/lib/availability';
 import { supabase, currentProfile } from '@/lib/supabaseClient';
 import { DEFAULT_DIAL, phoneDigits } from '@/lib/dial-codes';
@@ -276,7 +276,7 @@ export default function BookingModal({ tour, onClose }) {
                 <section className="bm-section">
                   <h3>What time?</h3>
                   <div className="bm-choices">
-                    {LESSON_TIMES.map((slot) => {
+                    {timeSlots(tour).map((slot) => {
                       const taken = avail.timeTaken(date, slot);
                       return (
                         <button
@@ -293,6 +293,7 @@ export default function BookingModal({ tour, onClose }) {
                     })}
                   </div>
                   {!date && <p className="bm-hint">Pick a day to see which times are free</p>}
+                  {tour.time_note && <p className="bm-hint">{tour.time_note}</p>}
                 </section>
               )}
 
