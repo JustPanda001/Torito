@@ -2173,3 +2173,8 @@ a.feature-img:hover img{transform:scale(1.04)}
   .cmp-table tbody th{font-size:13px}
   .cmp-table thead button{font-size:14px}
 }
+
+/* an Edit button beside each ticked inclusion in admin */
+.inc-choice-line{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.inc-choice-line .check{flex:1;min-width:0}
+.inc-edit{margin:8px 0 4px 30px}
