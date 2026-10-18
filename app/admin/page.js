@@ -19,6 +19,21 @@ import { slugify } from '@/lib/slug';
 import { LESSON } from '@/lib/lessons';
 import { ITINERARY_MODES, itineraryMode, stepLabel } from '@/lib/itinerary';
 import { CATEGORIES } from '@/lib/catalog';
+
+// what the dropdowns show; the stored values stay short
+const OPTION_LABELS = {
+  ski: 'Winter (ski, snowboard, snowmobile, paragliding…)',
+  hiking: 'Hiking',
+  camping: 'Camping',
+  mountaineering: 'Mountaineering',
+  transfer: 'Transfer',
+  lessons: 'Instructors & schools (lessons)',
+  freeride: 'Freeride',
+  freestyle: 'Freestyle',
+  snowmobile: 'Snowmobile rides',
+  paragliding: 'Paragliding',
+  unlimited: '∞  Unlimited',
+};
 import { parseCoord, parsePair } from '@/lib/coords';
 
 // these render as dropdowns backed by tour_options, with a + to add a choice
@@ -38,14 +53,14 @@ const OPTION_FIELDS = [
 const LESSON_FIELDS = new Set([
   'title', 'slug', 'subtitle', 'category', 'subtype', 'region', 'price',
   'duration', 'capacity', 'spots_left', 'season', 'season_from', 'season_to',
-  'badge', 'group_size', 'lat', 'lng',
+  'badge', 'group_size', 'lat', 'lng', 'slot_limit',
 ]);
 
 // [section title, note, field names] — the form is built from this, so the
 // order here is the order of the page it produces
 const SECTIONS = [
   ['The basics', 'Title and category decide everything else', ['title', 'category', 'subtype', 'slug', 'subtitle', 'region', 'price']],
-  ['The facts panel', 'The list beside the photos on the trip page', ['distance', 'duration', 'difficulty', 'capacity', 'spots_left', 'elevation_gain', 'season', 'season_from', 'season_to', 'stay', 'languages', 'badge']],
+  ['The facts panel', 'The list beside the photos on the trip page', ['distance', 'duration', 'difficulty', 'capacity', 'slot_limit', 'spots_left', 'elevation_gain', 'season', 'season_from', 'season_to', 'stay', 'languages', 'badge']],
   ['Getting there', 'The grid under "About this trip"', ['departure_point', 'departure_time', 'return_info', 'transport', 'group_size', 'walking_per_day']],
   ['On the map', 'Drives the little map and the weather tile', ['lat', 'lng', 'strava']],
 ];
@@ -55,7 +70,7 @@ const FIELDS = [
   ['category', 'Category *', { required: true, options: CATEGORIES }],
   // ski only: what the visitor is actually booking. A lesson has no journey,
   // so choosing it strips the form down the same way the category used to.
-  ['subtype', 'Type *', { options: ['', 'lessons', 'freeride', 'freestyle', 'snowmobile', 'paragliding'], onlyFor: 'ski' }],
+  ['subtype', 'Winter type *', { options: ['', 'lessons', 'freeride', 'freestyle', 'snowmobile', 'paragliding'], onlyFor: 'ski' }],
   ['slug', 'URL slug *', { required: true, placeholder: 'mestia-ushguli-trek', hint: 'Fills itself from the title — edit it if you want a different address' }],
   ['subtitle', 'Subtitle', { placeholder: '4 days' }],
   ['region', 'Region', { placeholder: 'Svaneti' }],
@@ -66,6 +81,9 @@ const FIELDS = [
   ['distance', 'Distance', { placeholder: '58 km' }],
   ['duration', 'Duration', { placeholder: '4 days' }],
   ['capacity', 'Capacity *', { type: 'number', min: 1, required: true, defaultValue: 10 }],
+  // team-only: never shown on the trip page. How many separate bookings one
+  // time slot takes — one per free instructor or pilot.
+  ['slot_limit', 'Bookings per time slot', { options: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '15', '20', 'unlimited'], hint: 'Team only, not shown to customers. For lessons, snowmobile and paragliding' }],
   ['spots_left', 'Spots left', { type: 'number', min: 0, placeholder: '5' }],
   ['elevation_gain', 'Elevation gain', { placeholder: '2,400 m' }],
   ['season', 'Season', { placeholder: 'June – October' }],
@@ -330,7 +348,7 @@ export default function AdminPage() {
                       }
                     >
                       {opts.options.map((o) => (
-                        <option value={o} key={o || 'none'}>{o === '' ? 'None' : o}</option>
+                        <option value={o} key={o || 'none'}>{OPTION_LABELS[o] ?? (o === '' ? 'None' : o)}</option>
                       ))}
                     </select>
                   ) : (

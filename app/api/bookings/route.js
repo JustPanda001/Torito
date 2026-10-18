@@ -121,14 +121,20 @@ async function alreadyTaken(supabase, row) {
   if (error || !Array.isArray(data)) return null;
   const sameDay = data.filter((r) => r.wanted_date === row.wanted_date);
 
+  const { data: trip } = await supabase
+    .from('tours').select('capacity, slot_limit').eq('slug', row.tour_slug).maybeSingle();
+
   if (row.lesson_time) {
-    return sameDay.some((r) => r.lesson_time === row.lesson_time)
+    if (trip?.slot_limit === 'unlimited') return null;
+    const limit = Number(trip?.slot_limit) || 1;
+    const held = sameDay
+      .filter((r) => r.lesson_time === row.lesson_time)
+      .reduce((n, r) => n + (r.bookings ?? 1), 0);
+    return held >= limit
       ? 'Sorry — that time was just booked by someone else. Please pick another.'
       : null;
   }
 
-  const { data: trip } = await supabase
-    .from('tours').select('capacity').eq('slug', row.tour_slug).maybeSingle();
   if (!trip?.capacity) return null;
 
   const booked = sameDay.reduce((sum, r) => sum + (r.people ?? 0), 0);
