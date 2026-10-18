@@ -53,13 +53,13 @@ const OPTION_FIELDS = [
 const LESSON_FIELDS = new Set([
   'title', 'slug', 'subtitle', 'category', 'subtype', 'region', 'price',
   'duration', 'capacity', 'spots_left', 'season', 'season_from', 'season_to',
-  'badge', 'group_size', 'lat', 'lng', 'slot_limit', 'time_slots', 'time_note',
+  'badge', 'group_size', 'lat', 'lng', 'slot_limit',
 ]);
 
 // [section title, note, field names] — the form is built from this, so the
 // order here is the order of the page it produces
 const SECTIONS = [
-  ['The basics', 'Title and category decide everything else', ['title', 'category', 'subtype', 'time_slots', 'time_note', 'slug', 'subtitle', 'region', 'price']],
+  ['The basics', 'Title and category decide everything else', ['title', 'category', 'subtype', 'slug', 'subtitle', 'region', 'price']],
   ['The facts panel', 'The list beside the photos on the trip page', ['distance', 'duration', 'difficulty', 'capacity', 'slot_limit', 'spots_left', 'elevation_gain', 'season', 'season_from', 'season_to', 'stay', 'languages', 'badge']],
   ['Getting there', 'The grid under "About this trip"', ['departure_point', 'departure_time', 'return_info', 'transport', 'group_size', 'walking_per_day']],
   ['On the map', 'Drives the little map and the weather tile', ['lat', 'lng', 'strava']],
@@ -71,10 +71,6 @@ const FIELDS = [
   // ski only: what the visitor is actually booking. A lesson has no journey,
   // so choosing it strips the form down the same way the category used to.
   ['subtype', 'Winter type *', { options: ['', 'lessons', 'freeride', 'freestyle', 'snowmobile', 'paragliding'], onlyFor: 'ski' }],
-  // the "What time?" buttons in the booking window, for lessons, snowmobile
-  // and paragliding
-  ['time_slots', 'Booking times', { onlyFor: 'ski', placeholder: '09:00, 10:00, 11:00, 12:00, 13:00, 14:00, 15:00, 16:00', hint: 'The times customers can pick, separated by commas. Leave empty for every hour 09:00 – 16:00' }],
-  ['time_note', 'Note under the times', { onlyFor: 'ski', placeholder: 'Flights may be moved or cancelled if the weather is not safe' }],
   ['slug', 'URL slug *', { required: true, placeholder: 'mestia-ushguli-trek', hint: 'Fills itself from the title — edit it if you want a different address' }],
   ['subtitle', 'Subtitle', { placeholder: '4 days' }],
   ['region', 'Region', { placeholder: 'Svaneti' }],
