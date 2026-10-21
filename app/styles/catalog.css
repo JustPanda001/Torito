@@ -1,0 +1,18 @@
+/* catalog styles. Loaded after globals.css, so rules here win. */
+
+/* ---- trip card: the right column without the capacity block ---- */
+/* stretched to the card height so name/heart sit on top, the status in the
+   middle and the button at the bottom, instead of a short stack with a gap */
+.tour-side{align-self:stretch;justify-content:space-between;gap:10px;padding:4px 4px 4px 0}
+.tour-status.unavailable{color:var(--ink-soft);font-weight:500;font-size:13px}
+@media (max-width:900px){
+  /* phone/tablet: status left, button right on one row */
+  .tour-side{align-self:auto;justify-content:flex-start}
+}
+
+/* Photo credits under the trip gallery: required by the CC BY / CC BY-SA
+   licences, kept small and folded so they don't compete with the photos. */
+.photo-credits{margin:10px 2px 0;font-size:12.5px;color:var(--ink-soft)}
+.photo-credits summary{cursor:pointer;width:max-content}
+.photo-credits ul{margin:6px 0 0;padding-left:18px;line-height:1.6}
+.photo-credits a{color:inherit;text-decoration:underline}

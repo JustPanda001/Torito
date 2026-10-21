@@ -315,9 +315,22 @@ drop policy if exists "edit own review"       on public.tour_reviews;
 drop policy if exists "delete own review"     on public.tour_reviews;
 drop policy if exists "admins manage reviews" on public.tour_reviews;
 
--- anyone may read a score; only the author may write one, and only their own
-create policy "reviews are public" on public.tour_reviews
-  for select using (true);
+-- Reviews wait for an admin before the public sees them (REVIEWS-MODERATION.sql
+-- adds the trigger and admin tools). Rows that already exist count as approved;
+-- new ones start as pending.
+alter table public.tour_reviews
+  add column if not exists status text not null default 'approved'
+  check (status in ('pending','approved','rejected'));
+alter table public.tour_reviews alter column status set default 'pending';
+
+drop policy if exists "approved reviews are public" on public.tour_reviews;
+drop policy if exists "read own review"             on public.tour_reviews;
+
+-- the public reads approved reviews; only the author may write one, and only their own
+create policy "approved reviews are public" on public.tour_reviews
+  for select using (status = 'approved');
+create policy "read own review" on public.tour_reviews
+  for select using (user_id = auth.uid());
 create policy "write own review" on public.tour_reviews
   for insert with check (user_id = auth.uid());
 create policy "edit own review" on public.tour_reviews

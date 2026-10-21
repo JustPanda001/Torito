@@ -53,8 +53,8 @@ export default function HomePage() {
             <h1>{t('hero.title1')}<br />{t('hero.title2')}</h1>
             <p>{t('hero.sub')}</p>
             <div className="hero-ctas">
-              <Link className="btn-pill btn-winter" href="/tours?cat=ski">{t('hero.cta')}</Link>
-              <Link className="btn-ghost" href="/tours">{t('hero.ctaAll')}</Link>
+              <Link className="btn-pill btn-winter" href="/activities?cat=ski">{t('hero.cta')}</Link>
+              <Link className="btn-ghost" href="/activities">{t('hero.ctaAll')}</Link>
             </div>
           </div>
         </section>
@@ -69,14 +69,14 @@ export default function HomePage() {
               <h2>{t('winter.title')}</h2>
               <p>{t('winter.lead')}</p>
             </div>
-            <Link className="hot-btn" href="/tours?cat=ski">
+            <Link className="hot-btn" href="/activities?cat=ski">
               {t('winter.all')} <span aria-hidden="true">→</span>
             </Link>
           </div>
 
           <div className="winter-grid">
             {WINTER.map(([type, src]) => (
-              <Link className="winter-card" href={`/tours?cat=ski&type=${type}`} key={type}>
+              <Link className="winter-card" href={`/activities?cat=ski&type=${type}`} key={type}>
                 <img src={src} alt="" loading="lazy" decoding="async" />
                 <span className="winter-card-label">
                   <strong>{t(`winter.${type}`)}</strong>
@@ -91,7 +91,7 @@ export default function HomePage() {
           <h2 className="section-title">{t('home.catalog')}</h2>
           <div className="activity-row">
             {ACTIVITIES.map(([src, key, cat]) => (
-              <Link className="activity-card" href={`/tours?cat=${cat}`} key={key}>
+              <Link className="activity-card" href={`/activities?cat=${cat}`} key={key}>
                 <img src={src} alt="" /><span>{t(key)}</span>
               </Link>
             ))}
@@ -102,84 +102,75 @@ export default function HomePage() {
           <h2 className="section-title">{t('home.whatWeDo')}</h2>
 
           <div className="feature">
-            <Link className="feature-img" href="/tours?cat=ski">
-              <img src="/assets/gudauri.webp" alt="Skiing in Gudauri" />
+            <Link className="feature-img" href="/activities?cat=ski">
+              <img src="/assets/gudauri.webp" alt={t('home.winter.alt')} />
             </Link>
             <div className="feature-text">
-              <span className="tag">Winter season</span>
-              <h3>Winter in Gudauri</h3>
+              <span className="tag">{t('home.winter.tag')}</span>
+              <h3>{t('home.winter.title')}</h3>
               <p>
-                Certified ski and snowboard instructors and schools for a first week on
-                snow, freeride guiding in the wide open bowls above Gudauri, snowmobile
-                rides up toward the Cross Pass, and tandem paragliding flights over the
-                slopes when the wind is right.
+                {t('home.winter.text')}
               </p>
-              <Link className="link-more" href="/tours?cat=ski">See winter activities →</Link>
+              <Link className="link-more" href="/activities?cat=ski">{t('home.winter.more')} →</Link>
             </div>
           </div>
 
           <div className="feature reverse">
-            <Link className="feature-img" href="/tours?cat=hiking">
-              <img src="/assets/svaneti(1).webp" alt="Hiking in the Georgian mountains" />
+            <Link className="feature-img" href="/activities?cat=hiking">
+              <img src="/assets/svaneti(1).webp" alt={t('home.hiking.alt')} />
             </Link>
             <div className="feature-text">
-              <span className="tag">Guided treks</span>
-              <h3>Hiking</h3>
+              <span className="tag">{t('home.hiking.tag')}</span>
+              <h3>{t('home.hiking.title')}</h3>
               <p>
-                As experienced mountain guides, we are passionate about showing you the raw
-                beauty of Georgia&apos;s grandest landscapes. From soaring alpine peaks and
-                dramatic glaciers to ancient valleys, we lead you safely through the finest
-                trails in Svaneti, Kazbegi, Tusheti and beyond.
+                {t('home.hiking.text')}{' '}
+                {t('home.laterNote')}
               </p>
-              <Link className="link-more" href="/tours?cat=hiking">See our hikes →</Link>
+              <Link className="link-more" href="/activities?cat=hiking">{t('home.hiking.more')} →</Link>
             </div>
           </div>
 
           <div className="feature">
-            <Link className="feature-img" href="/tours?cat=camping">
-              <img src="/assets/camping.jpg" alt="Camping in the mountains" />
+            <Link className="feature-img" href="/activities?cat=camping">
+              <img src="/assets/camping.jpg" alt={t('home.camping.alt')} />
             </Link>
             <div className="feature-text">
-              <span className="tag">Nights outside</span>
-              <h3>Camping</h3>
+              <span className="tag">{t('home.camping.tag')}</span>
+              <h3>{t('home.camping.title')}</h3>
               <p>
-                Lakeside camps, canyon nights and high meadows. We carry the tents, cook
-                dinner on the fire and pick the pitch — you just walk in and watch the
-                stars come out.
+                {t('home.camping.text')}{' '}
+                {t('home.laterNote')}
               </p>
-              <Link className="link-more" href="/tours?cat=camping">See camping trips →</Link>
+              <Link className="link-more" href="/activities?cat=camping">{t('home.camping.more')} →</Link>
             </div>
           </div>
 
           <div className="feature reverse">
-            <Link className="feature-img" href="/tours?cat=mountaineering">
-              <img src="/assets/sameba.jpe" alt="Mount Kazbek" />
+            <Link className="feature-img" href="/activities?cat=mountaineering">
+              <img src="/assets/sameba.jpe" alt={t('home.climb.alt')} />
             </Link>
             <div className="feature-text">
-              <span className="tag">Summer season</span>
-              <h3>Mountaineering</h3>
+              <span className="tag">{t('home.climb.tag')}</span>
+              <h3>{t('home.climb.title')}</h3>
               <p>
-                Your first big summit with certified guides — Kazbek at 5,054 m and other
-                Caucasus peaks, with acclimatisation days, glacier school and a reserve
-                day built in so the weather decides, not the schedule.
+                {t('home.climb.text')}{' '}
+                {t('home.laterNote')}
               </p>
-              <Link className="link-more" href="/tours?cat=mountaineering">See climbs →</Link>
+              <Link className="link-more" href="/activities?cat=mountaineering">{t('home.climb.more')} →</Link>
             </div>
           </div>
 
           <div className="feature">
-            <Link className="feature-img" href="/tours?cat=transfer">
-              <img src="/assets/transfer.svg" alt="Transfers across Georgia" />
+            <Link className="feature-img" href="/activities?cat=transfer">
+              <img src="/assets/transfer.svg" alt={t('home.transfer.alt')} />
             </Link>
             <div className="feature-text">
-              <span className="tag">Coming soon</span>
-              <h3>Transfer</h3>
+              <span className="tag">{t('home.transfer.tag')}</span>
+              <h3>{t('home.transfer.title')}</h3>
               <p>
-                Airport pickups and transfers to the trailhead, the resort or the next
-                region, for anything from a pair to a full minibus. We are still putting
-                the vehicles together — tell us what you need and we will arrange it.
+                {t('home.transfer.text')}
               </p>
-              <Link className="link-more" href="/tours?cat=transfer">See transfers →</Link>
+              <Link className="link-more" href="/activities?cat=transfer">{t('home.transfer.more')} →</Link>
             </div>
           </div>
         </section>

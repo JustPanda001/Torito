@@ -13,6 +13,7 @@ import { TOURS, withDemos } from '@/lib/tours-data';
 import { categoryOf, isOffered } from '@/lib/catalog';
 import { searchTours } from '@/lib/search';
 import { useT } from '@/lib/i18n';
+import { localizeTour } from '@/lib/trip-translations';
 
 let catalog = null;
 function loadCatalog() {
@@ -25,7 +26,7 @@ function loadCatalog() {
 }
 
 export default function SearchSuggest({ query, open, onPick, onSeeAll }) {
-  const { t } = useT();
+  const { t, lang } = useT();
   const [tours, setTours] = useState(null);
 
   useEffect(() => {
@@ -40,25 +41,30 @@ export default function SearchSuggest({ query, open, onPick, onSeeAll }) {
 
   const found = searchTours(tours, q);
   const list = (found.results.length ? found.results : found.similar).slice(0, 5).map((r) => r.tour);
+  // search matched on the stored text; what is shown is the translated view
+  const view = (tour) => localizeTour(tour, lang);
 
   return (
     <div className="search-suggest" role="listbox">
       {list.length === 0 && <p className="search-suggest-none">{t('search.none')}</p>}
-      {list.map((tour) => (
+      {list.map((source) => {
+        const tour = view(source);
+        return (
         <Link
-          key={tour.slug}
-          href={`/tours/${tour.slug}`}
+          key={source.slug}
+          href={`/activities/${tour.slug}`}
           className="search-suggest-item"
           // mousedown, not click: the field's blur would close the list first
-          onMouseDown={(e) => { e.preventDefault(); onPick(`/tours/${tour.slug}`); }}
+          onMouseDown={(e) => { e.preventDefault(); onPick(`/activities/${tour.slug}`); }}
         >
           <img src={tour.cover_image || '/assets/hero.svg'} alt="" loading="lazy" />
           <span>
             <strong>{tour.full_title || tour.title}</strong>
-            <em>{t(`cat.${categoryOf(tour)}`)}{tour.region ? ` · ${tour.region}` : ''}</em>
+            <em>{t(`cat.${categoryOf(source)}`)}{tour.region ? ` · ${tour.region}` : ''}</em>
           </span>
         </Link>
-      ))}
+        );
+      })}
       {found.corrected && !found.results.length && (
         <p className="search-suggest-none">{t('listing.didYouMean')} <strong>{found.corrected}</strong>?</p>
       )}

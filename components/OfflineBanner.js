@@ -4,9 +4,11 @@
 // dead backend just reads "Failed to fetch", which means nothing to anyone.
 
 import { useEffect, useState } from 'react';
+import { useT } from '@/lib/i18n';
 import { SUPABASE_URL, SUPABASE_KEY } from '@/lib/supabaseClient';
 
 export default function OfflineBanner() {
+  const { t } = useT();
   const [offline, setOffline] = useState(false);
   const [dismissed, setDismissed] = useState(false);
 
@@ -41,11 +43,8 @@ export default function OfflineBanner() {
         <path d="M12 9v4M12 17h.01" />
         <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" />
       </svg>
-      <span>
-        Not connected to the database. Signing in, creating an account and saving
-        changes will not work — the trips shown are sample data.
-      </span>
-      <button type="button" className="offline-close" aria-label="Dismiss" onClick={() => setDismissed(true)}>×</button>
+      <span>{t('offline.message')}</span>
+      <button type="button" className="offline-close" aria-label={t('offline.dismiss')} onClick={() => setDismissed(true)}>×</button>
     </div>
   );
 }

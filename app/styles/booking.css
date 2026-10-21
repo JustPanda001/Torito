@@ -1,0 +1,104 @@
+/* booking styles. Loaded after globals.css, so rules here win. */
+
+/* ---------- calendar (booking dialog + listing date filter) ----------
+   globals.css drew the calendar as a fixed dark popover in both themes; it now
+   follows the site theme through the variables below. */
+.cal-pop{
+  --cal-pick-bg:var(--green-700);   /* start / end / single day */
+  --cal-pick-ink:#fff;
+  --cal-band:var(--green-100);      /* the days between start and end */
+  --cal-hover:var(--green-50);
+  --cal-ring:var(--green-500);      /* today */
+  background:var(--surface);color:var(--ink);
+  border:1px solid var(--line);
+  box-shadow:0 18px 44px rgba(23,38,44,.18);
+}
+/* white on the light brand green is too faint in the dark theme */
+:root[data-theme="dark"] .cal-pop{
+  --cal-pick-bg:var(--green-500);
+  --cal-pick-ink:#0f2422;
+  --cal-band:#24504a;
+  --cal-hover:var(--green-100);
+  --cal-ring:var(--green-700);
+  box-shadow:0 18px 44px rgba(0,0,0,.45);
+}
+.booking-modal .bm-cal{border:1px solid var(--line);border-radius:16px;background:var(--surface)}
+
+.cal-head{margin-bottom:8px}
+.cal-title{font-size:15px;font-weight:700;color:var(--ink)}
+.cal-nav{
+  width:36px;height:36px;font-size:22px;color:var(--ink-soft);
+  display:grid;place-items:center;
+}
+.cal-nav:hover{background:var(--cal-hover);color:var(--ink)}
+.cal-nav:disabled{opacity:.3;cursor:default}
+.cal-nav:disabled:hover{background:none}
+.cal-nav:focus-visible{outline:2px solid var(--green-700);outline-offset:1px}
+
+.cal-dow span{color:var(--ink-soft);font-size:11.5px;font-weight:600;text-transform:capitalize}
+
+.cal-pad{height:40px}
+.cal-day{height:40px;color:var(--ink);font-size:14px;font-variant-numeric:tabular-nums}
+.cal-day::after{width:36px;height:36px}
+/* the range band is a pill a little shorter than the cell, so rows read apart */
+.cal-day::before{inset:3px 0}
+
+/* neutralise the old dark hover, then the themed one */
+.cal-day:hover:not([disabled])::after{background:none}
+.cal-day:hover:not([aria-disabled])::after{background:var(--cal-hover)}
+
+/* days that cannot be picked: faded, no hover, a "not allowed" cursor */
+.cal-day.is-off{color:var(--ink-soft);opacity:.42;cursor:not-allowed}
+.cal-day.is-past{opacity:.3}
+/* free on its own, but the trip would run into a closed day */
+.cal-day.is-range{text-decoration:line-through;text-decoration-thickness:1px}
+
+.cal-day.is-today{color:var(--green-700);font-weight:700}
+.cal-day.is-today::after{box-shadow:inset 0 0 0 1.5px var(--cal-ring)}
+
+.cal-day.in-range{color:var(--ink);font-weight:600}
+.cal-day.in-range::before{background:var(--cal-band)}
+.cal-day.is-start.ranged::before{background:linear-gradient(90deg,transparent 50%,var(--cal-band) 50%)}
+.cal-day.is-end.ranged::before{background:linear-gradient(270deg,transparent 50%,var(--cal-band) 50%)}
+/* a band that wraps onto the next week gets rounded ends at the row edges */
+.cal-grid > :nth-child(7n+1).in-range::before{border-radius:999px 0 0 999px}
+.cal-grid > :nth-child(7n).in-range::before{border-radius:0 999px 999px 0}
+
+.cal-day.is-start,.cal-day.is-end{color:var(--cal-pick-ink);font-weight:700;opacity:1}
+.cal-day.is-start::after,.cal-day.is-end::after,
+.cal-day.is-start:hover::after,.cal-day.is-end:hover::after{background:var(--cal-pick-bg);box-shadow:none}
+
+.cal-day:focus{outline:none}
+.cal-day:focus-visible::after{box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--green-700)}
+
+.cal-foot{border-top:1px solid var(--line);margin-top:8px;padding-top:6px}
+.cal-clear,.cal-done{color:var(--green-700);min-height:36px}
+.cal-clear{color:var(--ink-soft)}
+.cal-clear:hover,.cal-done:hover{background:var(--cal-hover)}
+
+/* "2 Dec – 3 Dec · 2 days" under the booking calendar */
+.cal-range-label{
+  display:inline-block;margin:10px 0 0;padding:6px 14px;
+  border-radius:999px;background:var(--green-50);color:var(--green-700);
+  font-size:14px;font-weight:600;line-height:1.4;
+}
+
+/* the time picker: a disabled slot says why on hover (title) and reads as gone */
+.bm-times .chip{font-variant-numeric:tabular-nums;min-width:72px}
+.bm-times .chip.taken{text-decoration:line-through}
+
+/* ---------- phones: every tap target at least 44px ---------- */
+@media (max-width:640px){
+  .cal-pad,.cal-day{height:44px}
+  .cal-day::after{width:40px;height:40px}
+  .cal-nav{width:44px;height:44px}
+  .cal-clear,.cal-done{min-height:44px;padding:8px 16px}
+  .booking-modal .bm-cal{padding:10px 6px 6px}
+
+  .bm-times .chip,.bm-choices .chip{min-height:44px}
+  .bm-step{width:44px;height:44px}
+  .bm-close{min-width:44px;min-height:44px}
+  .dial-btn{min-height:44px}
+  .dial-list button{min-height:44px}
+  .date-btn{min-height:44px}
+}

@@ -41,8 +41,8 @@ account to admin.
 ```
 app/
   page.js              home
-  tours/page.js        listing, category + date filters
-  tours/[slug]/page.js trip detail and booking
+  activities/page.js   listing, category + date filters
+  activities/[slug]/page.js trip detail and booking
   login, signup, reset auth pages
   admin/page.js        add / edit / delete tours
 components/

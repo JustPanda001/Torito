@@ -58,7 +58,7 @@ export default function SignInGate({ title, reason = 'book', onClose }) {
             <h2 id="gateTitle">{rating ? t('gate.titleRate') : t('gate.title')}</h2>
             <p className="bm-sub">{title}</p>
           </div>
-          <button type="button" className="bm-close" aria-label="Close" onClick={onClose}>×</button>
+          <button type="button" className="bm-close" aria-label={t('site.close')} onClick={onClose}>×</button>
         </div>
 
         <div className="bm-body">

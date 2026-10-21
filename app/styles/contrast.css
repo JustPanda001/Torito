@@ -1,0 +1,46 @@
+/* Readable greens. White text on the brand green #4fb3a0 is only 2.5:1, and
+   green text on white is the same; both fail WCAG AA (4.5:1). Buttons keep
+   the brand hue but use a deeper shade (#2c7d6f, 4.9:1 with white), and
+   green text in the light theme uses that shade too. The dark theme's green
+   text on near-black already passes, so it keeps the brighter green. */
+:root{
+  --btn-green:#2c7d6f;
+  --btn-green-hover:#246a5e;
+  --text-green:#2c7d6f;
+}
+:root[data-theme="dark"]{
+  --text-green:#5cc4b0;
+}
+
+/* solid green buttons and badges with white text */
+.book-btn:not(:disabled):not([aria-disabled="true"]),.tour-btn,.hot-btn,.btn-pill.btn-winter,.auth-btn:not(:disabled),.option-save,
+.date-btn.has-value,.chat-head,.chat-bubble,.chat-form button,
+.chat-msg.mine p,.chat-thread .chat-msg.admin p,.admin-tag,.inc-item .mark,
+.chip.active,:root[data-theme="dark"] .chip.active{
+  background:var(--btn-green);
+  border-color:var(--btn-green);
+  color:#fff;
+}
+.book-btn:not(:disabled):not([aria-disabled="true"]):hover,.tour-btn:hover,.hot-btn:hover,.btn-pill.btn-winter:hover,
+.auth-btn:hover,.option-save:hover,.chat-form button:hover,
+.chip.active:hover{
+  background:var(--btn-green-hover);
+  border-color:var(--btn-green-hover);
+  color:#fff;
+}
+
+/* green words on the page */
+.link-more,.tour-status.open,.tour-id,.book-status.open,.book-capacity em,
+.auth-link,.bm-req{
+  color:var(--text-green);
+}
+
+/* keyboard users can always see where they are */
+.book-btn:focus-visible,.tour-btn:focus-visible,.hot-btn:focus-visible,
+.btn-pill:focus-visible,.auth-btn:focus-visible,.chip:focus-visible{
+  outline:3px solid var(--green-300);
+  outline-offset:2px;
+}
+
+/* the Ask AI pill: white on the pale green was unreadable in the light theme */
+:root:not([data-theme="dark"]) .ai-btn{background:var(--green-100);color:var(--text-green)}

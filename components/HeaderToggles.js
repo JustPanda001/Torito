@@ -1,6 +1,7 @@
 'use client';
 
-// Theme and language switches for the header.
+// Theme toggle for the header, and the language picker used by the account menu.
+// There is no flag button in the header any more.
 //
 // The theme is applied to <html data-theme> by a blocking script in the layout
 // before first paint, so there is no flash of the wrong theme. This component
@@ -8,7 +9,7 @@
 
 import { useEffect, useState } from 'react';
 import { useT } from '@/lib/i18n';
-import { FlagGE, FlagUS } from './Flags';
+import { FlagGE, FlagUS, FlagRU, FlagCN } from './Flags';
 
 export function ThemeToggle() {
   const { t } = useT();
@@ -50,21 +51,51 @@ export function ThemeToggle() {
   );
 }
 
-export function LanguageToggle() {
-  const { lang, setLang } = useT();
-  const isEnglish = lang === 'en';
+// Native names, never translated: someone who landed on the wrong language
+// must still be able to find their own.
+const LANGS = [
+  ['en', 'English', FlagUS],
+  ['ka', 'ქართული', FlagGE],
+  ['ru', 'Русский', FlagRU],
+  ['zh', '中文', FlagCN],
+];
 
-  // shows the flag of the language currently in use, so the header always
-  // reflects the state of the site rather than what a click would do
+// t() hands back the key itself when no string exists yet (the translator adds
+// them later), so fall back to the English text given here
+export function tr(t, key, fallback) {
+  const s = t(key);
+  return s === key ? fallback : s;
+}
+
+// The four-language list, used in the account dropdown.
+export function LanguagePicker({ onPick }) {
+  const { t, lang, setLang } = useT();
   return (
-    <button
-      type="button"
-      className="head-toggle head-flag"
-      onClick={() => setLang(isEnglish ? 'ka' : 'en')}
-      title={isEnglish ? 'ქართული' : 'English'}
-      aria-label={isEnglish ? 'Switch to Georgian' : 'Switch to English'}
-    >
-      {isEnglish ? <FlagUS /> : <FlagGE />}
-    </button>
+    <div className="lang-picker" role="group" aria-label={tr(t, 'lang.label', 'Language')}>
+      {LANGS.map(([code, name, Flag]) => (
+        <button
+          key={code}
+          type="button"
+          className={`lang-opt${lang === code ? ' active' : ''}`}
+          aria-pressed={lang === code}
+          lang={code === 'zh' ? 'zh-Hans' : code}
+          onClick={() => { setLang(code); onPick?.(); }}
+        >
+          <Flag size={20} />
+          <span>{name}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// "Language" row inside the account dropdown (signed in and signed out).
+export function LanguageRow() {
+  const { t } = useT();
+  return (
+    <div className="lang-row">
+      <span className="lang-row-label">{tr(t, 'lang.label', 'Language')}</span>
+      <LanguagePicker />
+    </div>
   );
 }

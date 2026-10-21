@@ -1,0 +1,99 @@
+/* reviews styles. Loaded after globals.css, so rules here win. */
+
+/* Local tokens for the two states the shared palette has no colour for.
+   Light values first, dark overrides below; everything else uses the
+   globals.css variables so it follows the theme on its own. */
+:root{
+  --rev-warn-bg:#fdf6e7;
+  --rev-warn-ink:#8a5a12;
+  --rev-warn-line:#f0dcae;
+  --rev-bad-bg:#fdf0eb;
+  --rev-bad-ink:#b4462a;
+  --rev-bad-line:#e8b9a8;
+}
+:root[data-theme="dark"]{
+  --rev-warn-bg:#2f2717;
+  --rev-warn-ink:#f0c879;
+  --rev-warn-line:#4a3c1f;
+  --rev-bad-bg:#3a2320;
+  --rev-bad-ink:#f0a58f;
+  --rev-bad-line:#5a3129;
+}
+
+/* ---------- Review dialog: moderation notes ---------- */
+.rv-state{
+  margin:0 0 16px;padding:10px 14px;border-radius:12px;font-size:14px;line-height:1.5;
+  background:var(--green-50);color:var(--ink);border:1px solid var(--line);
+}
+.rv-state-pending{background:var(--rev-warn-bg);color:var(--rev-warn-ink);border-color:var(--rev-warn-line)}
+.rv-state-rejected{background:var(--rev-bad-bg);color:var(--rev-bad-ink);border-color:var(--rev-bad-line)}
+
+/* ---------- Admin: /admin/reviews ---------- */
+.rev-admin{max-width:920px}
+.rev-admin-head{justify-content:space-between;flex-wrap:wrap;margin-bottom:8px}
+.rev-admin-intro{margin:0 0 20px;color:var(--ink-soft);max-width:640px}
+
+.rev-tabs{
+  display:flex;gap:8px;margin-bottom:18px;
+  overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px;
+}
+.rev-tab{
+  display:inline-flex;align-items:center;gap:8px;flex-shrink:0;
+  padding:9px 16px;border-radius:999px;cursor:pointer;
+  font:inherit;font-size:14px;font-weight:600;
+  background:var(--surface);color:var(--ink);border:1.5px solid var(--line);
+}
+.rev-tab:hover{background:var(--green-50)}
+.rev-tab.on{background:var(--green-500);border-color:var(--green-500);color:#fff}
+.rev-tab:focus-visible,.rev-btn:focus-visible{outline:2px solid var(--green-700);outline-offset:2px}
+.rev-tab-count{
+  min-width:22px;padding:1px 7px;border-radius:999px;text-align:center;font-size:12px;
+  background:var(--surface-2);color:var(--ink-soft);
+}
+.rev-tab.on .rev-tab-count{background:rgba(255,255,255,.25);color:#fff}
+
+.rev-list{list-style:none;margin:0;padding:0;display:grid;gap:14px}
+.rev-card{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  box-shadow:var(--shadow);padding:16px 18px;
+}
+.rev-card-top{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.rev-trip{font-weight:700;color:var(--green-700);text-decoration:none;overflow-wrap:anywhere}
+.rev-trip:hover{text-decoration:underline}
+.rev-date{margin-left:auto;font-size:13px;color:var(--ink-soft)}
+.rev-card-meta{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:8px}
+.rev-card-meta strong{font-size:15px;color:var(--ink)}
+.rev-rec{font-size:12px;font-weight:600;padding:2px 10px;border-radius:999px}
+.rev-rec.yes{background:var(--green-50);color:var(--green-700)}
+.rev-rec.no{background:var(--surface-2);color:var(--ink-soft);border:1px solid var(--line)}
+.rev-body{margin:10px 0 0;color:var(--ink);line-height:1.6;white-space:pre-line;overflow-wrap:anywhere}
+.rev-body-none{color:var(--ink-soft);font-style:italic}
+
+.rev-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.rev-btn{
+  padding:9px 16px;border-radius:999px;cursor:pointer;
+  font:inherit;font-size:14px;font-weight:600;
+  background:var(--surface);color:var(--ink);border:1.5px solid var(--line);
+}
+.rev-btn:hover{background:var(--surface-2)}
+.rev-btn.approve{background:var(--green-500);border-color:var(--green-500);color:#fff}
+.rev-btn.approve:hover{background:var(--green-700);border-color:var(--green-700)}
+.rev-btn.reject{color:var(--rev-bad-ink);border-color:var(--rev-bad-line)}
+.rev-btn.reject:hover{background:var(--rev-bad-bg)}
+.rev-btn[disabled]{opacity:.55;cursor:wait}
+
+.rev-error{
+  margin:12px 0 0;padding:10px 14px;border-radius:12px;font-size:14px;
+  background:var(--rev-bad-bg);color:var(--rev-bad-ink);border:1px solid var(--rev-bad-line);
+}
+.rev-empty{color:var(--ink-soft);margin:8px 0 0}
+
+/* dark green-700 is a light mint; white on it would be unreadable */
+:root[data-theme="dark"] .rev-btn.approve:hover{color:#10201c}
+
+@media (max-width:600px){
+  .rev-card{padding:14px}
+  .rev-date{margin-left:0;width:100%}
+  /* full-width, thumb-sized buttons on a phone */
+  .rev-actions .rev-btn{flex:1 1 140px;padding:11px 14px}
+}

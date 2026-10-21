@@ -1,0 +1,32 @@
+/* footer styles. Loaded after globals.css, so rules here win. */
+
+/* Sticky footer: every page wrapper is .subpage-shell, so on a short page
+   (one trip in the catalogue) the footer sits at the bottom of the screen
+   instead of floating mid-page. 100dvh = the visible height on phones too. */
+.subpage-shell{
+  min-height:100vh;min-height:100dvh;box-sizing:border-box;
+  display:flex;flex-direction:column;
+}
+/* in a flex column, children with margin:0 auto shrink to their content, so
+   give the page content its full width back (header is fixed, footer own) */
+.subpage-shell > :not(header):not(footer){width:100%;box-sizing:border-box;flex:0 0 auto}
+.subpage-shell > main,.subpage-shell > .detail-page,.subpage-shell > .listing-page{flex:1 0 auto}
+.subpage-shell > .site-footer{margin-top:auto;flex-shrink:0}
+
+/* columns */
+.footer-inner{align-items:start}
+.footer-inner > div:not(.footer-brand){min-width:0}
+.footer-inner h4{letter-spacing:.02em}
+.site-footer span{display:block;font-size:14px;color:var(--ink-soft);padding:3px 0}
+
+/* tablet: logo + blurb on its own row, the three link columns below it */
+@media (min-width:561px) and (max-width:1100px){
+  .footer-inner{grid-template-columns:repeat(3,minmax(0,1fr));gap:28px 24px}
+  .footer-brand{grid-column:1 / -1}
+}
+
+/* phone: one centred column, a little tighter */
+@media (max-width:560px){
+  .site-footer{padding:36px 20px 20px}
+  .footer-inner{grid-template-columns:1fr;gap:22px;text-align:center}
+}

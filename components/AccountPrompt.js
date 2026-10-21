@@ -53,7 +53,7 @@ export default function AccountPrompt() {
             <h2 id="promptTitle">{t('prompt.title')}</h2>
             <p className="bm-sub">{t('prompt.sub')}</p>
           </div>
-          <button type="button" className="bm-close" aria-label="Close" onClick={closePrompt}>×</button>
+          <button type="button" className="bm-close" aria-label={t('site.close')} onClick={closePrompt}>×</button>
         </div>
 
         <div className="bm-body">

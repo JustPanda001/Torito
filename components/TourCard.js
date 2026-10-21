@@ -2,12 +2,13 @@
 
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { seasonLabel } from '@/lib/season';
+import { localizeTour } from '@/lib/trip-translations';
 import { useT } from '@/lib/i18n';
 import FavoriteButton from './FavoriteButton';
 import Stars from './Stars';
 import { useRatings } from '@/lib/ratings';
 import { filled } from '@/lib/filled';
+import { isBookable } from '@/lib/bookable';
 
 const ICONS = {
   distance: <><path d="M4 18h16" /><path d="M7 18l5-12 5 12" /></>,
@@ -16,13 +17,26 @@ const ICONS = {
   house: <><path d="M4 20V10l8-6 8 6v10" /><path d="M9 20v-6h6v6" /></>,
 };
 
+// month names come from Intl so every language gets its own, not English
+const INTL_LOCALE = { en: 'en-GB', ka: 'ka-GE', ru: 'ru-RU', zh: 'zh-CN' };
+
+function seasonText(tour, lang, t) {
+  if (!tour?.season_from || !tour?.season_to) return '';
+  if (tour.season_from === '01-01' && tour.season_to === '12-31') return t('listing.allYear');
+  const fmt = new Intl.DateTimeFormat(INTL_LOCALE[lang] ?? 'en-GB', { month: 'short' });
+  const mon = (md) => fmt.format(new Date(2026, Number(md.slice(0, 2)) - 1, 1));
+  return `${mon(tour.season_from)} – ${mon(tour.season_to)}`;
+}
+
 const Icon = ({ children }) => (
   <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.7">{children}</svg>
 );
 
-export default function TourCard({ tour }) {
-  const { t } = useT();
+export default function TourCard({ tour: source }) {
+  const { t, lang } = useT();
   const router = useRouter();
+  // text comes from the translated view; slug, category and prices stay on the original
+  const tour = localizeTour(source, lang);
   const score = useRatings().ratingFor(tour.slug);
 
   const specs = [
@@ -31,9 +45,10 @@ export default function TourCard({ tour }) {
     [ICONS.peak, tour.difficulty],
     [ICONS.house, tour.stay],
   ].filter(([, value]) => filled(value));
-  const full = tour.spots_left === 0;
-  const season = seasonLabel(tour);
-  const href = `/tours/${tour.slug}`;
+  const bookable = isBookable(source);
+  const full = bookable && source.spots_left === 0;
+  const season = seasonText(source, lang, t);
+  const href = `/activities/${tour.slug}`;
 
   // anywhere on the card opens the trip, but real links and selected text
   // still behave normally
@@ -66,8 +81,8 @@ export default function TourCard({ tour }) {
         )}
 
         <div className="tour-meta">
-          {tour.badge === 'top' && <span className="badge badge-top">TOP</span>}
-          {tour.badge === 'new' && <span className="badge badge-new">NEW</span>}
+          {tour.badge === 'top' && <span className="badge badge-top">{t('listing.badgeTop')}</span>}
+          {tour.badge === 'new' && <span className="badge badge-new">{t('listing.badgeNew')}</span>}
           <span>{tour.region || ''}</span>
           {season && <span className="tour-season">{season}</span>}
         </div>
@@ -82,15 +97,12 @@ export default function TourCard({ tour }) {
           <FavoriteButton slug={tour.slug} />
           <span className="tour-region">{tour.region || ''}</span>
         </div>
-        <div className={`tour-status ${full ? 'full' : 'open'}`}>{full ? t('listing.fullyBooked') : t('listing.spotsOpen')}</div>
-
-        <div className="tour-capacity">
-          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.7">
-            <circle cx="9" cy="8" r="3.2" /><path d="M2.5 19c0-3.4 2.9-5.5 6.5-5.5s6.5 2.1 6.5 5.5" />
-            <circle cx="17.5" cy="9" r="2.6" /><path d="M17.5 14c2.6 0 4 1.8 4 4" />
-          </svg>
-          <strong>{tour.capacity}</strong><span className="cap-label">{t('listing.peopleMax')}</span>
-        </div>
+        {/* a trip we are not selling this season says so instead of showing spots */}
+        {bookable ? (
+          <div className={`tour-status ${full ? 'full' : 'open'}`}>{full ? t('listing.fullyBooked') : t('listing.spotsOpen')}</div>
+        ) : (
+          <div className="tour-status unavailable">{t('listing.unavailable')}</div>
+        )}
 
         <Link className={`tour-btn${full ? ' ghost' : ''}`} href={href}>
           {full ? t('listing.waitlist') : t('listing.viewTrip')}

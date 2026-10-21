@@ -12,6 +12,7 @@ import SiteHeader from '@/components/SiteHeader';
 import Linkify from '@/components/Linkify';
 import { supabase, currentProfile, friendlyError } from '@/lib/supabaseClient';
 import { purgeOldChats, CHAT_TTL_HOURS } from '@/lib/chatExpiry';
+import { usePhoneSheet } from '@/components/ChatWidget';
 
 const POLL_MS = 10000;
 
@@ -28,6 +29,11 @@ export default function ChatAdminPage() {
   // read inside polling callbacks, which must not be rebuilt on every keystroke
   const activeRef = useRef(null);
   const typingRef = useRef(false);
+
+  // On a phone an open thread takes the whole screen, sized to what the
+  // keyboard leaves visible — the same sheet the visitor's chat uses — and a
+  // back button returns to the list.
+  const { sheet, sheetRef } = usePhoneSheet(Boolean(activeId), logRef);
 
   useEffect(() => { activeRef.current = activeId; }, [activeId]);
   useEffect(() => { typingRef.current = reply.length > 0; }, [reply]);
@@ -169,8 +175,21 @@ export default function ChatAdminPage() {
               ))}
             </div>
 
-            <div className="chat-thread">
+            <div className={`chat-thread${sheet ? ' sheet' : ''}`} ref={sheetRef}>
               <div className="chat-thread-head">
+                {sheet && (
+                  <button
+                    type="button"
+                    className="chat-back"
+                    onClick={() => { setActiveId(null); setMessages([]); setReply(''); }}
+                    aria-label="Back to conversations"
+                  >
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.2">
+                      <path d="M15 5l-7 7 7 7" />
+                    </svg>
+                  </button>
+                )}
+                <div className="chat-thread-title">
                 <strong>
                   {active
                     ? (active.display_name || active.email || `Guest ${active.id.slice(0, 6)}`)
@@ -181,6 +200,7 @@ export default function ChatAdminPage() {
                     ? `${active.email ? `${active.email} · ` : ''}started ${whenFull(active.created_at)}`
                     : 'Pick someone on the left to read and reply.'}
                 </span>
+                </div>
               </div>
 
               <div className="chat-log" ref={logRef}>
@@ -199,6 +219,7 @@ export default function ChatAdminPage() {
                   placeholder={activeId ? 'Write a reply…' : 'Pick a conversation first'}
                   aria-label="Reply"
                   autoComplete="off"
+                  enterKeyHint="send"
                   disabled={!activeId}
                 />
                 <button type="submit" disabled={!activeId || sending} aria-label="Send">

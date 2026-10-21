@@ -1,0 +1,73 @@
+/* header styles. Loaded after globals.css, so rules here win. */
+
+/* ---------- Right side: Ask AI, Menu, theme, favorites, profile ---------- */
+/* The Menu button sits in the middle of the row now; colours stay inherited
+   (white over the hero, ink once solid), so both themes work unchanged. */
+.header-actions > .menu-btn{margin:0;padding:8px 6px}
+@media (max-width:430px){
+  .header-actions > .menu-btn{padding:8px 3px}
+  .header-actions .burger{width:20px}
+}
+
+/* globals.css hides the theme toggle (<=640px) and the heart (<=820px) in the
+   bar; they now stay, and only leave on very narrow phones (below). */
+.header-actions > .head-toggle{display:flex}
+.header-actions > .saved-btn{display:flex}
+
+/* very narrow phones (under 340px): theme and favorites move into the profile
+   dropdown so nothing wraps or overlaps. Menu always stays in the bar. */
+.account-drop .drop-prefs,
+.account-drop .drop-fav{display:none}
+@media (max-width:339px){
+  .header-actions > .head-toggle,
+  .header-actions > .saved-btn{display:none}
+  .account-drop .drop-prefs{display:flex}
+  .account-drop .drop-fav{display:flex}
+}
+
+/* ---------- Menu panel: the full-width mega menu, directly under the header ---------- */
+/* In flow inside the fixed header, so it spans the page width. Taller than the
+   screen (small phones, landscape): it scrolls instead of running off. */
+.site-header .mega-menu{
+  position:static;width:auto;right:auto;
+  max-height:calc(100vh - var(--header-h));
+  max-height:calc(100dvh - var(--header-h));
+  overflow-y:auto;overscroll-behavior:contain;
+  border:0;border-top:1px solid var(--green-100);border-radius:0;
+}
+.site-header .mega-inner{
+  max-width:var(--max);margin:0 auto;padding:28px;gap:28px;
+  grid-template-columns:repeat(3,1fr);
+}
+@media (max-width:1000px){
+  .site-header .mega-inner{grid-template-columns:1fr 1fr}
+}
+@media (max-width:640px){
+  .site-header .mega-inner{padding:18px 16px 24px;gap:18px}
+  .site-header .mega-inner a{overflow-wrap:anywhere;padding:7px 0}
+}
+@media (max-width:340px){
+  .site-header .mega-inner{grid-template-columns:1fr}
+}
+
+/* ---------- Language picker (inside the profile dropdown) ---------- */
+.lang-picker{display:grid;grid-template-columns:1fr;gap:2px}
+.lang-picker .lang-opt{
+  display:flex;align-items:center;gap:10px;width:100%;
+  padding:8px 10px;border:0;border-radius:8px;cursor:pointer;
+  background:none;color:var(--ink);font:inherit;font-size:14px;text-align:left;
+  white-space:nowrap;
+}
+.lang-picker .lang-opt:hover{background:var(--green-50)}
+.lang-picker .lang-opt.active{background:var(--green-100);color:var(--green-700);font-weight:600}
+.lang-picker .flag{flex-shrink:0}
+
+/* the row inside the account dropdown: label, then the four options */
+.lang-row{padding:8px 6px 6px;border-top:1px solid var(--line);margin-top:4px}
+.lang-row-label{
+  display:block;padding:0 6px 6px;font-size:12px;font-weight:600;
+  letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft);
+}
+.lang-row .lang-picker{grid-template-columns:1fr 1fr}
+.lang-row .lang-opt{padding:8px}
+.account-drop{min-width:240px}

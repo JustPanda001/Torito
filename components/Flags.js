@@ -62,3 +62,40 @@ export function FlagUS({ size = 22 }) {
     </svg>
   );
 }
+
+// Russia — three horizontal stripes: white, blue, red.
+export function FlagRU({ size = 22 }) {
+  return (
+    <svg viewBox="0 0 30 20" width={size} height={size * 0.667} aria-hidden="true" className="flag">
+      <rect width="30" height="20" fill="#fff" />
+      <rect y="6.67" width="30" height="6.67" fill="#0039a6" />
+      <rect y="13.33" width="30" height="6.67" fill="#d52b1e" />
+    </svg>
+  );
+}
+
+// China — red field, one large yellow star and four small ones. Points are
+// computed so the five-point shape stays crisp at 22px.
+function starPoints(cx, cy, r, turn = 0) {
+  const pts = [];
+  for (let i = 0; i < 10; i++) {
+    const rad = i % 2 === 0 ? r : r * 0.382;
+    const a = ((i * 36 - 90 + turn) * Math.PI) / 180;
+    pts.push(`${(cx + rad * Math.cos(a)).toFixed(2)},${(cy + rad * Math.sin(a)).toFixed(2)}`);
+  }
+  return pts.join(' ');
+}
+
+export function FlagCN({ size = 22 }) {
+  // the small stars are not turned toward the big one: invisible at this size
+  const small = [[10, 2.4], [12, 4.8], [12, 8], [10, 10.4]];
+  return (
+    <svg viewBox="0 0 30 20" width={size} height={size * 0.667} aria-hidden="true" className="flag">
+      <rect width="30" height="20" fill="#de2910" />
+      <polygon points={starPoints(5, 5, 3)} fill="#ffde00" />
+      {small.map(([x, y]) => (
+        <polygon key={`${x}-${y}`} points={starPoints(x, y, 1)} fill="#ffde00" />
+      ))}
+    </svg>
+  );
+}

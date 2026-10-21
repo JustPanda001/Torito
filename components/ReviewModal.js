@@ -7,13 +7,20 @@
 //
 // Only the star count is required. A visitor who wants to leave four stars and
 // nothing else should not have to write a paragraph to do it.
+//
+// Reviews are checked by the team before the public sees them
+// (REVIEWS-MODERATION.sql). The dialog says so plainly: after posting, and
+// whenever the visitor reopens it while their review is still waiting, so it
+// never looks live when it is not.
 
 import { useEffect, useState } from 'react';
 import { Star } from './Stars';
 import { myReview, saveReview } from '@/lib/ratings';
 import { friendlyError } from '@/lib/supabaseClient';
+import { useT } from '@/lib/i18n';
+import { localizeTour } from '@/lib/trip-translations';
 
-const WORDS = ['', 'Poor', 'Fair', 'Good', 'Great', 'Excellent'];
+const WORD_KEYS = ['', 'trip.rvPoor', 'trip.rvFair', 'trip.rvGood', 'trip.rvGreat', 'trip.rvExcellent'];
 
 export default function ReviewModal({ tour, profile, onClose, onSaved }) {
   const [rating, setRating] = useState(0);
@@ -24,7 +31,10 @@ export default function ReviewModal({ tour, profile, onClose, onSaved }) {
   const [existing, setExisting] = useState(null);
   const [saving, setSaving] = useState(false);
   const [failed, setFailed] = useState(null);
-  const [done, setDone] = useState(false);
+  // null until posted; then the status the database gave the review
+  const [done, setDone] = useState(null);
+  const { t, lang } = useT();
+  const view = localizeTour(tour, lang);
 
   useEffect(() => {
     const esc = (e) => { if (e.key === 'Escape') onClose(); };
@@ -55,13 +65,14 @@ export default function ReviewModal({ tour, profile, onClose, onSaved }) {
     setSaving(true);
     setFailed(null);
     try {
-      await saveReview(tour.slug, {
+      const status = await saveReview(tour.slug, {
         rating,
         recommend,
         body,
         authorName: profile?.full_name,
       });
-      setDone(true);
+      // null means the moderation SQL has not been run yet: the review is live
+      setDone(status ?? 'approved');
       onSaved?.();
     } catch (error) {
       setFailed(friendlyError(error));
@@ -78,29 +89,50 @@ export default function ReviewModal({ tour, profile, onClose, onSaved }) {
 
         <div className="bm-head">
           <div>
-            <h2 id="rvTitle">{existing ? 'Update your review' : 'Rate this trip'}</h2>
-            <p className="bm-sub">{tour.full_title || tour.title}</p>
+            <h2 id="rvTitle">{existing ? t('trip.rvUpdateTitle') : t('trip.rateTrip')}</h2>
+            <p className="bm-sub">{view.full_title || view.title}</p>
           </div>
-          <button type="button" className="bm-close" aria-label="Close" onClick={onClose}>×</button>
+          <button type="button" className="bm-close" aria-label={t('trip.close')} onClick={onClose}>×</button>
         </div>
 
         <div className="bm-body">
-          {done ? (
+          {done === 'approved' ? (
             <div className="rv-done">
-              <p><strong>Thanks — your review is live.</strong></p>
-              <p className="field-hint">It now counts towards this trip&apos;s score.</p>
-              <button type="button" className="book-btn" onClick={onClose}>Close</button>
+              <p><strong>{t('trip.rvThanksLive')}</strong></p>
+              <p className="field-hint">{t('trip.rvThanksLiveHint')}</p>
+              <button type="button" className="book-btn" onClick={onClose}>{t('trip.close')}</button>
+            </div>
+          ) : done ? (
+            <div className="rv-done">
+              <p><strong>{t('reviews.thanksPending')}</strong></p>
+              <p className="field-hint">{t('reviews.thanksPendingHint')}</p>
+              <button type="button" className="book-btn" onClick={onClose}>{t('trip.close')}</button>
             </div>
           ) : (
             <>
-              <div className="rv-stars" role="radiogroup" aria-label="Your rating">
+              {existing?.status === 'pending' && (
+                <p className="rv-state rv-state-pending" role="status">
+                  {t('reviews.pendingNote')}
+                </p>
+              )}
+              {existing?.status === 'rejected' && (
+                <p className="rv-state rv-state-rejected" role="status">
+                  {t('reviews.rejectedNote')}
+                </p>
+              )}
+              {existing?.status === 'approved' && (
+                <p className="rv-state" role="status">
+                  {t('reviews.editRecheck')}
+                </p>
+              )}
+              <div className="rv-stars" role="radiogroup" aria-label={t('trip.rvYourRating')}>
                 {[1, 2, 3, 4, 5].map((n) => (
                   <button
                     key={n}
                     type="button"
                     role="radio"
                     aria-checked={rating === n}
-                    aria-label={`${n} ${n === 1 ? 'star' : 'stars'}`}
+                    aria-label={t(n === 1 ? 'trip.rvStarOne' : 'trip.rvStarMany', { n })}
                     className={`star-btn${n <= shown ? ' on' : ''}`}
                     onClick={() => setRating(n)}
                     onMouseEnter={() => setHover(n)}
@@ -111,40 +143,40 @@ export default function ReviewModal({ tour, profile, onClose, onSaved }) {
                     <Star size={34} filled={n <= shown} />
                   </button>
                 ))}
-                <span className="rv-word">{WORDS[shown]}</span>
+                <span className="rv-word">{WORD_KEYS[shown] ? t(WORD_KEYS[shown]) : ''}</span>
               </div>
 
               <div className="field">
-                <span className="field-label">Would you recommend it?</span>
+                <span className="field-label">{t('trip.rvRecommendQ')}</span>
                 <div className="rv-rec">
                   <button
                     type="button"
                     className={`chip small${recommend ? ' active' : ''}`}
                     onClick={() => setRecommend(true)}
                   >
-                    Yes, I&apos;d recommend it
+                    {t('trip.rvYes')}
                   </button>
                   <button
                     type="button"
                     className={`chip small${!recommend ? ' active' : ''}`}
                     onClick={() => setRecommend(false)}
                   >
-                    No
+                    {t('trip.rvNo')}
                   </button>
                 </div>
               </div>
 
               <div className="field">
-                <span className="field-label">Anything you&apos;d tell someone thinking about it?</span>
+                <span className="field-label">{t('trip.rvTellQ')}</span>
                 <textarea
                   className="rv-text"
                   rows={4}
                   maxLength={1200}
                   value={body}
                   onChange={(e) => setBody(e.target.value)}
-                  placeholder="The guide, the pace, what surprised you — optional."
+                  placeholder={t('trip.rvPlaceholder')}
                 />
-                <span className="field-hint">{body.length}/1200 · posting as {profile?.full_name || 'your account'}</span>
+                <span className="field-hint">{body.length}/1200 · {t('trip.rvPostingAs', { name: profile?.full_name || t('trip.rvYourAccount') })}</span>
               </div>
 
               {failed && <p className="form-note error">{failed}</p>}
@@ -155,7 +187,7 @@ export default function ReviewModal({ tour, profile, onClose, onSaved }) {
                 disabled={!rating || saving}
                 onClick={submit}
               >
-                {saving ? 'Saving…' : existing ? 'Update review' : 'Post review'}
+                {saving ? t('trip.rvSaving') : existing ? t('trip.rvUpdate') : t('trip.rvPost')}
               </button>
             </>
           )}

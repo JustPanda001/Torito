@@ -32,6 +32,91 @@ const KIND_KEY = {
 
 export const CHAT_OPEN_EVENT = 'torito:chat-open';
 
+// Phones get the chat as a full-screen sheet rather than a floating panel; this
+// is the same width chat.css switches at.
+const PHONE_QUERY = '(max-width: 640px)';
+
+/**
+ * Turns an element into a full-screen sheet on a phone, the way Intercom or
+ * WhatsApp do it, while `active` is true.
+ *
+ * Two things CSS alone cannot do on iOS:
+ *  - When the keyboard opens, Safari keeps the layout viewport full height and
+ *    only shrinks the *visual* viewport, so a `position:fixed; inset:0` sheet
+ *    would carry on under the keyboard and the input would vanish behind it.
+ *    window.visualViewport gives the part actually on screen, so the sheet is
+ *    sized and placed to exactly that and follows it as it changes.
+ *  - overflow:hidden on <body> does not stop the page scrolling behind on iOS;
+ *    pinning <body> with position:fixed does. The scroll position is put back
+ *    on close, so the visitor lands where they were.
+ *
+ * logRef, if given, is scrolled to the newest message whenever the sheet is
+ * resized — that is the moment the keyboard opens or closes.
+ */
+export function usePhoneSheet(active, logRef) {
+  const [phone, setPhone] = useState(false);
+  const sheetRef = useRef(null);
+
+  useEffect(() => {
+    const mq = window.matchMedia(PHONE_QUERY);
+    const update = () => setPhone(mq.matches);
+    update();
+    mq.addEventListener?.('change', update);
+    return () => mq.removeEventListener?.('change', update);
+  }, []);
+
+  const sheet = Boolean(active && phone);
+
+  useEffect(() => {
+    if (!sheet) return undefined;
+
+    const body = document.body;
+    const y = window.scrollY;
+    const path = window.location.pathname;
+    const saved = {
+      position: body.style.position, top: body.style.top, left: body.style.left,
+      right: body.style.right, width: body.style.width, overflow: body.style.overflow,
+    };
+    Object.assign(body.style, {
+      position: 'fixed', top: `-${y}px`, left: '0', right: '0', width: '100%', overflow: 'hidden',
+    });
+
+    const vv = window.visualViewport;
+    let frame = 0;
+    const fit = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const el = sheetRef.current;
+        if (el && vv) {
+          el.style.top = `${vv.offsetTop}px`;
+          el.style.height = `${vv.height}px`;
+        }
+        const log = logRef?.current;
+        if (log) log.scrollTop = log.scrollHeight;
+      });
+    };
+    fit();
+    vv?.addEventListener('resize', fit);
+    vv?.addEventListener('scroll', fit);
+
+    // keep a ref to the node: by cleanup time a closed panel has unmounted
+    const node = sheetRef.current;
+    return () => {
+      cancelAnimationFrame(frame);
+      vv?.removeEventListener('resize', fit);
+      vv?.removeEventListener('scroll', fit);
+      if (node) { node.style.top = ''; node.style.height = ''; }
+      Object.assign(body.style, saved);
+      // html has scroll-behavior:smooth, which would make the page visibly
+      // glide back from the top; and if the visitor has moved to another page
+      // meanwhile, the old position means nothing there
+      if (window.location.pathname === path) window.scrollTo({ top: y, behavior: 'instant' });
+    };
+  }, [sheet, logRef]);
+
+  return { phone, sheet, sheetRef };
+}
+
 /**
  * Lets any component open the panel: openChat() from a click handler.
  *
@@ -66,6 +151,11 @@ export default function ChatWidget() {
   const autoReplied = useRef(false);
   const logRef = useRef(null);
   const inputRef = useRef(null);
+
+  // the admin pages have their own chat UI; two panels at once would be silly
+  const hidden = Boolean(pathname?.startsWith('/admin') || pathname?.startsWith('/chat'));
+  const shown = open && !hidden;
+  const { phone, sheetRef } = usePhoneSheet(shown, logRef);
 
   const greeting = { id: 'greeting', sender: 'bot', body: t('chat.greeting'), created_at: null };
 
@@ -191,7 +281,19 @@ export default function ChatWidget() {
     if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
   }, [open, messages]);
 
-  useEffect(() => { if (open) inputRef.current?.focus(); }, [open]);
+  // On a phone, focusing straight away would throw the keyboard up over the
+  // conversation the visitor opened the chat to read; they tap the input when
+  // they are ready to type, as in any messaging app.
+  useEffect(() => { if (open && !phone) inputRef.current?.focus(); }, [open, phone]);
+
+  // Contract with the rest of the site (BRIEF "Chat open state"): anything that
+  // floats over the page can hide itself with `.chat-open .their-bar`.
+  useEffect(() => {
+    if (!shown) return undefined;
+    const html = document.documentElement;
+    html.classList.add('chat-open');
+    return () => html.classList.remove('chat-open');
+  }, [shown]);
 
   /* ---------------- writing ---------------- */
 
@@ -282,13 +384,12 @@ export default function ChatWidget() {
     setSending(false);
   }
 
-  // the admin pages have their own chat UI; two panels at once would be silly
-  if (pathname?.startsWith('/admin') || pathname?.startsWith('/chat')) return null;
+  if (hidden) return null;
 
   return (
     <div className={`chat-widget${open ? ' open' : ''}`}>
       {open && (
-        <div className="chat-panel">
+        <div className="chat-panel" ref={sheetRef} role="dialog" aria-label={t('chat.title')}>
           <div className="chat-head">
             <span className="chat-avatar"><img src="/assets/torito-logo.png" alt="" /></span>
             <div className="chat-head-main">
@@ -321,6 +422,7 @@ export default function ChatWidget() {
               placeholder={t('chat.placeholder')}
               aria-label={t('chat.placeholder')}
               autoComplete="off"
+              enterKeyHint="send"
             />
             <button type="submit" disabled={sending} aria-label={t('chat.send')}>
               <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">

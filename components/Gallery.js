@@ -1,8 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+import { useT } from '@/lib/i18n';
 
 export default function Gallery({ photos, alt }) {
+  const { t } = useT();
   const [index, setIndex] = useState(0);
   const shots = photos?.length ? photos : ['/assets/hero.svg'];
   const goTo = (i) => setIndex((i + shots.length) % shots.length);   // wraps both ways
@@ -19,13 +21,13 @@ export default function Gallery({ photos, alt }) {
       >
         <div className="gallery-track" style={{ transform: `translateX(-${index * 100}%)` }}>
           {shots.map((src, i) => (
-            <img key={src + i} src={src} alt={`${alt} photo ${i + 1}`} loading={i ? 'lazy' : undefined} />
+            <img key={src + i} src={src} alt={t('trip.photoAlt', { name: alt, n: i + 1 })} loading={i ? 'lazy' : undefined} />
           ))}
         </div>
-        <button type="button" className="gal-arrow prev" aria-label="Previous photo" onClick={() => goTo(index - 1)}>
+        <button type="button" className="gal-arrow prev" aria-label={t('trip.prevPhoto')} onClick={() => goTo(index - 1)}>
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M15 5l-7 7 7 7" /></svg>
         </button>
-        <button type="button" className="gal-arrow next" aria-label="Next photo" onClick={() => goTo(index + 1)}>
+        <button type="button" className="gal-arrow next" aria-label={t('trip.nextPhoto')} onClick={() => goTo(index + 1)}>
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M9 5l7 7-7 7" /></svg>
         </button>
       </div>

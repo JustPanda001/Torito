@@ -5,7 +5,7 @@
 // Placeholder trips render immediately so the page is never blank, then the
 // database rows replace them if any exist.
 
-import { Suspense, useEffect, useMemo, useState } from 'react';
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import SiteHeader from '@/components/SiteHeader';
@@ -50,10 +50,11 @@ function ToursListing() {
   const wantedType = params.get('type') ?? '';
 
   const [tours, setTours] = useState(TOURS);
-  const [category, setCategory] = useState(CHIPS.some(([k]) => k === wanted) ? wanted : 'all');
+  // Favorites always opens with no filters, even if a link carries ?cat=
+  const [category, setCategory] = useState(!savedOnly && CHIPS.some(([k]) => k === wanted) ? wanted : 'all');
   const [range, setRange] = useState({ from: null, to: null });
   // the second filter belongs to the category, so switching category clears it
-  const [sub, setSub] = useState(wantedType);
+  const [sub, setSub] = useState(savedOnly ? '' : wantedType);
   const subFilter = SUB_FILTERS[category] ?? null;
 
   // closed on a phone, where it is a disclosure; the CSS keeps it open on a
@@ -77,9 +78,20 @@ function ToursListing() {
 
   // following another menu link while already on the listing has to move the
   // chip too, and that is a prop change rather than a fresh mount
+  // Filters live in this component's state, which survives client-side
+  // navigation, so arriving at (or leaving) Favorites would keep whatever was
+  // chosen before. Start clean whenever ?saved=1 switches on or off; filters
+  // picked on the page afterwards still work.
+  const wasSaved = useRef(savedOnly);
   useEffect(() => {
-    if (wanted && CHIPS.some(([k]) => k === wanted)) { setCategory(wanted); setSub(wantedType); }
-  }, [wanted, wantedType]);
+    if (wasSaved.current === savedOnly) return;
+    wasSaved.current = savedOnly;
+    clearFilters();
+  }, [savedOnly]);
+
+  useEffect(() => {
+    if (!savedOnly && wanted && CHIPS.some(([k]) => k === wanted)) { setCategory(wanted); setSub(wantedType); }
+  }, [wanted, wantedType, savedOnly]);
 
   useEffect(() => {
     let alive = true;
@@ -132,15 +144,15 @@ function ToursListing() {
           </h1>
           <p className="listing-count">{t('listing.count', { n: shown.length })}</p>
           {savedOnly && (
-            <Link className="auth-link saved-back" href="/tours">{t('saved.showAll')}</Link>
+            <Link className="auth-link saved-back" href="/activities">{t('saved.showAll')}</Link>
           )}
           {query && (
-            <Link className="auth-link saved-back" href="/tours">{t('listing.clearSearch')}</Link>
+            <Link className="auth-link saved-back" href="/activities">{t('listing.clearSearch')}</Link>
           )}
           {search?.corrected && search.corrected !== query.toLowerCase() && (
             <p className="did-you-mean">
               {t('listing.didYouMean')}{' '}
-              <Link href={`/tours?q=${encodeURIComponent(search.corrected)}`}>{search.corrected}</Link>
+              <Link href={`/activities?q=${encodeURIComponent(search.corrected)}`}>{search.corrected}</Link>
             </p>
           )}
         </div>
@@ -190,7 +202,7 @@ function ToursListing() {
         <div className="filter-row">
           {subFilter ? (
             <div className="sub-filter">
-              <span className="filter-group-label">{subFilter.group}</span>
+              <span className="filter-group-label">{t(subFilter.group)}</span>
               {/* the same chips as the row above, one level down: clearing is
                   a chip of its own rather than a hidden "none" option */}
               <button
@@ -198,7 +210,7 @@ function ToursListing() {
                 className={`chip small${sub === '' ? ' active' : ''}`}
                 onClick={() => setSub('')}
               >
-                {subFilter.label}
+                {t(subFilter.label)}
               </button>
               {subFilter.options.map(([value, label]) => (
                 <button
@@ -207,7 +219,7 @@ function ToursListing() {
                   className={`chip small${sub === value ? ' active' : ''}`}
                   onClick={() => setSub(value)}
                 >
-                  {label}
+                  {t(label)}
                 </button>
               ))}
             </div>
@@ -215,7 +227,7 @@ function ToursListing() {
 
           <div className="filter-dates">
             <span className="filter-group-label">{t('listing.groupWhen')}</span>
-            <DateFilter from={range.from} to={range.to} onChange={setRange} />
+            <DateFilter from={range.from} to={range.to} onChange={setRange} category={category} tours={tours} />
           </div>
         </div>
         </div>
@@ -229,7 +241,7 @@ function ToursListing() {
                 <path d="M12 20s-7-4.6-7-9.4A4 4 0 0 1 12 8a4 4 0 0 1 7-2.6c0 4.8-7 9.4-7 9.4z" />
               </svg>
               <p>{signedIn ? t('saved.empty') : t('saved.signedOut')}</p>
-              <Link className="tour-btn" href={signedIn ? '/tours' : '/login'}>
+              <Link className="tour-btn" href={signedIn ? '/activities' : '/login'}>
                 {signedIn ? t('saved.browse') : t('auth.signInBtn')}
               </Link>
             </div>

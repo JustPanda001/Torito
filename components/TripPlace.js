@@ -6,8 +6,9 @@
 // than spending the page's quietest space on them.
 
 import { useEffect, useState } from 'react';
-import { currentWeather, conditionOf, CONDITIONS } from '@/lib/weather';
-import { MONTHS_SHORT } from '@/lib/season';
+import { currentWeather, conditionOf } from '@/lib/weather';
+import { useT } from '@/lib/i18n';
+import { localizeTour } from '@/lib/trip-translations';
 import StravaEmbed, { parseStrava } from './StravaEmbed';
 
 const ICONS = {
@@ -29,7 +30,13 @@ const embedFor = (lat, lng, span) => {
   return `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${lat},${lng}`;
 };
 
+const DATE_LOCALE = { en: 'en-GB', ka: 'ka-GE', ru: 'ru-RU', zh: 'zh-CN' };
+// condition -> translation key
+const COND_KEY = { clear: 'trip.wxClear', cloudy: 'trip.wxCloudy', rain: 'trip.wxRain', snow: 'trip.wxSnow', storm: 'trip.wxStorm' };
+
 export default function TripPlace({ tour }) {
+  const { t, lang } = useT();
+  const view = localizeTour(tour, lang);
   const { lat, lng } = tour;
   // a published Strava route says far more than a pin: the line, and the
   // climbing, which is the question a hiker actually has
@@ -61,6 +68,8 @@ export default function TripPlace({ tour }) {
 
   const now = wx?.now;
   const kind = now ? conditionOf(now.code) : 'cloudy';
+  const dayFmt = new Intl.DateTimeFormat(DATE_LOCALE[lang] || 'en-GB', { day: 'numeric', month: 'short' });
+  const title = view.full_title || view.title;
 
   return (
     <>
@@ -69,18 +78,18 @@ export default function TripPlace({ tour }) {
           <Icon kind={kind} size={30} />
           <span className="place-tile-main">
             <strong>{now ? `${now.temp}°` : '—'}</strong>
-            <span>{now ? CONDITIONS[kind].label : 'Weather'}</span>
+            <span>{now ? t(COND_KEY[kind]) : t('trip.wxWeather')}</span>
           </span>
 
           {now && (
             <span className="wx-facts">
-              <span><b>{now.high}°</b> / {now.low}° today</span>
-              {now.rainChance != null && <span>{now.rainChance}% rain</span>}
-              <span>wind {now.wind} km/h</span>
+              <span>{t('trip.wxHighLow', { high: now.high, low: now.low })}</span>
+              {now.rainChance != null && <span>{t('trip.wxRainChance', { n: now.rainChance })}</span>}
+              <span>{t('trip.wxWind', { n: now.wind })}</span>
             </span>
           )}
 
-          <span className="place-tile-more">2-week forecast →</span>
+          <span className="place-tile-more">{t('trip.wxForecast')}</span>
         </button>
 
         <button type="button" className="place-tile map-tile" onClick={() => setOpen('map')}>
@@ -90,10 +99,10 @@ export default function TripPlace({ tour }) {
             <iframe src={embedFor(lat, lng, 0.09)} title="" loading="lazy" tabIndex={-1} />
           </span>
           <span className="place-tile-main">
-            <strong>{tour.region || 'On the map'}</strong>
-            <span>{route ? 'The route' : 'Where it starts'}</span>
+            <strong>{view.region || t('trip.onMap')}</strong>
+            <span>{route ? t('trip.theRoute') : t('trip.whereStarts')}</span>
           </span>
-          <span className="place-tile-more">{route ? 'See the route →' : 'Bigger map →'}</span>
+          <span className="place-tile-more">{route ? t('trip.seeRoute') : t('trip.biggerMap')}</span>
         </button>
       </div>
 
@@ -102,10 +111,10 @@ export default function TripPlace({ tour }) {
           <div className={`booking-modal place-modal${open === 'map' ? ' map-modal' : ''}`} role="dialog" aria-modal="true">
             <div className="bm-head">
               <div>
-                <h2>{open === 'map' ? (route ? 'The route' : 'Where it is') : 'Next two weeks'}</h2>
-                <p className="bm-sub">{tour.full_title || tour.title}</p>
+                <h2>{open === 'map' ? (route ? t('trip.theRoute') : t('trip.whereItIs')) : t('trip.nextTwoWeeks')}</h2>
+                <p className="bm-sub">{title}</p>
               </div>
-              <button type="button" className="bm-close" aria-label="Close" onClick={() => setOpen(null)}>×</button>
+              <button type="button" className="bm-close" aria-label={t('trip.close')} onClick={() => setOpen(null)}>×</button>
             </div>
 
             <div className="bm-body">
@@ -113,14 +122,14 @@ export default function TripPlace({ tour }) {
                 <>
                   {route
                     ? <StravaEmbed className="strava-wrap" value={tour.strava} />
-                    : <iframe className="map-big" src={embedFor(lat, lng, 0.25)} title={`Map of ${tour.title}`} />}
+                    : <iframe className="map-big" src={embedFor(lat, lng, 0.25)} title={t('trip.mapOf', { name: view.title })} />}
                   <a
                     className="auth-link"
                     href={`https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=12/${lat}/${lng}`}
                     target="_blank"
                     rel="noreferrer"
                   >
-                    Open in OpenStreetMap →
+                    {t('trip.openOsm')}
                   </a>
                 </>
               ) : (
@@ -131,12 +140,12 @@ export default function TripPlace({ tour }) {
                     return (
                       <li key={d.date}>
                         <span className="wx-dow">
-                          {when.getDate()} {MONTHS_SHORT[when.getMonth()]}
+                          {dayFmt.format(when)}
                         </span>
                         <Icon kind={k} />
                         <span className="wx-temp"><strong>{d.max}°</strong> {d.min}°</span>
                         <span className="wx-cond">
-                          {CONDITIONS[k].label}
+                          {t(COND_KEY[k])}
                           {d.rainChance != null && d.rainChance > 0 && (
                             <em> · {d.rainChance}%</em>
                           )}
@@ -144,7 +153,7 @@ export default function TripPlace({ tour }) {
                       </li>
                     );
                   })}
-                  {!wx && <li className="wx-note">Checking the forecast…</li>}
+                  {!wx && <li className="wx-note">{t('trip.wxChecking')}</li>}
                 </ul>
               )}
             </div>

@@ -9,21 +9,25 @@
 import { useState } from 'react';
 import SiteHeader from '@/components/SiteHeader';
 import SiteFooter from '@/components/SiteFooter';
+import { useT } from '@/lib/i18n';
 
 const EMAIL = 'hello@torito.ge';
 
+// [label key, value (or value key), href, value is a key?]
 const WAYS = [
-  ['Email', EMAIL, `mailto:${EMAIL}`],
-  ['Phone & WhatsApp', '+995 000 000 000', 'tel:+995000000000'],
-  ['Find us', 'Gudauri, Georgia — winter base', null],
+  ['contact.email', EMAIL, `mailto:${EMAIL}`, false],
+  ['contact.phone', '+995 000 000 000', 'tel:+995000000000', false],
+  ['contact.find', 'contact.findValue', null, true],
 ];
 
 export default function ContactPage() {
+  const { t } = useT();
   const [name, setName] = useState('');
   const [message, setMessage] = useState('');
 
   function send(e) {
     e.preventDefault();
+    // the subject is read by our team, not the visitor, so it stays in English
     const subject = encodeURIComponent(`Question from ${name || 'the website'}`);
     const body = encodeURIComponent(message);
     window.location.href = `mailto:${EMAIL}?subject=${subject}&body=${body}`;
@@ -34,31 +38,28 @@ export default function ContactPage() {
       <SiteHeader solid />
       <main className="info-page">
         <section className="info-body">
-          <span className="tag">Contact</span>
-          <h1 className="info-title">Talk to us</h1>
-          <p className="info-lead">
-            Questions about a lesson, a date or a group booking? Write to us — we usually
-            answer within a few hours. You can also use the chat in the corner of any page.
-          </p>
+          <span className="tag">{t('nav.contact')}</span>
+          <h1 className="info-title">{t('contact.title')}</h1>
+          <p className="info-lead">{t('contact.lead')}</p>
 
           <div className="contact-grid">
             <div className="info-cards contact-ways">
-              {WAYS.map(([label, value, href]) => (
+              {WAYS.map(([label, value, href, isKey]) => (
                 <div className="info-card" key={label}>
-                  <h3>{label}</h3>
-                  {href ? <a href={href}>{value}</a> : <p>{value}</p>}
+                  <h3>{t(label)}</h3>
+                  {href ? <a href={href}>{value}</a> : <p>{isKey ? t(value) : value}</p>}
                 </div>
               ))}
             </div>
 
             <form className="info-card contact-form" onSubmit={send}>
-              <h3>Send a message</h3>
+              <h3>{t('contact.sendTitle')}</h3>
               <label className="field">
-                <span className="field-label">Your name</span>
+                <span className="field-label">{t('contact.yourName')}</span>
                 <input className="bm-text" value={name} onChange={(e) => setName(e.target.value)} />
               </label>
               <label className="field">
-                <span className="field-label">Message *</span>
+                <span className="field-label">{t('contact.message')}</span>
                 <textarea
                   className="bm-text"
                   rows={5}
@@ -68,7 +69,7 @@ export default function ContactPage() {
                 />
               </label>
               <button type="submit" className="hot-btn" disabled={!message.trim()}>
-                Send <span aria-hidden="true">→</span>
+                {t('contact.send')} <span aria-hidden="true">→</span>
               </button>
             </form>
           </div>

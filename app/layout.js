@@ -1,4 +1,12 @@
 import './globals.css';
+import './styles/header.css';
+import './styles/chat.css';
+import './styles/catalog.css';
+import './styles/footer.css';
+import './styles/reviews.css';
+import './styles/booking.css';
+import './styles/trip.css';
+import './styles/contrast.css';
 import OfflineBanner from '@/components/OfflineBanner';
 import AccountPrompt from '@/components/AccountPrompt';
 import ChatWidget from '@/components/ChatWidget';
@@ -15,6 +23,8 @@ export const metadata = {
 export const viewport = {
   width: 'device-width',
   initialScale: 1,
+  // lets the phone chat sheet pad itself clear of the iPhone home bar
+  viewportFit: 'cover',
 };
 
 // Runs before the first paint, so a dark-theme visitor never sees a white

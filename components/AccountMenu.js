@@ -1,6 +1,7 @@
 'use client';
 
-// Swaps the header "Log in" link for the signed-in user, and reveals the
+// Profile dropdown (far right of the header). Signed out: Log in / Create account /
+// language. Signed in: the user's links, and reveals the
 // Admin link when that user's profile row has role = 'admin'.
 
 import { useEffect, useRef, useState } from 'react';
@@ -8,15 +9,19 @@ import Link from 'next/link';
 import { currentProfile, signOut } from '@/lib/supabaseClient';
 import { useT } from '@/lib/i18n';
 import { useFavorites } from '@/lib/favorites';
-import { ThemeToggle, LanguageToggle } from './HeaderToggles';
+import { ThemeToggle, LanguageRow, tr } from './HeaderToggles';
 
-// phone only (CSS): the header has no room for these, so they live here
+// Language is only here (no flag in the header), for signed-in and signed-out
+// visitors. The theme toggle in this block shows only on very narrow phones
+// (CSS), where the header row has no room for its own.
 function Prefs() {
   return (
-    <div className="drop-prefs">
-      <LanguageToggle />
-      <ThemeToggle />
-    </div>
+    <>
+      <LanguageRow />
+      <div className="drop-prefs">
+        <ThemeToggle />
+      </div>
+    </>
   );
 }
 
@@ -25,6 +30,20 @@ const PersonIcon = () => (
     <circle cx="12" cy="8" r="4" /><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7" />
   </svg>
 );
+
+// Favorites link inside the dropdown; shown by CSS only on very narrow phones,
+// where the heart in the header row does not fit.
+function FavRow({ favorites, t, onClick }) {
+  return (
+    <Link href="/activities?saved=1" className="drop-fav" onClick={onClick}>
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8">
+        <path d="M12 20s-7-4.6-7-9.4A4 4 0 0 1 12 8a4 4 0 0 1 7-2.6c0 4.8-7 9.4-7 9.4z" />
+      </svg>
+      <span>{t('nav.saved')}</span>
+      {favorites.size > 0 && <span className="drop-count">{favorites.size}</span>}
+    </Link>
+  );
+}
 
 export default function AccountMenu() {
   const { t } = useT();
@@ -67,28 +86,26 @@ export default function AccountMenu() {
   }, [open]);
 
   if (!profile) {
-    // a plain link on a wide screen; on a phone a small menu, since language
-    // and theme have nowhere else to go there
+    // the same dropdown on every screen size: log in, create account, language
     return (
       <div className="account-menu" ref={wrap}>
-        <Link className="icon-btn login-desktop" href="/login" title={t('nav.login')}>
-          <PersonIcon />
-          <span className="hide-sm">{t('nav.login')}</span>
-        </Link>
         <button
-          className="icon-btn login-phone"
+          className="icon-btn account-btn"
           type="button"
           aria-expanded={open}
           aria-haspopup="menu"
+          title={t('nav.login')}
           aria-label={t('nav.login')}
           onClick={() => setOpen((v) => !v)}
         >
           <PersonIcon />
+          <span className="hide-sm">{t('nav.login')}</span>
         </button>
         {open && (
           <div className="account-drop" role="menu">
             <Link href="/login" className="admin-link" onClick={() => setOpen(false)}>{t('nav.login')}</Link>
             <Link href="/signup" onClick={() => setOpen(false)}>{t('auth.createAccount')}</Link>
+            <FavRow favorites={favorites} t={t} onClick={() => setOpen(false)} />
             <Prefs />
           </div>
         )}
@@ -96,7 +113,7 @@ export default function AccountMenu() {
     );
   }
 
-  const name = (profile.full_name || profile.email || 'Account').split(' ')[0];
+  const name = (profile.full_name || profile.email || t('header.account')).split(' ')[0];
   const isAdmin = profile.role === 'admin';
 
   return (
@@ -106,11 +123,11 @@ export default function AccountMenu() {
         type="button"
         aria-expanded={open}
         aria-haspopup="menu"
+        title={name}
+        aria-label={name}
         onClick={() => setOpen((v) => !v)}
       >
-        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8">
-          <circle cx="12" cy="8" r="4" /><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7" />
-        </svg>
+        <PersonIcon />
         <span className="hide-sm">{name}</span>
       </button>
 
@@ -128,18 +145,18 @@ export default function AccountMenu() {
           )}
 
           {isAdmin && (
+            <Link href="/admin/reviews" className="admin-link" onClick={() => setOpen(false)}>
+              {tr(t, 'account.reviews', 'Reviews')}
+            </Link>
+          )}
+
+          {isAdmin && (
             <Link href="/chat" className="admin-link" onClick={() => setOpen(false)}>
               {t('account.chat')}
             </Link>
           )}
 
-          <Link href="/tours?saved=1" className="drop-fav" onClick={() => setOpen(false)}>
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8">
-              <path d="M12 20s-7-4.6-7-9.4A4 4 0 0 1 12 8a4 4 0 0 1 7-2.6c0 4.8-7 9.4-7 9.4z" />
-            </svg>
-            <span>{t('nav.saved')}</span>
-            {favorites.size > 0 && <span className="drop-count">{favorites.size}</span>}
-          </Link>
+          <FavRow favorites={favorites} t={t} onClick={() => setOpen(false)} />
 
           <Link href="/bookings" onClick={() => setOpen(false)}>{t('account.myBookings')}</Link>
           <Link href="/reset" onClick={() => setOpen(false)}>{t('account.changePassword')}</Link>

@@ -3,9 +3,25 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { supabase, friendlyError } from '@/lib/supabaseClient';
+import { supabase } from '@/lib/supabaseClient';
+import { useT } from '@/lib/i18n';
 import { DEFAULT_DIAL, phoneDigits } from '@/lib/dial-codes';
 import DialSelect from '@/components/DialSelect';
+
+/** Supabase error -> friendly, translated text; anything unknown gets a generic line. */
+function authMessage(error, t) {
+  const m = String(error?.message ?? error ?? '').toLowerCase();
+  if (/failed to fetch|networkerror|load failed|network request failed|not connected/.test(m)) return t('auth.errNetwork');
+  if (/invalid login credentials/.test(m)) return t('auth.errInvalid');
+  if (/already registered|already been registered|already exists/.test(m)) return t('auth.errExists');
+  if (/not confirmed/.test(m)) return t('auth.errUnconfirmed');
+  if (error?.status === 429 || /rate limit|too many|security purposes/.test(m)) return t('auth.errRate');
+  if (/different from the old/.test(m)) return t('auth.errSamePassword');
+  if (/at least \d+ char/.test(m)) return t('auth.errShort');
+  if (/weak|easy to guess|pwned/.test(m)) return t('auth.errWeak');
+  if (/expired|invalid.*(token|link)|otp/.test(m)) return t('auth.errLinkExpired');
+  return t('auth.errGeneric');
+}
 
 /** Where to go after signing in: back to the trip, if we came from one. */
 function nextUrl() {
@@ -17,6 +33,7 @@ function nextUrl() {
 
 export default function SignupPage() {
   const router = useRouter();
+  const { t } = useT();
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState(null);
   const [dial, setDial] = useState(DEFAULT_DIAL);
@@ -34,26 +51,26 @@ export default function SignupPage() {
     const password = String(data.get('password'));
 
     if (password !== String(data.get('confirm'))) {
-      setNote({ error: true, text: 'Passwords do not match.' });
+      setNote({ error: true, key: 'auth.errMismatch' });
       return;
     }
     // checked by hand: the minLength attribute only applies to values the
     // visitor typed, so it misses anything set any other way
     if (password.length < 8) {
-      setNote({ error: true, text: 'Password must be at least 8 characters.' });
+      setNote({ error: true, key: 'auth.errShort' });
       return;
     }
     if (!String(data.get('name')).trim()) {
-      setNote({ error: true, text: 'Enter your full name.' });
+      setNote({ error: true, key: 'auth.errName' });
       return;
     }
     if (!data.get('terms')) {
-      setNote({ error: true, text: 'Please agree to the terms and privacy policy to continue.' });
+      setNote({ error: true, key: 'auth.errTerms' });
       return;
     }
     const phone = String(data.get('phone')).trim();
     if (phoneDigits(phone).length < 6) {
-      setNote({ error: true, text: 'Enter a phone number we can reach you on.' });
+      setNote({ error: true, key: 'auth.errPhone' });
       return;
     }
 
@@ -74,15 +91,15 @@ export default function SignupPage() {
     });
     setBusy(false);
 
-    if (error) { setNote({ error: true, text: friendlyError(error) }); return; }
+    if (error) { setNote({ error: true, err: error }); return; }
 
     // with email confirmation on there is no session until the link is clicked
     if (result.session) router.replace(nextUrl());
     else {
-      const trip = nextUrl().startsWith('/tours/');
+      const trip = nextUrl().startsWith('/activities/');
       setNote({
         error: false,
-        text: `Account created. Check your email and confirm it. The link in that email ${trip ? 'brings you back to your trip' : 'brings you back here'}.`,
+        key: trip ? 'auth.signupDoneTrip' : 'auth.signupDoneHere',
       });
       form.reset();
     }
@@ -92,56 +109,60 @@ export default function SignupPage() {
     <main className="auth-page">
       <div className="auth-card">
         <Link className="auth-logo" href="/">
-          <img src="/assets/torito-logo.png" alt="Torito — Georgian Ascent Tours" />
+          <img src="/assets/torito-logo.png" alt={t('auth.logoAlt')} />
           <span>TORITO</span>
         </Link>
 
-        <h1>Create your account</h1>
+        <h1>{t('auth.createAccount')}</h1>
 
         <form className="auth-form" onSubmit={onSubmit} noValidate>
           <label className="field">
-            <span className="field-label">Full name</span>
+            <span className="field-label">{t('auth.fullName')}</span>
             <input type="text" name="name" autoComplete="name" required />
           </label>
 
           <label className="field">
-            <span className="field-label">Email address</span>
+            <span className="field-label">{t('auth.email')}</span>
             <input type="email" name="email" autoComplete="email" required />
           </label>
 
           <div className="field">
-            <span className="field-label">Phone</span>
+            <span className="field-label">{t('auth.phone')}</span>
             <div className="bm-phone">
               <DialSelect value={dial} onChange={setDial} />
               <input name="phone" inputMode="tel" autoComplete="tel" placeholder="599 12 34 56" required />
             </div>
-            <span className="field-hint">So we can reach you about a booking</span>
+            <span className="field-hint">{t('auth.phoneHint')}</span>
           </div>
 
           <label className="field">
-            <span className="field-label">Password</span>
+            <span className="field-label">{t('auth.password')}</span>
             <input type="password" name="password" autoComplete="new-password" minLength={8} required />
-            <span className="field-hint">At least 8 characters</span>
+            <span className="field-hint">{t('auth.passwordHint')}</span>
           </label>
 
           <label className="field">
-            <span className="field-label">Confirm password</span>
+            <span className="field-label">{t('auth.confirm')}</span>
             <input type="password" name="confirm" autoComplete="new-password" minLength={8} required />
           </label>
 
           <label className="check">
             <input type="checkbox" name="terms" required />
-            <span>I agree to the <Link className="auth-link" href="/tours">terms</Link> and <Link className="auth-link" href="/tours">privacy policy</Link></span>
+            <span>{t('auth.agree').split(/(\{terms\}|\{privacy\})/).map((part, i) => (
+              part === '{terms}' ? <Link key={i} className="auth-link" href="/activities">{t('auth.terms')}</Link>
+                : part === '{privacy}' ? <Link key={i} className="auth-link" href="/activities">{t('auth.privacy')}</Link>
+                : part
+            ))}</span>
           </label>
 
           <button className="auth-btn" type="submit" disabled={busy}>
-            {busy ? 'Please wait…' : 'Create account'}
+            {busy ? t('auth.wait') : t('auth.createBtn')}
           </button>
 
-          {note && <p className={`form-note${note.error ? ' error' : ''}`}>{note.text}</p>}
+          {note && <p className={`form-note${note.error ? ' error' : ''}`}>{note.err ? authMessage(note.err, t) : t(note.key)}</p>}
         </form>
 
-        <p className="auth-foot">Already have an account? <Link className="auth-link" href={next ? `/login?next=${encodeURIComponent(next)}` : '/login'}>Sign in</Link></p>
+        <p className="auth-foot">{t('auth.haveAccount')} <Link className="auth-link" href={next ? `/login?next=${encodeURIComponent(next)}` : '/login'}>{t('auth.signInBtn')}</Link></p>
       </div>
     </main>
   );
