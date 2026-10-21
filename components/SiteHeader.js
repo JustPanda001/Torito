@@ -128,17 +128,6 @@ export default function SiteHeader({ solid = false }) {
             <span className="ai-dot" /><span className="hide-sm">{t('nav.askAi')}</span>
           </button>
 
-          <button
-            className="menu-btn"
-            type="button"
-            aria-expanded={menuOpen}
-            aria-label={t('nav.menu')}
-            onClick={(e) => { e.stopPropagation(); setSearchOpen(false); setMenuOpen((v) => !v); }}
-          >
-            <span className="burger"><span /><span /><span /></span>
-            <span className="menu-label">{t('nav.menu')}</span>
-          </button>
-
           <ThemeToggle />
 
           {/* on very narrow phones this moves into the account menu */}
@@ -150,6 +139,18 @@ export default function SiteHeader({ solid = false }) {
           </Link>
 
           <AccountMenu />
+
+          {/* far right, next to the profile */}
+          <button
+            className="menu-btn"
+            type="button"
+            aria-expanded={menuOpen}
+            aria-label={t('nav.menu')}
+            onClick={(e) => { e.stopPropagation(); setSearchOpen(false); setMenuOpen((v) => !v); }}
+          >
+            <span className="burger"><span /><span /><span /></span>
+            <span className="menu-label">{t('nav.menu')}</span>
+          </button>
         </div>
       </div>
 

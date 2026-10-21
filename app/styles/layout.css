@@ -1,0 +1,25 @@
+/* Fluid page width. The content used to stop at 1440px, which left wide empty
+   bands on large monitors and made the header float away from the edges. Now
+   pages use most of the screen up to 1920px, and the side padding grows with
+   the screen: 16px on phones, up to 64px on wide monitors. */
+:root{
+  --max:1920px;
+  --header-max:1920px;
+  --gutter:clamp(16px, 4vw, 64px);
+}
+
+.header-inner{padding-left:var(--gutter);padding-right:var(--gutter)}
+.section{padding-left:var(--gutter);padding-right:var(--gutter)}
+.footer-inner,.copyright{padding-left:var(--gutter);padding-right:var(--gutter)}
+.mega-inner{padding-left:var(--gutter);padding-right:var(--gutter)}
+
+/* nothing should ever push the page sideways */
+html,body{max-width:100%;overflow-x:clip}
+img,video,iframe{max-width:100%}
+
+.hero-content{padding-left:var(--gutter);padding-right:var(--gutter)}
+
+/* reading pages stay narrower than the home page so lines don't get too
+   long, but they still grow on big screens instead of stopping at ~1200px */
+.listing-page{max-width:1560px;padding-left:var(--gutter);padding-right:var(--gutter)}
+.detail-page{max-width:1640px;padding-left:var(--gutter);padding-right:var(--gutter)}

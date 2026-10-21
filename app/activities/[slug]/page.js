@@ -209,7 +209,7 @@ export default function TourPage({ params }) {
           {/* the separators belong to the parts that survive, or a trip with no
               region opens with a stray dot */}
           <div className="detail-head-right">
-            {[view.region, t('trip.views', { n: tour.views }), view.season_text]
+            {[view.region, view.season_text]
               .filter(filled)
               .map((part, i) => (
                 <Fragment key={part}>

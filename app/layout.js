@@ -7,6 +7,7 @@ import './styles/reviews.css';
 import './styles/booking.css';
 import './styles/trip.css';
 import './styles/contrast.css';
+import './styles/layout.css';
 import OfflineBanner from '@/components/OfflineBanner';
 import AccountPrompt from '@/components/AccountPrompt';
 import ChatWidget from '@/components/ChatWidget';

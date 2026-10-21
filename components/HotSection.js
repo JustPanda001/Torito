@@ -70,7 +70,6 @@ export default function HotSection() {
       <div className="hot-grid">
         {hot.map((source) => {
           const tour = localizeTour(source, lang);
-          const views = counts.get(tour.slug) ?? 0;
           return (
             <Link className="hot-tile" href={`/activities/${tour.slug}`} key={tour.slug}>
               <img
@@ -83,7 +82,6 @@ export default function HotSection() {
                 <strong>{tour.title}</strong>
                 <em>
                   {t(`cat.${categoryOf(source)}`)}
-                  {views > 0 && ` · ${t('hot.views', { n: views })}`}
                 </em>
               </span>
             </Link>
