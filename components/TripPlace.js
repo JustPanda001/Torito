@@ -93,10 +93,14 @@ export default function TripPlace({ tour }) {
         </button>
 
         <button type="button" className="place-tile map-tile" onClick={() => setOpen('map')}>
-          {/* the thumbnail is decoration: the tile itself is the control, so the
-              map must not eat the click that opens the bigger one */}
-          <span className="map-thumb" aria-hidden="true">
-            <iframe src={embedFor(lat, lng, 0.09)} title="" loading="lazy" tabIndex={-1} />
+          {/* a drawn pin over mountains instead of a squeezed live map: the real
+              map opens full size on tap, where it is readable */}
+          <span className="place-icon" aria-hidden="true">
+            <svg viewBox="0 0 48 48" width="48" height="48">
+              <path d="M4 40 L17 22 L24 31 L31 20 L44 40 Z" fill="currentColor" opacity=".25" />
+              <path d="M24 6c-5.5 0-10 4.3-10 9.7C14 23 24 34 24 34s10-11 10-18.3C34 10.3 29.5 6 24 6z" fill="currentColor" />
+              <circle cx="24" cy="15.5" r="3.8" fill="var(--surface)" />
+            </svg>
           </span>
           <span className="place-tile-main">
             <strong>{view.region || t('trip.onMap')}</strong>

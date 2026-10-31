@@ -16,3 +16,9 @@
 .photo-credits summary{cursor:pointer;width:max-content}
 .photo-credits ul{margin:6px 0 0;padding-left:18px;line-height:1.6}
 .photo-credits a{color:inherit;text-decoration:underline}
+
+/* card side: keep the status right above the View trip button instead of
+   leaving a tall gap between them */
+.tour-side{justify-content:flex-start}
+.tour-side .tour-status,.tour-side .tour-unavailable{margin-top:auto}
+.tour-side .tour-btn{margin-top:8px}
