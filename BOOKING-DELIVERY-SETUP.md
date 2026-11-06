@@ -59,6 +59,9 @@ no service account, no JSON key.
 // Torito booking requests -> this sheet
 const SECRET = 'put-your-own-random-string-here';
 
+// every booking is also copied here, so one tab shows what is coming up next
+const ALL_TAB = 'All bookings';
+
 const HEADERS = [
   'created_at', 'kind', 'tour_title', 'tour_slug', 'wanted_date',
   'lesson_time', 'people', 'skill_level', 'lesson_type', 'total',
@@ -78,19 +81,57 @@ function doPost(e) {
     return ContentService.createTextOutput('no');
   }
 
-  const sheet = SpreadsheetApp.getActiveSheet();
-  if (sheet.getLastRow() === 0) {
-    setUpSheet(sheet);
-  }
-
   const row = HEADERS.map(function (key) {
     return literal(body[key]);
   });
 
-  sheet.appendRow(row);
-  dressRow(sheet, sheet.getLastRow());
+  // two bookings at once must not sort the same tab over each other
+  const lock = LockService.getScriptLock();
+  lock.waitLock(20000);
+  try {
+    addTo(tabFor(body.tour_title), row);
+    addTo(tabFor(ALL_TAB), row);
+  } finally {
+    lock.releaseLock();
+  }
 
   return ContentService.createTextOutput('ok');
+}
+
+// One tab per trip, made the first time that trip is booked, and named after
+// it. Renaming a trip in the admin panel starts a new tab.
+function tabFor(title) {
+  const book = SpreadsheetApp.getActiveSpreadsheet();
+  const name = String(title || 'Other').replace(/[:\\\/?*\[\]']/g, ' ').trim().slice(0, 90) || 'Other';
+  return book.getSheetByName(name) || book.insertSheet(name);
+}
+
+function addTo(sheet, row) {
+  if (sheet.getLastRow() === 0) setUpSheet(sheet);
+  sheet.appendRow(row);
+  dressRow(sheet, sheet.getLastRow());
+  sortByDate(sheet);
+}
+
+// earliest date on top, then earliest time; requests with no date go last
+function sortByDate(sheet) {
+  const rows = sheet.getLastRow() - 1;
+  if (rows < 2) return;
+  sheet.getRange(2, 1, rows, HEADERS.length).sort([
+    { column: 5, ascending: true },
+    { column: 6, ascending: true },
+  ]);
+}
+
+// Run this once by hand: it copies the rows already in Sheet1 into the new tabs.
+// Sheet1 itself is left as it is.
+function splitOldRows() {
+  const old = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Sheet1');
+  const rows = old.getRange(2, 1, old.getLastRow() - 1, HEADERS.length).getValues();
+  rows.forEach(function (row) {
+    addTo(tabFor(row[2]), row);
+    addTo(tabFor(ALL_TAB), row);
+  });
 }
 
 // A value starting with + = - or @ is read as a formula, so "+995 599..."
@@ -130,7 +171,6 @@ function setUpSheet(sheet) {
 function dressRow(sheet, r) {
   const range = sheet.getRange(r, 1, 1, HEADERS.length);
   range.setVerticalAlignment('middle').setFontSize(10);
-  if (r % 2 === 0) range.setBackground('#f2fbf7');
 
   // the timestamp arrives as an ISO string; store a real date so the column
   // sorts and filters as one
@@ -159,11 +199,40 @@ function dressRow(sheet, r) {
 
 6. **Redeploy.**
 
----|---|
-   | `SHEETS_WEBHOOK_URL` | the Web app URL |
-   | `SHEETS_WEBHOOK_SECRET` | the same string you put in `SECRET` |
+**Already set up?** Paste the new code over the old, keeping your own `SECRET`.
+Then **Deploy -> Manage deployments -> edit (pencil) -> Version: New version ->
+Deploy**, which keeps the same URL, so nothing changes in Vercel. To bring
+existing rows across, pick `splitOldRows` in the function menu and press **Run**
+once.
 
-6. **Redeploy.**
+---
+
+## Chat messages on Telegram (10 minutes)
+
+Needs the bot from step 2. A visitor's chat message arrives on Telegram, and
+replying to that alert answers them on the site.
+
+1. Make up a long random string using only letters and digits. This is your
+   chat secret.
+2. In Vercel -> **Settings -> Environment Variables**, add these, then
+   **Redeploy**:
+
+   | Name | Value |
+   |---|---|
+   | `CHAT_WEBHOOK_SECRET` | the chat secret |
+   | `SUPABASE_SERVICE_ROLE_KEY` | Supabase -> Project Settings -> API keys -> service role. Never put this in a `NEXT_PUBLIC_` variable |
+
+3. Supabase -> **Database -> Webhooks -> Create a new hook**:
+   - Table `chat_messages`, event **Insert**
+   - Type **HTTP Request**, method **POST**
+   - URL `https://YOUR-SITE/api/chat-notify`
+   - HTTP header `x-webhook-secret` set to the chat secret
+4. To turn on replying, open this once in a browser with your values filled in:
+   `https://api.telegram.org/bot<YOUR_TOKEN>/setWebhook?url=https://YOUR-SITE/api/telegram&secret_token=<CHAT_SECRET>`
+   It should answer `Webhook was set`.
+
+Reply with Telegram's own **Reply** on the alert. A plain message to the bot
+does nothing, because it cannot tell which visitor you mean.
 
 ---
 
