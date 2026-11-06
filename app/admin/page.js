@@ -17,6 +17,7 @@ import BookingQuestionsEditor from '@/components/BookingQuestionsEditor';
 import OptionsEditor from '@/components/OptionsEditor';
 import PlaceSearch from '@/components/PlaceSearch';
 import AdminNav from '@/components/AdminNav';
+import AdminTripPreview from '@/components/AdminTripPreview';
 import { isTimed, isTimeQuestion, defaultTimeQuestion } from '@/lib/lessons';
 import { NO_TIMES } from '@/lib/bookingQuestions';
 import { supabase, currentProfile, friendlyError } from '@/lib/supabaseClient';
@@ -152,6 +153,14 @@ export default function AdminPage() {
   const form = useRef(null);
   // once the slug has been typed in by hand, the title stops overwriting it
   const slugTouched = useRef(false);
+  // the form is uncontrolled, so the preview reads a copy of it after each change
+  const [draft, setDraft] = useState({});
+  const [focusField, setFocusField] = useState(null);
+  const syncPreview = useCallback(() => {
+    if (form.current) setDraft(Object.fromEntries(new FormData(form.current).entries()));
+  }, []);
+  // switching category adds and removes fields
+  useEffect(syncPreview, [syncPreview, profile, category, subtype]);
 
   useEffect(() => {
     // ?mockuser=admin renders the panel without a real session so the form can
@@ -226,6 +235,7 @@ export default function AdminPage() {
       }
       input.value = v;
     }
+    syncPreview();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -263,6 +273,7 @@ export default function AdminPage() {
     setCompare([]);
     setItinMode('days');
     form.current?.reset();
+    syncPreview();
     setNote(null);
   }
 
@@ -379,7 +390,15 @@ export default function AdminPage() {
             </p>
           )}
 
-          <form className="admin-form" ref={form} onSubmit={onSubmit}>
+          <div className="admin-edit">
+          <form
+            className="admin-form"
+            ref={form}
+            onSubmit={onSubmit}
+            onChange={syncPreview}
+            onFocus={(e) => setFocusField(e.target.name || null)}
+            onBlur={() => setFocusField(null)}
+          >
             {SECTIONS.map(([sectionTitle, sectionHint, names]) => {
               const fields = FIELDS
                 .filter(([name]) => names.includes(name))
@@ -568,6 +587,30 @@ export default function AdminPage() {
 
             {note && <p className={`form-note${note.error ? ' error' : ''}`}>{note.text}</p>}
           </form>
+
+          <AdminTripPreview
+            focus={focusField}
+            row={{
+              ...draft,
+              slug: draft.slug || 'preview',
+              category,
+              subtype,
+              capacity: Number(draft.capacity),
+              spots_left: draft.spots_left ? Number(draft.spots_left) : draft.spots_left === '0' ? 0 : null,
+              price: draft.price ? Number(draft.price) : null,
+              badge: draft.badge || null,
+              options: options.filter((o) => o.name).map((o) => ({ ...o, price: Number(o.price) })),
+              compare,
+              gallery: photos,
+              cover_image: cover || photos[0] || null,
+              itinerary: itinerary.map((r) => [r.title, r.note]),
+              itinerary_mode: itinMode,
+              included,
+              excluded,
+              required_items: requiredItems.filter((r) => r.title).map((r) => [r.title, r.note]),
+            }}
+          />
+          </div>
         </section>
 
         <section className="detail-block">

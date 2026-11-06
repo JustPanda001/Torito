@@ -23,7 +23,8 @@ export default function AdminNav({ rootRef }) {
     const found = [];
     root.querySelectorAll('.detail-block, .admin-section').forEach((el, i) => {
       const text = label(el);
-      if (!text) return;
+      // the preview repeats the trip page's blocks; they are not form sections
+      if (!text || el.closest('.admin-preview')) return;
       if (!el.id) el.id = `admin-sec-${i}`;
       found.push({ id: el.id, text, top: el.classList.contains('detail-block') });
     });

@@ -53,7 +53,11 @@ export default function OptionSelect({ name, label, field, hint, required = fals
     setAdding(false);
     setDraft('');
     // select it once React has rendered the new <option>
-    setTimeout(() => { if (select.current) select.current.value = value; }, 0);
+    setTimeout(() => {
+      if (!select.current) return;
+      select.current.value = value;
+      select.current.dispatchEvent(new Event('change', { bubbles: true }));
+    }, 0);
   }
 
   async function remove(value) {
