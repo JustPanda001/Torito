@@ -33,7 +33,9 @@ const EMPTY = {
 };
 
 const STATUS_LABEL = { new: 'Needs answer', confirmed: 'Confirmed', declined: 'Declined' };
-const KIND_LABEL = { trip: 'Trip', lesson: 'Lesson', waitlist: 'Waitlist' };
+// only ski/snowboard lessons are 'lesson'; paragliding, snowmobiles, hikes and
+// transfers are all 'trip'
+const KIND_LABEL = { trip: 'Activity', lesson: 'Lesson', waitlist: 'Waitlist' };
 
 // "2026-12-28" -> "28 Dec 2026". The date has no time zone, so format as UTC
 // to keep the day from shifting.

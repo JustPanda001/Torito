@@ -608,7 +608,7 @@ export default function BookingModal({ tour, option = null, onClose }) {
                 className="book-btn"
                 disabled={sending || !date || !phoneOk || !questionsOk || !kitOk
                   || (timeQ?.required && !time) || (lesson && (!level || !kind))}
-                onClick={() => submit(timed ? 'lesson' : 'trip')}
+                onClick={() => submit(lesson ? 'lesson' : 'trip')}
               >
                 {sending ? t('booking.sending')
                   : !date ? t('booking.chooseDate')
