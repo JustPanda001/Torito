@@ -22,3 +22,8 @@
 .tour-side{justify-content:flex-start}
 .tour-side .tour-status,.tour-side .tour-unavailable{margin-top:auto}
 .tour-side .tour-btn{margin-top:8px}
+/* when the column becomes a row (phone/tablet) the stacked-layout top margins
+   would push the status and button lower than the heart and region name */
+@media (max-width:900px){
+  .tour-side .tour-status,.tour-side .tour-unavailable,.tour-side .tour-btn{margin-top:0}
+}

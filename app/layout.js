@@ -30,13 +30,12 @@ export const viewport = {
 
 // Runs before the first paint, so a dark-theme visitor never sees a white
 // flash. It cannot be a component: React renders too late for that.
+// First-time visitors always start in light mode, whatever their device uses;
+// dark is only applied once they have picked it with the toggle.
 const THEME_SCRIPT = `
 (function(){
   try {
-    var saved = localStorage.getItem('theme');
-    var dark = saved ? saved === 'dark'
-      : window.matchMedia('(prefers-color-scheme: dark)').matches;
-    if (dark) document.documentElement.dataset.theme = 'dark';
+    if (localStorage.getItem('theme') === 'dark') document.documentElement.dataset.theme = 'dark';
   } catch (e) {}
 })();`;
 

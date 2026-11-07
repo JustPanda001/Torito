@@ -20,6 +20,7 @@ export default function SiteFooter() {
         <div><h4>{t('nav.info')}</h4>
           <Link href="/">{t('nav.home')}</Link><Link href="/about">{t('nav.about')}</Link>
           <Link href="/faq">{t('nav.faq')}</Link><Link href="/contact">{t('nav.contact')}</Link>
+          <Link href="/terms">{t('legal.terms.tag')}</Link><Link href="/privacy">{t('legal.privacy.tag')}</Link>
         </div>
         <div><h4>{t('nav.contact')}</h4>
           <a href="mailto:hello@torito.ge">hello@torito.ge</a>

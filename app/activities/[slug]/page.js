@@ -9,6 +9,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import SiteHeader from '@/components/SiteHeader';
 import { openChat } from '@/components/ChatWidget';
 import SiteFooter from '@/components/SiteFooter';
+import NotFoundView, { TripLoading } from '@/components/NotFoundView';
 import Gallery from '@/components/Gallery';
 import BookingModal from '@/components/BookingModal';
 import SignInGate from '@/components/SignInGate';
@@ -54,15 +55,39 @@ export default function TourPage({ params }) {
   // the placeholder renders immediately so the page is never blank, then the
   // database row replaces it — a trip added in the admin panel only exists there
   const [tour, setTour] = useState(() => findTour(slug));
+  // false until the database has answered (or failed); a trip that only
+  // exists there shows a loading state, not "not found", until then
+  const [checked, setChecked] = useState(false);
 
   useEffect(() => {
     let alive = true;
-    supabase
-      .from('tours')
-      .select('*')
-      .eq('slug', slug)
-      .maybeSingle()
-      .then(({ data }) => { if (alive && data) setTour(fromRow(data)); });
+    const local = findTour(slug);
+    setChecked(false);
+    setTour(local);
+    (async () => {
+      const { data, error } = await supabase
+        .from('tours')
+        .select('*')
+        .eq('slug', slug)
+        .eq('published', true)
+        .maybeSingle();
+      if (!alive) return;
+      if (data) { setTour(fromRow(data)); setChecked(true); return; }
+      // database unreachable: the static copy (if any) stands
+      if (error || !local) { if (!local) setTour(null); setChecked(true); return; }
+      // No published row. A static demo trip stays (the catalogue adds those
+      // next to the database rows); any other static trip is only a fallback
+      // for an empty database, so it goes once the database has published trips.
+      if (!local.demo) {
+        const { count, error: countError } = await supabase
+          .from('tours')
+          .select('slug', { count: 'exact', head: true })
+          .eq('published', true);
+        if (!alive) return;
+        if (!countError && count > 0) setTour(null);
+      }
+      setChecked(true);
+    })();
     return () => { alive = false; };
   }, [slug]);
   const router = useRouter();
@@ -114,7 +139,9 @@ export default function TourPage({ params }) {
   }, [profile, tour, router, pathname]);
 
   // one open, one view — this is what ranks the "Hot right now" strip
-  useEffect(() => { bumpTourView(slug); }, [slug]);
+  // (only for a trip that exists, once the lookup is settled)
+  const exists = Boolean(tour);
+  useEffect(() => { if (checked && exists) bumpTourView(slug); }, [slug, checked, exists]);
 
   const loadReviews = useCallback(() => {
     fetchReviews(slug).then(setReviews).catch(() => {});
@@ -122,21 +149,7 @@ export default function TourPage({ params }) {
 
   useEffect(() => { loadReviews(); }, [loadReviews]);
 
-  if (!tour) {
-    return (
-      <div className="subpage-shell">
-        <SiteHeader solid />
-        <main className="detail-page">
-          <h1>{t('detail.notFound')}</h1>
-          <p className="lead">
-            {t('trip.notFoundText', { slug })}{' '}
-            <Link className="auth-link" href="/activities">{t('detail.browseAll')}</Link>
-          </p>
-        </main>
-        <SiteFooter />
-      </div>
-    );
-  }
+  if (!tour) return checked ? <NotFoundView kind="trip" /> : <TripLoading />;
 
   // text shown to the visitor comes from `view`; logic keeps reading `tour`
   const view = localizeTour(tour, lang);

@@ -8,6 +8,8 @@
 // ones), and a hand-kept list would drift out of step with that.
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
+import { supabase } from '@/lib/supabaseClient';
 
 const label = (el) => el.querySelector('h2, h3')?.textContent?.trim() ?? '';
 
@@ -15,6 +17,18 @@ export default function AdminNav({ rootRef }) {
   const [items, setItems] = useState([]);
   const [active, setActive] = useState(null);
   const bar = useRef(null);
+  // bookings waiting for an answer; stays null (no badge) if the count fails
+  const [newBookings, setNewBookings] = useState(null);
+
+  useEffect(() => {
+    let live = true;
+    supabase
+      .from('bookings')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'new')
+      .then(({ count, error }) => { if (live && !error && count != null) setNewBookings(count); });
+    return () => { live = false; };
+  }, []);
 
   // the big blocks (Add a tour, Existing tours) and every form section in them
   const scan = useCallback(() => {
@@ -94,6 +108,10 @@ export default function AdminNav({ rootRef }) {
 
   return (
     <nav className="admin-nav" ref={bar} aria-label="Jump to a section">
+      <Link className="admin-nav-btn top admin-nav-link" href="/admin/bookings">
+        Bookings
+        {newBookings > 0 && <span className="admin-nav-count">{newBookings}</span>}
+      </Link>
       {items.map((item) => (
         <button
           type="button"

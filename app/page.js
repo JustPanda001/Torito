@@ -5,31 +5,55 @@ import SiteHeader from '@/components/SiteHeader';
 import SiteFooter from '@/components/SiteFooter';
 import { useT } from '@/lib/i18n';
 
-// winter leads: it is where the season's bookings are
-const HERO = [
-  '/assets/gudauri 1.jpe',
-  '/assets/skier-gudauri-yellow-jacket-768x512.jpg',
-  '/assets/gudauri.webp',
-  '/assets/svaneti.jpg',
-  '/assets/camping.jpg',
-];
+// Optimised copies live next to the originals in /public/assets (made with
+// sharp; originals are untouched). [src, srcSet, width, height]
+const A = '/assets/';
+const GUDAURI1 = [A + 'gudauri-1-1600.webp', A + 'gudauri-1-800.webp 800w, ' + A + 'gudauri-1-1600.webp 1600w', 1600, 900];
+const GUDAURI = [A + 'gudauri-hero-1600.webp', A + 'gudauri-hero-800.webp 800w, ' + A + 'gudauri-hero-1600.webp 1600w', 1600, 900];
+const SVANETI = [A + 'svaneti-1600.webp', A + 'svaneti-800.webp 800w, ' + A + 'svaneti-1600.webp 1600w', 1600, 1009];
+const CAMPING = [A + 'camping-1300.webp', A + 'camping-800.webp 800w, ' + A + 'camping-1300.webp 1300w', 1300, 867];
+const SKIER = [A + 'skier-768.webp', null, 768, 512];
 
-// The four ways onto the snow. Each opens the listing already narrowed to
-// winter and to that one thing, so the visitor lands on what they clicked.
+// winter leads: it is where the season's bookings are
+const HERO = [GUDAURI1, SKIER, GUDAURI, SVANETI, CAMPING];
+
+// Card and feature pictures are shown at most ~600px wide, so 800px is enough.
 const WINTER = [
-  ['lessons', '/assets/skier-gudauri-yellow-jacket-768x512.jpg'],
-  ['freeride', '/assets/gudauri.webp'],
-  ['snowmobile', '/assets/gudauri 1.jpe'],
-  ['paragliding', '/assets/gudauri.jpe'],
+  ['lessons', [A + 'skier-768.webp', null, 768, 512]],
+  ['freeride', [A + 'gudauri-hero-800.webp', null, 800, 450]],
+  ['snowmobile', [A + 'gudauri-1-800.webp', null, 800, 450]],
+  ['paragliding', [A + 'gudauri-paraglide-800.webp', null, 800, 413]],
 ];
 
 // [image, label, tours-page category]
 const ACTIVITIES = [
-  ['/assets/Svaneti-history.jpg', 'cat.hiking', 'hiking'],
-  ['/assets/camping fier.webp', 'cat.camping', 'camping'],
-  ['/assets/sameba.webp', 'cat.mountaineering', 'mountaineering'],
-  ['/assets/transfer.svg', 'cat.transfer', 'transfer'],
+  [[A + 'svaneti-history-800.webp', null, 800, 457], 'cat.hiking', 'hiking'],
+  [[A + 'camping fier.webp', null, 1000, 667], 'cat.camping', 'camping'],
+  [[A + 'sameba.webp', null, 474, 634], 'cat.mountaineering', 'mountaineering'],
+  [[A + 'transfer.svg', null, 800, 600], 'cat.transfer', 'transfer'],
 ];
+
+// One place for the loading attributes. "first" marks the single picture that
+// is above the fold on load; everything else is lazy.
+// Hero slides after the first are fetched straight away but at low priority:
+// they sit off-screen in a sliding track, where lazy loading never triggers, so
+// "lazy" would leave them blank when they slide in.
+function Pic({ p, alt = '', sizes, first = false, slide = false }) {
+  const [src, srcSet, width, height] = p;
+  return (
+    <img
+      src={src}
+      srcSet={srcSet || undefined}
+      sizes={srcSet ? sizes : undefined}
+      width={width}
+      height={height}
+      alt={alt}
+      loading={first || slide ? 'eager' : 'lazy'}
+      decoding={first ? undefined : 'async'}
+      fetchPriority={first ? 'high' : slide ? 'low' : undefined}
+    />
+  );
+}
 
 export default function HomePage() {
   const { t } = useT();
@@ -41,11 +65,11 @@ export default function HomePage() {
 
         <section className="hero">
           <div className="hero-track">
-            {HERO.map((src) => (
-              <div className="hero-slide" key={src}><img src={src} alt="" /></div>
+            {HERO.map((p, i) => (
+              <div className="hero-slide" key={p[0]}><Pic p={p} sizes="100vw" first={i === 0} slide /></div>
             ))}
             {/* clone of slide 1 so the loop restarts without a visible jump */}
-            <div className="hero-slide" aria-hidden="true"><img src={HERO[0]} alt="" /></div>
+            <div className="hero-slide" aria-hidden="true"><Pic p={HERO[0]} sizes="100vw" slide /></div>
           </div>
           <div className="hero-scrim" />
           <div className="hero-content">
@@ -77,7 +101,7 @@ export default function HomePage() {
           <div className="winter-grid">
             {WINTER.map(([type, src]) => (
               <Link className="winter-card" href={`/activities?cat=ski&type=${type}`} key={type}>
-                <img src={src} alt="" loading="lazy" decoding="async" />
+                <Pic p={src} />
                 <span className="winter-card-label">
                   <strong>{t(`winter.${type}`)}</strong>
                   <em>{t(`winter.${type}Note`)}</em>
@@ -92,7 +116,7 @@ export default function HomePage() {
           <div className="activity-row">
             {ACTIVITIES.map(([src, key, cat]) => (
               <Link className="activity-card" href={`/activities?cat=${cat}`} key={key}>
-                <img src={src} alt="" /><span>{t(key)}</span>
+                <Pic p={src} /><span>{t(key)}</span>
               </Link>
             ))}
           </div>
@@ -103,7 +127,7 @@ export default function HomePage() {
 
           <div className="feature">
             <Link className="feature-img" href="/activities?cat=ski">
-              <img src="/assets/gudauri.webp" alt={t('home.winter.alt')} />
+              <Pic p={[A + 'gudauri-hero-800.webp', null, 800, 450]} alt={t('home.winter.alt')} />
             </Link>
             <div className="feature-text">
               <span className="tag">{t('home.winter.tag')}</span>
@@ -117,7 +141,7 @@ export default function HomePage() {
 
           <div className="feature reverse">
             <Link className="feature-img" href="/activities?cat=hiking">
-              <img src="/assets/svaneti(1).webp" alt={t('home.hiking.alt')} />
+              <Pic p={[A + 'svaneti-hiking-800.webp', null, 800, 450]} alt={t('home.hiking.alt')} />
             </Link>
             <div className="feature-text">
               <span className="tag">{t('home.hiking.tag')}</span>
@@ -132,7 +156,7 @@ export default function HomePage() {
 
           <div className="feature">
             <Link className="feature-img" href="/activities?cat=camping">
-              <img src="/assets/camping.jpg" alt={t('home.camping.alt')} />
+              <Pic p={[A + 'camping-800.webp', null, 800, 534]} alt={t('home.camping.alt')} />
             </Link>
             <div className="feature-text">
               <span className="tag">{t('home.camping.tag')}</span>
@@ -147,7 +171,7 @@ export default function HomePage() {
 
           <div className="feature reverse">
             <Link className="feature-img" href="/activities?cat=mountaineering">
-              <img src="/assets/sameba.jpe" alt={t('home.climb.alt')} />
+              <Pic p={[A + 'sameba-800.webp', null, 800, 533]} alt={t('home.climb.alt')} />
             </Link>
             <div className="feature-text">
               <span className="tag">{t('home.climb.tag')}</span>
@@ -162,7 +186,7 @@ export default function HomePage() {
 
           <div className="feature">
             <Link className="feature-img" href="/activities?cat=transfer">
-              <img src="/assets/transfer.svg" alt={t('home.transfer.alt')} />
+              <Pic p={[A + 'transfer.svg', null, 800, 600]} alt={t('home.transfer.alt')} />
             </Link>
             <div className="feature-text">
               <span className="tag">{t('home.transfer.tag')}</span>

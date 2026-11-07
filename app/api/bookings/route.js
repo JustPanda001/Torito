@@ -35,6 +35,65 @@ const {
 const clean = (value, max = 200) =>
   (typeof value === 'string' ? value.trim().slice(0, max) : null) || null;
 
+// How many requests one account may send. Generous for a real person (a
+// family booking a few trips in one sitting stays well under), tight enough
+// that a script cannot flood Telegram, the sheet and the customer's inbox.
+// RATE-LIMITS.sql enforces the same numbers in the database, so a direct
+// insert that skips this route is held to them too; keep the two in step.
+const RATE_LIMITS = [
+  { ms: 60 * 60 * 1000, max: 5, error: 'Sorry — you have sent a lot of booking requests in the last hour. Please try again later, or write to us in the chat.' },
+  { ms: 24 * 60 * 60 * 1000, max: 20, error: 'Sorry — you have sent a lot of booking requests today. Please try again tomorrow, or write to us in the chat.' },
+];
+
+const MAX_PEOPLE = 50;
+
+/** Today's date in Georgia (UTC+4 all year, no daylight saving), as YYYY-MM-DD. */
+const georgiaToday = () => new Date(Date.now() + 4 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
+/** True for a real calendar date written as YYYY-MM-DD (so not 2026-02-30). */
+function isCalendarDate(value) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!m) return false;
+  const d = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])));
+  return d.toISOString().slice(0, 10) === value;
+}
+
+/**
+ * Why the date cannot be booked, or null when it can. An absent date is
+ * allowed, as before (alreadyTaken() skips it too). Plain string comparison is
+ * enough: YYYY-MM-DD sorts the same way as the dates it names.
+ */
+function dateProblem(value) {
+  if (value == null || value === '') return null;
+  if (typeof value !== 'string' || !isCalendarDate(value.trim())) return 'Please pick a valid date.';
+  const today = georgiaToday();
+  const latest = `${Number(today.slice(0, 4)) + 2}${today.slice(4)}`;
+  if (value.trim() < today) return 'That date has already passed. Please pick another.';
+  if (value.trim() > latest) return 'Please pick a date within the next two years.';
+  return null;
+}
+
+/**
+ * The first limit this account is over, as its message, or null. Counted with
+ * the visitor's own token: "read own bookings" lets them see exactly their own
+ * rows. A failed count lets the request through (logged) rather than blocking
+ * a real customer; the database trigger is the hard stop.
+ */
+async function overLimit(supabase, userId) {
+  const results = await Promise.all(RATE_LIMITS.map(({ ms }) => supabase
+    .from('bookings')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .gte('created_at', new Date(Date.now() - ms).toISOString())));
+
+  for (let i = 0; i < RATE_LIMITS.length; i += 1) {
+    const { count, error } = results[i];
+    if (error) { console.error('Booking rate count failed:', error.message); continue; }
+    if ((count ?? 0) >= RATE_LIMITS[i].max) return RATE_LIMITS[i].error;
+  }
+  return null;
+}
+
 /** The kit list the visitor ticked, as plain titles. Bounded like the rest. */
 function cleanItems(value) {
   if (!Array.isArray(value)) return null;
@@ -91,12 +150,29 @@ export async function POST(request) {
     return Response.json({ error: 'Malformed request.' }, { status: 400 });
   }
 
+  if (!body || typeof body !== 'object' || Array.isArray(body)) {
+    return Response.json({ error: 'Malformed request.' }, { status: 400 });
+  }
+
+  const badDate = dateProblem(body.wanted_date);
+  if (badDate) return Response.json({ error: badDate }, { status: 400 });
+
+  // a missing count still means one person, as before; a count that is there
+  // but out of range is refused rather than quietly changed
+  if (body.people != null
+    && !(Number.isInteger(body.people) && body.people >= 1 && body.people <= MAX_PEOPLE)) {
+    return Response.json({ error: `Please choose between 1 and ${MAX_PEOPLE} people.` }, { status: 400 });
+  }
+
+  const tooMany = await overLimit(supabase, user.id);
+  if (tooMany) return Response.json({ error: tooMany }, { status: 429 });
+
   const row = {
     tour_slug: clean(body.tour_slug, 120),
     tour_title: clean(body.tour_title, 200),
     kind: ['trip', 'lesson', 'waitlist'].includes(body.kind) ? body.kind : 'trip',
-    wanted_date: clean(body.wanted_date, 10),
-    people: Number.isInteger(body.people) && body.people > 0 && body.people < 100 ? body.people : 1,
+    wanted_date: typeof body.wanted_date === 'string' ? clean(body.wanted_date, 10) : null,
+    people: body.people ?? 1,
     total: Number.isFinite(body.total) ? body.total : null,
     lesson_time: clean(body.lesson_time, 20),
     skill_level: clean(body.skill_level, 40),
@@ -124,6 +200,11 @@ export async function POST(request) {
     .from('bookings').insert(row).select('id, created_at').single();
 
   if (error) {
+    // two requests sent at the same moment can both pass the count above; the
+    // database trigger from RATE-LIMITS.sql then refuses the extra one
+    if (error.code === 'PT429' || /rate_limited/.test(error.message ?? '')) {
+      return Response.json({ error: RATE_LIMITS[0].error }, { status: 429 });
+    }
     console.error('Booking insert failed:', error.message);
     return Response.json({ error: 'Could not save the request.' }, { status: 500 });
   }

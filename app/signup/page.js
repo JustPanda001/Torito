@@ -149,8 +149,8 @@ export default function SignupPage() {
           <label className="check">
             <input type="checkbox" name="terms" required />
             <span>{t('auth.agree').split(/(\{terms\}|\{privacy\})/).map((part, i) => (
-              part === '{terms}' ? <Link key={i} className="auth-link" href="/activities">{t('auth.terms')}</Link>
-                : part === '{privacy}' ? <Link key={i} className="auth-link" href="/activities">{t('auth.privacy')}</Link>
+              part === '{terms}' ? <Link key={i} className="auth-link" href="/terms">{t('auth.terms')}</Link>
+                : part === '{privacy}' ? <Link key={i} className="auth-link" href="/privacy">{t('auth.privacy')}</Link>
                 : part
             ))}</span>
           </label>
