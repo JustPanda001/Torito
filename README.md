@@ -1,4 +1,4 @@
-# Torito — Georgian Ascent Tours
+# MTANI — Georgian Ascent Tours
 
 Next.js (App Router) rewrite of the original static site. Tours, hikes, ski and
 camping trips across Georgia, with a Supabase backend for accounts and the

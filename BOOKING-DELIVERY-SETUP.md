@@ -56,7 +56,7 @@ no service account, no JSON key.
 2. **Extensions -> Apps Script**. Delete what is there and paste:
 
 ```javascript
-// Torito booking requests -> this sheet
+// MTANI booking requests -> this sheet
 const SECRET = 'put-your-own-random-string-here';
 
 // every booking is also copied here, so one tab shows what is coming up next
@@ -244,7 +244,7 @@ link to **My bookings**. It goes only to the email on the customer's account.
 It is sent through [Resend](https://resend.com); without it, bookings still
 work and the dialog simply does not mention an email.
 
-1. Create a Resend account and add your domain (e.g. `torito.ge`) under
+1. Create a Resend account and add your domain (e.g. `mtani.ge`) under
    **Domains**, then add the DNS records it shows. Until the domain is
    verified, Resend only delivers to your own address.
 2. **API Keys -> Create API key** (sending access is enough).
@@ -253,8 +253,8 @@ work and the dialog simply does not mention an email.
    | Name | Value |
    |---|---|
    | `RESEND_API_KEY` | the key from step 2 |
-   | `BOOKING_EMAIL_FROM` | e.g. `Torito <bookings@torito.ge>` — must be on the verified domain |
-   | `BOOKING_EMAIL_REPLY_TO` | optional: where customer replies go, e.g. `hello@torito.ge` |
+   | `BOOKING_EMAIL_FROM` | e.g. `MTANI <bookings@mtani.ge>` — must be on the verified domain |
+   | `BOOKING_EMAIL_REPLY_TO` | optional: where customer replies go, e.g. `hello@mtani.ge` |
 
 4. **Redeploy.** A failed send shows in Runtime Logs as `Confirmation email failed`.
 
@@ -265,8 +265,8 @@ in Supabase's email brings them back to that trip with the booking dialog
 open. Supabase only allows return addresses you list:
 
 1. Supabase -> **Authentication -> URL Configuration**.
-2. **Site URL**: your live address, e.g. `https://torito.ge`.
-3. **Redirect URLs**: add `https://torito.ge/**` (and your `*.vercel.app`
+2. **Site URL**: your live address, e.g. `https://mtani.ge`.
+3. **Redirect URLs**: add `https://mtani.ge/**` (and your `*.vercel.app`
    address, and `http://localhost:3000/**` for local testing).
 
 Without this, the link still confirms the account but lands on the Site URL.

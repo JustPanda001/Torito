@@ -1,4 +1,4 @@
--- Torito / xnomads — review moderation.
+-- MTANI / xnomads — review moderation.
 -- Run once in the Supabase SQL editor: paste this whole file and press Run.
 -- Safe to re-run: it never drops data, and a second run does not approve
 -- anything that is waiting for you.

@@ -1,4 +1,4 @@
--- Torito — chat, bookings, profile phone, trip locations, content and routes.
+-- MTANI — chat, bookings, profile phone, trip locations, content and routes.
 -- Paste this whole file into the Supabase SQL editor and press Run.
 -- Safe to re-run: it never drops data.
 

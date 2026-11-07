@@ -1,4 +1,4 @@
--- Torito — database schema
+-- MTANI — database schema
 -- Paste the whole file into the Supabase SQL editor and run it once.
 -- Safe to re-run: every statement is written to be idempotent.
 
