@@ -9,7 +9,11 @@
 
 export const runtime = 'nodejs';
 
-const { TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, CHAT_WEBHOOK_SECRET } = process.env;
+// Chat alerts go to the support bot. Without one set, they fall back to the
+// bookings bot so nothing is lost.
+const { CHAT_WEBHOOK_SECRET } = process.env;
+const TELEGRAM_BOT_TOKEN = process.env.SUPPORT_BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN;
+const TELEGRAM_CHAT_ID = process.env.SUPPORT_CHAT_ID || process.env.TELEGRAM_CHAT_ID;
 
 export async function POST(request) {
   if (!CHAT_WEBHOOK_SECRET || request.headers.get('x-webhook-secret') !== CHAT_WEBHOOK_SECRET) {

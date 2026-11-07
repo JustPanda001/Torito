@@ -14,10 +14,12 @@ export const runtime = 'nodejs';
 const {
   NEXT_PUBLIC_SUPABASE_URL: SUPABASE_URL,
   SUPABASE_SERVICE_ROLE_KEY,
-  TELEGRAM_BOT_TOKEN,
-  TELEGRAM_CHAT_ID,
   CHAT_WEBHOOK_SECRET,
 } = process.env;
+
+// the support bot's webhook; same fallback as /api/chat-notify
+const TELEGRAM_BOT_TOKEN = process.env.SUPPORT_BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN;
+const TELEGRAM_CHAT_ID = process.env.SUPPORT_CHAT_ID || process.env.TELEGRAM_CHAT_ID;
 
 const CHAT_LINE = /^Chat: ([0-9a-f-]{36})$/m;
 
