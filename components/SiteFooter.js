@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useT } from '@/lib/i18n';
+import MtaniLogo from './MtaniLogo';
 
 export default function SiteFooter() {
   const { t } = useT();
@@ -9,7 +10,7 @@ export default function SiteFooter() {
     <footer className="site-footer">
       <div className="footer-inner">
         <div className="footer-brand">
-          <img src="/assets/torito-logo.png" alt="" className="footer-logo" />
+          <MtaniLogo tagline className="footer-logo" />
           <p>{t('footer.tagline')}</p>
         </div>
         <div><h4>{t('footer.explore')}</h4>
@@ -23,12 +24,12 @@ export default function SiteFooter() {
           <Link href="/terms">{t('legal.terms.tag')}</Link><Link href="/privacy">{t('legal.privacy.tag')}</Link>
         </div>
         <div><h4>{t('nav.contact')}</h4>
-          <a href="mailto:hello@torito.ge">hello@torito.ge</a>
+          <a href="mailto:hello@mtani.ge">hello@mtani.ge</a>
           <a href="tel:+995000000000">+995 000 000 000</a>
           <span>{t('footer.location')}</span>
         </div>
       </div>
-      <p className="copyright">© 2026 Torito</p>
+      <p className="copyright">© 2026 MTANI</p>
     </footer>
   );
 }

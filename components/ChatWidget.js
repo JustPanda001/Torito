@@ -9,17 +9,30 @@
 // Visitors are not asked to sign in first, so a thread is identified by its own
 // uuid, kept in localStorage. That uuid is the secret: holding it is what lets
 // the same browser read its thread back later. A signed-in visitor also gets
-// user_id stamped on the row, so their name and email show in the inbox.
+// user_id stamped on the row, so their name and email show in the inbox, and
+// their thread then opens only while they are signed in to that account.
+//
+// The widget never touches the chat tables directly: the database only lets a
+// visitor in through start_chat, send_chat_message and get_chat (see
+// CHAT-PRIVACY.sql), which check that the thread is theirs. That is also why
+// there is no realtime subscription here — row security hides the rows from a
+// guest's realtime feed, so polling get_chat is how replies arrive.
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
-import { supabase, currentProfile } from '@/lib/supabaseClient';
+import { supabase } from '@/lib/supabaseClient';
 import { useT } from '@/lib/i18n';
 import Linkify from './Linkify';
 import { purgeOldChats } from '@/lib/chatExpiry';
 
 const STORE_KEY = 'torito.chat.conversation';
-const POLL_MS = 8000;
+// quick while the panel is open, slow while closed (only feeds the badge)
+const POLL_OPEN_MS = 4000;
+const POLL_CLOSED_MS = 15000;
+// each poll asks only for messages from the newest one seen, minus this much,
+// so a reply stamped a moment before the last poll is not skipped
+const OVERLAP_MS = 60 * 1000;
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 // the opening line names the thing by what it actually is, so "I have a
 // question about this hike" rather than the same word for every listing
@@ -148,6 +161,8 @@ export default function ChatWidget() {
   const conversationId = useRef(null);
   const loaded = useRef(false);
   const seen = useRef(new Set());
+  // created_at of the newest message fetched, as the database wrote it
+  const lastAt = useRef(null);
   const autoReplied = useRef(false);
   const logRef = useRef(null);
   const inputRef = useRef(null);
@@ -160,67 +175,63 @@ export default function ChatWidget() {
   const greeting = { id: 'greeting', sender: 'bot', body: t('chat.greeting'), created_at: null };
 
   useEffect(() => {
-    conversationId.current = localStorage.getItem(STORE_KEY);
+    const saved = localStorage.getItem(STORE_KEY);
+    // anything else would only ever earn an "invalid uuid" error from the database
+    conversationId.current = saved && UUID.test(saved) ? saved : null;
   }, []);
 
   const append = useCallback((msg) => {
     setMessages((prev) => [...prev, msg]);
   }, []);
 
+  /** Drops the stored thread: it expired, or it is not this visitor's any more
+   *  (opened under an account that has since signed out). The next message
+   *  starts a fresh one. */
+  const forget = useCallback(() => {
+    conversationId.current = null;
+    lastAt.current = null;
+    localStorage.removeItem(STORE_KEY);
+    seen.current.clear();
+    autoReplied.current = false;
+  }, []);
+
+  /** Records the newest created_at, kept as the database's own string so the
+   *  next poll's "from" is exact. Rows arrive oldest first. */
+  const track = useCallback((rows) => {
+    if (rows.length) lastAt.current = rows[rows.length - 1].created_at;
+  }, []);
+
   /* ---------------- reading ---------------- */
 
-  // Realtime is off by default on a fresh Supabase project, so this poll is the
-  // dependable path rather than a fallback. Cheap: one indexed query per tick,
+  // Cheap: one indexed lookup per tick, only messages since the last one seen,
   // and only while the tab is visible.
   const pull = useCallback(async () => {
     const id = conversationId.current;
     if (!id || document.hidden) return;
 
-    const { data } = await supabase
-      .from('chat_messages')
-      .select('id, sender, body, created_at')
-      .eq('conversation_id', id)
-      .eq('sender', 'admin')
-      .order('created_at');
+    const after = lastAt.current
+      ? new Date(new Date(lastAt.current).getTime() - OVERLAP_MS).toISOString()
+      : null;
+    const { data, error } = await supabase.rpc('get_chat', { p_conversation: id, p_after: after });
+    if (error || conversationId.current !== id) return;
+    // null (not an error) means the thread is gone or no longer ours
+    if (data === null) { forget(); return; }
 
-    const fresh = (data ?? []).filter((m) => !seen.current.has(m.id));
+    const rows = Array.isArray(data) ? data : [];
+    track(rows);
+    const fresh = rows.filter((m) => m.sender === 'admin' && !seen.current.has(m.id));
     if (!fresh.length) return;
 
     fresh.forEach((m) => seen.current.add(m.id));
     if (loaded.current) setMessages((prev) => [...prev, ...fresh]);
     setUnread((n) => (open ? 0 : n + fresh.length));
-  }, [open]);
+  }, [open, forget, track]);
 
   useEffect(() => {
-    const timer = setInterval(pull, POLL_MS);
+    const timer = setInterval(pull, open ? POLL_OPEN_MS : POLL_CLOSED_MS);
     pull();
     return () => clearInterval(timer);
-  }, [pull]);
-
-  // and take realtime when the project does have it enabled
-  useEffect(() => {
-    const id = conversationId.current;
-    if (!id) return undefined;
-
-    const channel = supabase
-      .channel(`chat:${id}`)
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'chat_messages',
-        filter: `conversation_id=eq.${id}`,
-      }, ({ new: row }) => {
-        if (row.sender !== 'admin' || seen.current.has(row.id)) return;
-        seen.current.add(row.id);
-        if (loaded.current) append(row);
-        setUnread((n) => (open ? 0 : n + 1));
-      })
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
-    // conversationId is a ref, so this re-runs only when the panel opens and
-    // the id may have just been created
-  }, [open, append]);
+  }, [pull, open]);
 
   const loadHistory = useCallback(async () => {
     if (loaded.current) return;
@@ -229,36 +240,26 @@ export default function ChatWidget() {
     const id = conversationId.current;
     if (!id) { setMessages([greeting]); return; }
 
-    // the thread may have aged out since this browser last used it; writing
-    // into a deleted row would fail the foreign key, so forget it and start over
-    const { data: conv } = await supabase
-      .from('chat_conversations')
-      .select('id')
-      .eq('id', id)
-      .maybeSingle();
+    const { data, error } = await supabase.rpc('get_chat', { p_conversation: id });
 
-    if (!conv) {
-      conversationId.current = null;
-      localStorage.removeItem(STORE_KEY);
-      seen.current.clear();
-      setMessages([greeting]);
-      return;
-    }
+    // a network or server error: keep the thread and try again on next open
+    if (error) { loaded.current = false; setMessages([greeting]); return; }
 
-    const { data, error } = await supabase
-      .from('chat_messages')
-      .select('id, sender, body, created_at')
-      .eq('conversation_id', id)
-      .order('created_at');
+    // the thread may have aged out since this browser last used it, or belong
+    // to an account that is not signed in now; posting into it would fail, so
+    // forget it and start over
+    if (data === null) { forget(); setMessages([greeting]); return; }
 
-    if (error || !data?.length) { setMessages([greeting]); return; }
+    const rows = Array.isArray(data) ? data : [];
+    if (!rows.length) { setMessages([greeting]); return; }
 
-    data.forEach((m) => seen.current.add(m.id));
-    autoReplied.current = data.some((m) => m.sender === 'bot'
+    rows.forEach((m) => seen.current.add(m.id));
+    track(rows);
+    autoReplied.current = rows.some((m) => m.sender === 'bot'
       && (m.body === t('chat.autoReply') || m.body === t('chat.askDetails')));
-    setMessages([greeting, ...data]);
+    setMessages([greeting, ...rows]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [t]);
+  }, [t, forget, track]);
 
   /* ---------------- opening ---------------- */
 
@@ -302,22 +303,36 @@ export default function ChatWidget() {
   async function ensureConversation() {
     if (conversationId.current) return conversationId.current;
 
-    const profile = await currentProfile().catch(() => null);
-    const { data, error } = await supabase
-      .from('chat_conversations')
-      .insert({
-        user_id: profile?.id ?? null,
-        display_name: profile?.full_name ?? null,
-        email: profile?.email ?? null,
-        page: window.location.pathname,
-      })
-      .select('id')
-      .single();
+    // the database stamps the account, name and email from the session itself
+    const { data: id, error } = await supabase.rpc('start_chat', { p_page: window.location.pathname });
 
     if (error) throw error;
-    conversationId.current = data.id;
-    localStorage.setItem(STORE_KEY, data.id);
-    return data.id;
+    if (!id) throw new Error('start_chat returned no id');
+    conversationId.current = id;
+    localStorage.setItem(STORE_KEY, id);
+    return id;
+  }
+
+  /**
+   * Stores one message and returns the thread id it went into. If the saved
+   * thread has gone (expired, or opened under an account now signed out), a
+   * visitor's message starts a new one and tries once more rather than failing.
+   * An auto-reply never does: a thread holding only our reply would be noise.
+   */
+  async function store(sender, body) {
+    let id = await ensureConversation();
+    const call = () => supabase.rpc('send_chat_message', { p_conversation: id, p_body: body, p_sender: sender });
+
+    let { data, error } = await call();
+    if (error && sender === 'user' && /chat_not_found/.test(error.message ?? '')) {
+      forget();
+      id = await ensureConversation();
+      ({ data, error } = await call());
+    }
+    if (error) throw error;
+    // the poll would otherwise not know this row is already on screen
+    if (data) seen.current.add(data);
+    return id;
   }
 
   /**
@@ -331,27 +346,26 @@ export default function ChatWidget() {
     append({ id: `local-${Date.now()}`, sender: 'user', body, created_at: new Date().toISOString() });
 
     try {
-      const id = await ensureConversation();
-      const { error } = await supabase
-        .from('chat_messages')
-        .insert({ conversation_id: id, sender: 'user', body });
-      if (error) throw error;
+      await store('user', body);
 
       if (autoReply && !autoReplied.current) {
         autoReplied.current = true;
         const reply = t(replyKey);
         setTimeout(async () => {
           append({ id: `auto-${Date.now()}`, sender: 'bot', body: reply, created_at: new Date().toISOString() });
-          // stored too, so the thread reads the same way when it is reopened
-          await supabase.from('chat_messages')
-            .insert({ conversation_id: id, sender: 'bot', body: reply });
+          // stored too, so the thread reads the same way when it is reopened;
+          // best effort, as before: the visitor has already seen it
+          try { await store('bot', reply); } catch (err) {
+            console.warn('Chat auto-reply not stored:', err?.message ?? err);
+          }
         }, 600);
       }
     } catch (err) {
       append({ id: `err-${Date.now()}`, sender: 'bot', body: t('chat.failed'), created_at: new Date().toISOString() });
       console.warn('Chat send failed:', err?.message ?? err);
     }
-    // ensureConversation reads refs only, so it needs no dependency entry
+    // store / ensureConversation read refs and the stable forget() only, so
+    // they need no dependency entry
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [append, t]);
 
@@ -391,7 +405,7 @@ export default function ChatWidget() {
       {open && (
         <div className="chat-panel" ref={sheetRef} role="dialog" aria-label={t('chat.title')}>
           <div className="chat-head">
-            <span className="chat-avatar"><img src="/assets/torito-logo.png" alt="" /></span>
+            <span className="chat-avatar"><img src="/assets/mtani-mark.svg" alt="" /></span>
             <div className="chat-head-main">
               <strong>{t('chat.title')}</strong>
               <span>{t('chat.sub')}</span>

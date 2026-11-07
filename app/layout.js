@@ -16,9 +16,9 @@ import { FavoritesProvider } from '@/lib/favorites';
 import { RatingsProvider } from '@/lib/ratings';
 
 export const metadata = {
-  title: 'Torito — Ski, Hikes, Camping & Climbs in Georgia',
+  title: 'MTANI — Ski, Hikes, Camping & Climbs in Georgia',
   description: 'Ski and snowboard instructors, snowmobiles and paragliding in Gudauri, plus hikes, camping and mountaineering across Georgia.',
-  icons: { icon: '/assets/torito-logo.png' },
+  icons: { icon: '/assets/mtani-favicon.svg' },
 };
 
 export const viewport = {

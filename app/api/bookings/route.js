@@ -13,9 +13,18 @@
 // token: it is what ties the row to them (so My bookings can list it), and the
 // confirmation only ever goes to the email on that account — never an address
 // typed into the post, or this would be an open mail relay.
+//
+// The price is ours, not the browser's. The trip is loaded here by slug (as the
+// visitor, published only), refused if unknown or not bookable, and the total
+// and title are recomputed with lib/pricing.js — the same helper the booking
+// dialog uses to show its preview. The post's total and tour_title are ignored.
 
 import { createClient } from '@supabase/supabase-js';
 import { bookingRef } from '@/lib/bookingRef';
+import { isBookable } from '@/lib/bookable';
+import { TOURS } from '@/lib/tours-data';
+import { tourOptions } from '@/lib/options';
+import { bookingTitle, bookingTotal, findOption, unitPrice } from '@/lib/pricing';
 
 export const runtime = 'nodejs';
 
@@ -94,6 +103,42 @@ async function overLimit(supabase, userId) {
   return null;
 }
 
+/**
+ * The trip a request is for, found the way the trip page finds it, or an
+ * { error, status } to answer with.
+ *
+ * A published row in the database wins. With no such row the static list is
+ * trusted only for its `demo` trips (the catalogue shows those next to the
+ * database rows) or when the database has no published trips at all (the
+ * site's fallback for an empty database). Anything else is unknown. If the
+ * database cannot be asked, nothing is guessed: the visitor is told to retry.
+ * Runs as the visitor, so "published tours are public" is what they can see.
+ */
+async function findTrip(supabase, slug) {
+  const retry = { error: 'Could not check that trip right now. Please try again in a moment.', status: 503 };
+  const unknown = { error: 'That trip could not be found.', status: 400 };
+
+  const { data, error } = await supabase
+    .from('tours').select('*').eq('slug', slug).eq('published', true).maybeSingle();
+  if (error) {
+    console.error('Booking trip lookup failed:', error.message);
+    return retry;
+  }
+  if (data) return { trip: data };
+
+  const local = TOURS.find((t) => t.slug === slug);
+  if (!local) return unknown;
+  if (local.demo) return { trip: local };
+
+  const { count, error: countError } = await supabase
+    .from('tours').select('slug', { count: 'exact', head: true }).eq('published', true);
+  if (countError) {
+    console.error('Booking trip count failed:', countError.message);
+    return retry;
+  }
+  return count > 0 ? unknown : { trip: local };
+}
+
 /** The kit list the visitor ticked, as plain titles. Bounded like the rest. */
 function cleanItems(value) {
   if (!Array.isArray(value)) return null;
@@ -167,13 +212,45 @@ export async function POST(request) {
   const tooMany = await overLimit(supabase, user.id);
   if (tooMany) return Response.json({ error: tooMany }, { status: 429 });
 
+  const slug = clean(body.tour_slug, 120);
+  if (!slug) return Response.json({ error: 'Missing trip.' }, { status: 400 });
+
+  const kind = ['trip', 'lesson', 'waitlist'].includes(body.kind) ? body.kind : 'trip';
+
+  // The trip, its title and the total all come from our own data. The browser's
+  // tour_title and total are ignored: they could say anything.
+  const found = await findTrip(supabase, slug);
+  if (found.error) return Response.json({ error: found.error }, { status: found.status });
+  const { trip } = found;
+  if (!isBookable(trip)) {
+    return Response.json({ error: 'That trip cannot be booked right now.' }, { status: 400 });
+  }
+
+  // All the browser gets to say about price is WHICH option it picked, by name;
+  // the price itself is the trip's. A trip with options needs one of them
+  // (the page always picks one); a waitlist has no price, so it may go without.
+  const option = findOption(trip, body.option, body.tour_title);
+  if (!option && kind !== 'waitlist' && tourOptions(trip).length > 0) {
+    return Response.json({ error: 'Please choose one of the options for this trip.' }, { status: 400 });
+  }
+
+  const people = body.people ?? 1;
+  // A trip with no price set (or a waitlist) has no total, rather than a
+  // made-up 0. Rounded to cents so float noise never reaches the row.
+  const unit = unitPrice(trip, option);
+  const priced = kind !== 'waitlist' && unit != null && unit !== '' && Number.isFinite(Number(unit));
+  const total = priced ? Math.round(bookingTotal(trip, option, people) * 100) / 100 : null;
+  if (total != null && Number.isFinite(body.total) && body.total !== total) {
+    console.warn(`Booking total differs: browser said ${body.total}, server says ${total} (${slug})`);
+  }
+
   const row = {
-    tour_slug: clean(body.tour_slug, 120),
-    tour_title: clean(body.tour_title, 200),
-    kind: ['trip', 'lesson', 'waitlist'].includes(body.kind) ? body.kind : 'trip',
+    tour_slug: trip.slug,
+    tour_title: clean(bookingTitle(trip, option), 200),
+    kind,
     wanted_date: typeof body.wanted_date === 'string' ? clean(body.wanted_date, 10) : null,
-    people: body.people ?? 1,
-    total: Number.isFinite(body.total) ? body.total : null,
+    people,
+    total,
     lesson_time: clean(body.lesson_time, 20),
     skill_level: clean(body.skill_level, 40),
     lesson_type: clean(body.lesson_type, 40),
@@ -185,10 +262,6 @@ export async function POST(request) {
     email: user.email ?? null,
     phone: clean(body.phone, 40),
   };
-
-  if (!row.tour_slug || !row.tour_title) {
-    return Response.json({ error: 'Missing trip.' }, { status: 400 });
-  }
 
   // The dialog already greys out what is taken, but two people can have it
   // open at once, so the check is repeated here against the live table.
@@ -361,7 +434,7 @@ async function emailCustomer(row, site) {
     hello, '', lead, '',
     ...details.map(([k, v]) => `${k}: ${v}`), '',
     `See all your bookings: ${link}`, '',
-    'Reply to this email if anything needs changing.', '', 'Torito',
+    'Reply to this email if anything needs changing.', '', 'MTANI',
   ].join('\n');
 
   const cell = 'padding:8px 0;border-top:1px solid #d8f3e4';
@@ -378,7 +451,7 @@ async function emailCustomer(row, site) {
     <p style="margin:24px 0 0"><a href="${escapeHtml(link)}" style="display:inline-block;background:#3f8f80;color:#fff;text-decoration:none;font-weight:600;padding:12px 24px;border-radius:999px">See my bookings</a></p>
     <p style="margin:20px 0 0;font-size:14px;color:#5c7784;line-height:1.6">Reply to this email if anything needs changing.</p>
   </div>
-  <p style="text-align:center;font-size:12px;color:#5c7784;margin:16px 0 0">Torito · Georgia</p>
+  <p style="text-align:center;font-size:12px;color:#5c7784;margin:16px 0 0">MTANI · Georgia</p>
 </div></body></html>`;
 
   const res = await fetch('https://api.resend.com/emails', {

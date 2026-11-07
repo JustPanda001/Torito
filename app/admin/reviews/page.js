@@ -224,7 +224,7 @@ function Denied({ message }) {
     <main className="auth-page">
       <div className="auth-card">
         <Link className="auth-logo" href="/">
-          <img src="/assets/torito-logo.png" alt="" /><span>TORITO</span>
+          <img src="/assets/mtani-mark.svg" alt="" /><span>MTANI</span>
         </Link>
         <h1>Admins only</h1>
         <p className="form-note">{message}</p>

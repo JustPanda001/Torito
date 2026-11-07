@@ -23,6 +23,7 @@ import DialSelect from './DialSelect';
 import { answersComplete, bookingQuestions, initialAnswer, packAnswers } from '@/lib/bookingQuestions';
 import { requiredItems } from '@/lib/requiredItems';
 import { isBookable } from '@/lib/bookable';
+import { bookingTitle, bookingTotal, unitPrice } from '@/lib/pricing';
 import { useT } from '@/lib/i18n';
 import { localizeTour } from '@/lib/trip-translations';
 
@@ -104,7 +105,7 @@ export default function BookingModal({ tour, option = null, onClose }) {
   const view = useMemo(() => localizeTour(tour, lang), [tour, lang]);
   const tripName = view.full_title || view.title;
 
-  const price = option ? option.price : tour.price;
+  const price = unitPrice(tour, option);
   const seats = tour.spots_left ?? tour.capacity;
   const full = seats === 0;
 
@@ -220,7 +221,9 @@ export default function BookingModal({ tour, option = null, onClose }) {
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
         body: JSON.stringify({
           tour_slug: tour.slug,
-          tour_title: `${tour.full_title || tour.title}${option ? ` — ${option.name}` : ''}`,
+          tour_title: bookingTitle(tour, option),
+          // the server prices the booking from this option's price in the database
+          option: option?.name ?? null,
           kind: requestKind,
           // a plain YYYY-MM-DD, built locally: toISOString() would shift the
           // date backwards for anyone east of UTC, which is everyone here
@@ -288,7 +291,7 @@ export default function BookingModal({ tour, option = null, onClose }) {
   const blocked = !isBookable(tour);
   useEffect(() => { if (blocked) onClose(); }, [blocked, onClose]);
 
-  const total = price * people;
+  const total = bookingTotal(tour, option, people);
   // places still open on the chosen departure, once other bookings count
   const daySeats = date && !timed && tour.capacity
     ? Math.max(0, Math.min(seats, tour.capacity - avail.bookedOn(date)))

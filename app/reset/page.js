@@ -128,8 +128,8 @@ export default function ResetPage() {
     <main className="auth-page">
       <div className="auth-card">
         <Link className="auth-logo" href="/">
-          <img src="/assets/torito-logo.png" alt={t('auth.logoAlt')} />
-          <span>TORITO</span>
+          <img src="/assets/mtani-mark.svg" alt={t('auth.logoAlt')} />
+          <span>MTANI</span>
         </Link>
 
         <h1>{mode === 'request' ? t('auth.resetTitle') : mode === 'done' ? t('auth.doneTitle') : t('auth.newTitle')}</h1>

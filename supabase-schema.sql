@@ -296,8 +296,9 @@ on conflict (id) do nothing;
 --
 -- Visitors are not required to sign in, so a conversation is identified by its
 -- own uuid, which the widget keeps in localStorage. That uuid is the secret:
--- knowing it is what lets a guest read their own thread back. Signed-in
--- visitors also get user_id stamped, so their thread follows the account.
+-- knowing it is what lets a guest read their own thread back, through the
+-- functions below (never the tables). A thread opened while signed in gets
+-- user_id stamped and is readable only with that account's session.
 create table if not exists public.chat_conversations (
   id              uuid primary key default gen_random_uuid(),
   user_id         uuid references auth.users(id) on delete set null,
@@ -346,33 +347,153 @@ create trigger chat_messages_touch
   after insert on public.chat_messages
   for each row execute function public.touch_conversation();
 
+-- ------------------------------------------------------------
+-- CHAT PRIVACY (same block as CHAT-PRIVACY.sql; keep the three files in step)
+-- A visitor reads and writes only their own thread. Guests have no table
+-- access: the widget calls the three security-definer functions below with the
+-- thread's uuid. A thread opened while signed in belongs to that account and
+-- needs that account's session. Admins (is_admin) keep full access; the
+-- service role bypasses RLS. Rate-limit triggers (RATE-LIMITS.sql) still fire
+-- for inserts made through these functions.
+-- ------------------------------------------------------------
+
+-- opens a thread; user_id, name and email come from the session, not the browser
+create or replace function public.start_chat(p_page text default null)
+returns uuid
+language plpgsql
+volatile
+security definer
+set search_path = public
+as $$
+declare
+  uid    uuid := auth.uid();
+  v_name text;
+  v_mail text;
+  new_id uuid;
+begin
+  if uid is not null then
+    select coalesce(nullif(p.full_name, ''), nullif(u.raw_user_meta_data->>'full_name', '')),
+           u.email
+      into v_name, v_mail
+      from auth.users u
+      left join public.profiles p on p.id = u.id
+     where u.id = uid;
+  end if;
+
+  insert into public.chat_conversations (user_id, display_name, email, page)
+  values (uid, v_name, v_mail, left(nullif(p_page, ''), 300))
+  returning id into new_id;
+
+  return new_id;
+end;
+$$;
+
+-- posts as 'user' or 'bot' into a guest thread (by uuid) or the caller's own;
+-- missing / expired / not-yours all answer 'chat_not_found'
+create or replace function public.send_chat_message(
+  p_conversation uuid,
+  p_body         text,
+  p_sender       text default 'user'
+)
+returns uuid
+language plpgsql
+volatile
+security definer
+set search_path = public
+as $$
+declare
+  new_id uuid;
+begin
+  if p_sender is null or p_sender not in ('user', 'bot') then
+    raise exception using errcode = '22023', message = 'sender must be user or bot';
+  end if;
+
+  if not exists (
+    select 1 from public.chat_conversations c
+     where c.id = p_conversation
+       and (c.user_id is null or c.user_id = auth.uid())
+  ) then
+    raise exception using errcode = 'P0002', message = 'chat_not_found';
+  end if;
+
+  insert into public.chat_messages (conversation_id, sender, body)
+  values (p_conversation, p_sender, p_body)
+  returning id into new_id;
+
+  return new_id;
+end;
+$$;
+
+-- reads the same threads: null when not found for this caller, else a json
+-- array of {id, sender, body, created_at}, oldest first, optionally from p_after
+create or replace function public.get_chat(
+  p_conversation uuid,
+  p_after        timestamptz default null
+)
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path = public
+as $$
+begin
+  if not exists (
+    select 1 from public.chat_conversations c
+     where c.id = p_conversation
+       and (c.user_id is null or c.user_id = auth.uid())
+  ) then
+    return null;
+  end if;
+
+  return coalesce((
+    select jsonb_agg(
+             jsonb_build_object('id', m.id, 'sender', m.sender, 'body', m.body, 'created_at', m.created_at)
+             order by m.created_at, m.id)
+      from public.chat_messages m
+     where m.conversation_id = p_conversation
+       and (p_after is null or m.created_at >= p_after)
+  ), '[]'::jsonb);
+end;
+$$;
+
+revoke all on function public.start_chat(text)                    from public;
+revoke all on function public.send_chat_message(uuid, text, text) from public;
+revoke all on function public.get_chat(uuid, timestamptz)         from public;
+
+grant execute on function public.start_chat(text)                    to anon, authenticated;
+grant execute on function public.send_chat_message(uuid, text, text) to anon, authenticated;
+grant execute on function public.get_chat(uuid, timestamptz)         to anon, authenticated;
+
 alter table public.chat_conversations enable row level security;
 alter table public.chat_messages      enable row level security;
 
-drop policy if exists "start a conversation"    on public.chat_conversations;
-drop policy if exists "read own conversation"   on public.chat_conversations;
-drop policy if exists "admins manage chats"     on public.chat_conversations;
-drop policy if exists "write own messages"      on public.chat_messages;
-drop policy if exists "read conversation"       on public.chat_messages;
-drop policy if exists "admins manage messages"  on public.chat_messages;
+-- the old names are dropped too: "read own conversation" and "read conversation"
+-- were `using (true)` (anyone could read every thread) and "write own messages"
+-- let anyone post into any thread. Do not bring them back.
+drop policy if exists "start a conversation"     on public.chat_conversations;
+drop policy if exists "read own conversation"    on public.chat_conversations;
+drop policy if exists "owner reads conversation" on public.chat_conversations;
+drop policy if exists "admins manage chats"      on public.chat_conversations;
+drop policy if exists "write own messages"       on public.chat_messages;
+drop policy if exists "read conversation"        on public.chat_messages;
+drop policy if exists "owner reads messages"     on public.chat_messages;
+drop policy if exists "admins manage messages"   on public.chat_messages;
 
--- anyone may open a thread; only an admin may claim a row as someone else's
-create policy "start a conversation" on public.chat_conversations
-  for insert with check (user_id is null or user_id = auth.uid());
-
--- a guest fetches their thread by its uuid, which only they hold
-create policy "read own conversation" on public.chat_conversations
-  for select using (true);
+-- a signed-in visitor sees the threads opened under their own account
+create policy "owner reads conversation" on public.chat_conversations
+  for select to authenticated
+  using (user_id = (select auth.uid()));
 
 create policy "admins manage chats" on public.chat_conversations
   for all using (public.is_admin()) with check (public.is_admin());
 
--- visitors may only ever post as themselves; 'admin' messages are gated
-create policy "write own messages" on public.chat_messages
-  for insert with check (sender in ('user','bot'));
-
-create policy "read conversation" on public.chat_messages
-  for select using (true);
+create policy "owner reads messages" on public.chat_messages
+  for select to authenticated
+  using (exists (
+    select 1 from public.chat_conversations c
+     where c.id = conversation_id
+       and c.user_id = (select auth.uid())
+  ));
 
 create policy "admins manage messages" on public.chat_messages
   for all using (public.is_admin()) with check (public.is_admin());

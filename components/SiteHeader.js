@@ -8,6 +8,7 @@ import SearchSuggest from './SearchSuggest';
 import { ThemeToggle } from './HeaderToggles';
 import { useT } from '@/lib/i18n';
 import { useFavorites } from '@/lib/favorites';
+import MtaniLogo from './MtaniLogo';
 
 // useSearchParams needs a Suspense boundary on statically built pages, so the
 // watcher is its own tiny component rather than a hook in the header itself.
@@ -84,8 +85,7 @@ export default function SiteHeader({ solid = false }) {
 
         <div className="header-left">
           <Link className="logo" href="/">
-            <img src="/assets/torito-logo.png" alt={t('header.logoAlt')} />
-            <span className="logo-text">TORITO</span>
+            <MtaniLogo className="logo-word" title={t('header.logoAlt')} />
           </Link>
           {/* phone only: sits next to the logo */}
           <button
