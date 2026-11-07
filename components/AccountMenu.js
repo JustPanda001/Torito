@@ -145,6 +145,12 @@ export default function AccountMenu() {
           )}
 
           {isAdmin && (
+            <Link href="/admin/bookings" className="admin-link" onClick={() => setOpen(false)}>
+              {tr(t, 'account.bookingRequests', 'Booking requests')}
+            </Link>
+          )}
+
+          {isAdmin && (
             <Link href="/admin/reviews" className="admin-link" onClick={() => setOpen(false)}>
               {tr(t, 'account.reviews', 'Reviews')}
             </Link>
