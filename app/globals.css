@@ -1942,7 +1942,7 @@ body.has-offline-banner{padding-bottom:104px}
    rounded cards around them. Every standalone photo now carries the same large
    radius as the activity cards. */
 .feature-img{border-radius:var(--radius-lg);overflow:hidden;box-shadow:0 14px 34px rgba(47,74,85,.16)}
-.feature-img img{display:block;width:100%;aspect-ratio:4/3;object-fit:cover}
+.feature-img img{display:block;width:100%;height:auto;aspect-ratio:4/3;object-fit:cover}
 .gal-thumb{border-radius:12px}
 
 /* ---------- Winter first ---------- */
