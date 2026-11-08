@@ -10,6 +10,7 @@ import SiteFooter from '@/components/SiteFooter';
 import { supabase, currentUser } from '@/lib/supabaseClient';
 import { useT } from '@/lib/i18n';
 import { bookingRef } from '@/lib/bookingRef';
+import { markMyBookingsSeen } from '@/lib/badges';
 import { money } from '@/lib/season';
 import { findTour } from '@/lib/tours-data';
 import { localizeTour } from '@/lib/trip-translations';
@@ -90,6 +91,8 @@ export default function BookingsPage() {
       if (error) throw error;
       setRows(data ?? []);
       setState('ready');
+      // looking at the list is what clears the "!" on My bookings
+      markMyBookingsSeen(user.id, data ?? []);
     } catch {
       setState('error');
     }

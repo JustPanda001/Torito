@@ -25,6 +25,7 @@ import { requiredItems } from '@/lib/requiredItems';
 import { isBookable } from '@/lib/bookable';
 import { bookingTitle, bookingTotal, unitPrice } from '@/lib/pricing';
 import { useT } from '@/lib/i18n';
+import { refreshBadges } from '@/lib/badges';
 import { localizeTour } from '@/lib/trip-translations';
 
 // the stored values stay English (the team reads them); only the buttons are
@@ -268,6 +269,8 @@ export default function BookingModal({ tour, option = null, onClose }) {
         if (saveError) console.warn('Could not save phone to profile:', saveError.message);
       }
       if (requestKind === 'waitlist') setWaitlisted(true); else setDone(true);
+      // light up "!" on My bookings straight away instead of at the next poll
+      refreshBadges();
     } catch (err) {
       setFailed(t('booking.failed'));
       console.warn('Booking request failed:', err.message);

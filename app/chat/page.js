@@ -13,6 +13,7 @@ import Linkify from '@/components/Linkify';
 import { supabase, currentProfile, friendlyError } from '@/lib/supabaseClient';
 import { purgeOldChats, CHAT_TTL_HOURS } from '@/lib/chatExpiry';
 import { usePhoneSheet } from '@/components/ChatWidget';
+import { refreshBadges } from '@/lib/badges';
 
 const POLL_MS = 10000;
 
@@ -118,6 +119,8 @@ export default function ChatAdminPage() {
     if (conv?.admin_unread) {
       await supabase.from('chat_conversations').update({ admin_unread: false }).eq('id', id);
       loadList();
+      // the "!" on the account menu's Chat link should drop at once
+      refreshBadges();
     }
   }
 

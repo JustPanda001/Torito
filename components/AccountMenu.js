@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { currentProfile, signOut } from '@/lib/supabaseClient';
 import { useT } from '@/lib/i18n';
 import { useFavorites } from '@/lib/favorites';
+import { Bang, useAccountBadges, useBangLabel } from '@/lib/badges';
 import { ThemeToggle, LanguageRow, tr } from './HeaderToggles';
 
 // Language is only here (no flag in the header), for signed-in and signed-out
@@ -33,24 +34,27 @@ const PersonIcon = () => (
 
 // Favorites link inside the dropdown; shown by CSS only on very narrow phones,
 // where the heart in the header row does not fit.
-function FavRow({ favorites, t, onClick }) {
+function FavRow({ unseen, t, onClick }) {
   return (
     <Link href="/activities?saved=1" className="drop-fav" onClick={onClick}>
       <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8">
         <path d="M12 20s-7-4.6-7-9.4A4 4 0 0 1 12 8a4 4 0 0 1 7-2.6c0 4.8-7 9.4-7 9.4z" />
       </svg>
       <span>{t('nav.saved')}</span>
-      {favorites.size > 0 && <span className="drop-count">{favorites.size}</span>}
+      {unseen && <Bang />}
     </Link>
   );
 }
 
 export default function AccountMenu() {
   const { t } = useT();
-  const { favorites } = useFavorites();
+  const { unseen } = useFavorites();
   const [profile, setProfile] = useState(null);
   const [open, setOpen] = useState(false);
   const wrap = useRef(null);
+  // "!" on the links below and on the avatar; all false while signed out
+  const badges = useAccountBadges(profile);
+  const bangLabel = useBangLabel();
 
   useEffect(() => {
     let alive = true;
@@ -105,7 +109,7 @@ export default function AccountMenu() {
           <div className="account-drop" role="menu">
             <Link href="/login" className="admin-link" onClick={() => setOpen(false)}>{t('nav.login')}</Link>
             <Link href="/signup" onClick={() => setOpen(false)}>{t('auth.createAccount')}</Link>
-            <FavRow favorites={favorites} t={t} onClick={() => setOpen(false)} />
+            <FavRow unseen={unseen} t={t} onClick={() => setOpen(false)} />
             <Prefs />
           </div>
         )}
@@ -115,6 +119,7 @@ export default function AccountMenu() {
 
   const name = (profile.full_name || profile.email || t('header.account')).split(' ')[0];
   const isAdmin = profile.role === 'admin';
+  const anyBang = (isAdmin && (badges.chat || badges.bookings)) || badges.mine;
 
   return (
     <div className="account-menu" ref={wrap}>
@@ -124,10 +129,13 @@ export default function AccountMenu() {
         aria-expanded={open}
         aria-haspopup="menu"
         title={name}
-        aria-label={name}
+        aria-label={anyBang ? `${name}, ${bangLabel}` : name}
         onClick={() => setOpen((v) => !v)}
       >
-        <PersonIcon />
+        <span className="bang-host">
+          <PersonIcon />
+          {anyBang && <Bang className="bang-corner" decorative />}
+        </span>
         <span className="hide-sm">{name}</span>
       </button>
 
@@ -145,8 +153,9 @@ export default function AccountMenu() {
           )}
 
           {isAdmin && (
-            <Link href="/admin/bookings" className="admin-link" onClick={() => setOpen(false)}>
+            <Link href="/admin/bookings" className="admin-link has-bang" onClick={() => setOpen(false)}>
               {tr(t, 'account.bookingRequests', 'Booking requests')}
+              {badges.bookings && <Bang />}
             </Link>
           )}
 
@@ -157,14 +166,18 @@ export default function AccountMenu() {
           )}
 
           {isAdmin && (
-            <Link href="/chat" className="admin-link" onClick={() => setOpen(false)}>
+            <Link href="/chat" className="admin-link has-bang" onClick={() => setOpen(false)}>
               {t('account.chat')}
+              {badges.chat && <Bang />}
             </Link>
           )}
 
-          <FavRow favorites={favorites} t={t} onClick={() => setOpen(false)} />
+          <FavRow unseen={unseen} t={t} onClick={() => setOpen(false)} />
 
-          <Link href="/bookings" onClick={() => setOpen(false)}>{t('account.myBookings')}</Link>
+          <Link href="/bookings" className="has-bang" onClick={() => setOpen(false)}>
+            {t('account.myBookings')}
+            {badges.mine && <Bang />}
+          </Link>
           <Link href="/reset" onClick={() => setOpen(false)}>{t('account.changePassword')}</Link>
 
           <Prefs />

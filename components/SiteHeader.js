@@ -8,6 +8,7 @@ import SearchSuggest from './SearchSuggest';
 import { ThemeToggle } from './HeaderToggles';
 import { useT } from '@/lib/i18n';
 import { useFavorites } from '@/lib/favorites';
+import { Bang, useBangLabel } from '@/lib/badges';
 import MtaniLogo from './MtaniLogo';
 
 // useSearchParams needs a Suspense boundary on statically built pages, so the
@@ -20,10 +21,20 @@ function RouteWatcher({ onChange }) {
   return null;
 }
 
+// Opening the saved view (/activities?saved=1) is what clears the heart's "!".
+// Its own component for the same reason as RouteWatcher: useSearchParams.
+function SavedViewWatcher({ pending, onSeen }) {
+  const pathname = usePathname();
+  const params = useSearchParams();
+  const onSaved = pathname === '/activities' && params.get('saved') === '1';
+  useEffect(() => { if (onSaved && pending) onSeen(); }, [onSaved, pending, onSeen]);
+  return null;
+}
+
 export default function SiteHeader({ solid = false }) {
   const { t } = useT();
-  const { favorites } = useFavorites();
-  const savedCount = favorites.size;
+  const { unseen, markSeen } = useFavorites();
+  const bangLabel = useBangLabel();
   // on phones the search field cannot share the row with the buttons, so it
   // collapses to an icon that drops a full-width field below the bar
   const [searchOpen, setSearchOpen] = useState(false);
@@ -131,11 +142,16 @@ export default function SiteHeader({ solid = false }) {
           <ThemeToggle />
 
           {/* on very narrow phones this moves into the account menu */}
-          <Link className="icon-btn round saved-btn" href="/activities?saved=1" title={t('nav.saved')} aria-label={t('nav.saved')}>
+          <Link
+            className="icon-btn round saved-btn"
+            href="/activities?saved=1"
+            title={t('nav.saved')}
+            aria-label={unseen ? `${t('nav.saved')}, ${bangLabel}` : t('nav.saved')}
+          >
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8">
               <path d="M12 20s-7-4.6-7-9.4A4 4 0 0 1 12 8a4 4 0 0 1 7-2.6c0 4.8-7 9.4-7 9.4z" />
             </svg>
-            {savedCount > 0 && <span className="saved-count">{savedCount}</span>}
+            {unseen && <Bang className="bang-corner" decorative />}
           </Link>
 
           <AccountMenu />
@@ -182,6 +198,7 @@ export default function SiteHeader({ solid = false }) {
       {/* closes the menu whenever the page or its query string changes */}
       <Suspense fallback={null}>
         <RouteWatcher onChange={closeMenu} />
+        <SavedViewWatcher pending={unseen} onSeen={markSeen} />
       </Suspense>
 
       {menuOpen && (

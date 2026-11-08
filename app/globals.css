@@ -2438,3 +2438,28 @@ a.feature-img:hover img{transform:scale(1.04)}
 /* long Georgian/Russian words in page titles must break instead of running off a phone screen */
 .info-title{overflow-wrap:break-word;hyphens:auto}
 @media (max-width:480px){.info-title{font-size:clamp(24px,7vw,32px)}}
+
+/* ---- badges ---- */
+/* one small round "!" = something new you have not looked at. Same slot and
+   colour as the old count badge; the ring takes the surface colour so it reads
+   on the hero, the solid header and the dropdown in both themes. */
+.bang{
+  display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;
+  width:18px;height:18px;border-radius:50%;
+  background:#d04a3d;color:#fff;
+  font-family:inherit;font-size:11px;font-weight:800;line-height:1;text-transform:none;letter-spacing:0;
+  box-shadow:0 0 0 2px var(--surface);
+  animation:bangIn .25s ease;
+  pointer-events:none;
+}
+:root[data-theme="dark"] .bang{background:#d8574a}
+/* pinned to the top right corner of a round button or the avatar icon */
+.bang-corner{position:absolute;top:-3px;right:-3px}
+.saved-btn .bang-corner{top:-2px;right:-2px}
+.bang-host{position:relative;display:inline-flex}
+.bang-host .bang-corner{top:-5px;right:-6px;width:16px;height:16px;font-size:10px}
+/* trailing "!" on a dropdown row */
+.account-drop a.has-bang{display:flex;align-items:center;gap:8px}
+.account-drop .bang{margin-left:auto}
+@keyframes bangIn{0%{transform:scale(.4);opacity:0}70%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
+@media (prefers-reduced-motion:reduce){.bang{animation:none}}

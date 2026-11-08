@@ -16,6 +16,7 @@ import Link from 'next/link';
 import SiteHeader from '@/components/SiteHeader';
 import { supabase, currentProfile, friendlyError } from '@/lib/supabaseClient';
 import { bookingRef } from '@/lib/bookingRef';
+import { markAdminBookingsSeen } from '@/lib/badges';
 import { money } from '@/lib/season';
 
 const TABS = [
@@ -81,6 +82,7 @@ export default function AdminBookingsPage() {
   const [busy, setBusy] = useState(() => new Set());
   // re-rendered every minute so "x minutes ago" stays honest
   const [now, setNow] = useState(() => Date.now());
+  const userId = profile?.id ?? null;
 
   useEffect(() => {
     currentProfile().then(setProfile).catch(() => setProfile(null));
@@ -104,7 +106,9 @@ export default function AdminBookingsPage() {
     }
     setRows(data ?? []);
     setNow(Date.now());
-  }, []);
+    // opening the list is what clears the "!" on Booking requests
+    markAdminBookingsSeen(userId, data ?? []);
+  }, [userId]);
 
   useEffect(() => { if (profile?.role === 'admin') load(); }, [profile, load]);
 

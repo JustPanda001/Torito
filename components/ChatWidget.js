@@ -2,7 +2,7 @@
 
 // Visitor-side live chat: a small panel in the bottom-right corner.
 //
-// Opened by its own bubble, or by anything that fires the 'torito:chat-open'
+// Opened by its own bubble, or by anything that fires the 'mtani:chat-open'
 // event — that is how the "Ask a question" button on a trip page reaches it
 // without the two components having to know about each other.
 //
@@ -25,7 +25,9 @@ import { useT } from '@/lib/i18n';
 import Linkify from './Linkify';
 import { purgeOldChats } from '@/lib/chatExpiry';
 
-const STORE_KEY = 'torito.chat.conversation';
+const STORE_KEY = 'mtani.chat.conversation';
+// the key this thread was stored under before the rename; moved over once
+const OLD_STORE_KEY = 'torito.chat.conversation';
 // quick while the panel is open, slow while closed (only feeds the badge)
 const POLL_OPEN_MS = 4000;
 const POLL_CLOSED_MS = 15000;
@@ -43,7 +45,7 @@ const KIND_KEY = {
   culture: 'chat.aboutTour',
 };
 
-export const CHAT_OPEN_EVENT = 'torito:chat-open';
+export const CHAT_OPEN_EVENT = 'mtani:chat-open';
 
 // Phones get the chat as a full-screen sheet rather than a floating panel; this
 // is the same width chat.css switches at.
@@ -175,6 +177,15 @@ export default function ChatWidget() {
   const greeting = { id: 'greeting', sender: 'bot', body: t('chat.greeting'), created_at: null };
 
   useEffect(() => {
+    // a visitor with an open thread from before the rename keeps it: copy the
+    // old entry across once, then delete it
+    try {
+      const old = localStorage.getItem(OLD_STORE_KEY);
+      if (old !== null) {
+        if (!localStorage.getItem(STORE_KEY)) localStorage.setItem(STORE_KEY, old);
+        localStorage.removeItem(OLD_STORE_KEY);
+      }
+    } catch { /* storage blocked: nothing to migrate */ }
     const saved = localStorage.getItem(STORE_KEY);
     // anything else would only ever earn an "invalid uuid" error from the database
     conversationId.current = saved && UUID.test(saved) ? saved : null;
