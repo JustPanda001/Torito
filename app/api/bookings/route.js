@@ -270,7 +270,7 @@ export async function POST(request) {
   // the row is the visitor's own, so "read own bookings" lets it come back —
   // that is where the reference comes from
   const { data: saved, error } = await supabase
-    .from('bookings').insert(row).select('id, created_at').single();
+    .from('bookings').insert(row).select('id, created_at, status').single();
 
   if (error) {
     // two requests sent at the same moment can both pass the count above; the
@@ -283,7 +283,9 @@ export async function POST(request) {
   }
 
   const ref = bookingRef(saved.id);
-  const record = { ...row, id: saved.id, ref, created_at: saved.created_at };
+  // ref and status are what the sheet uses to find this row again when the
+  // admin confirms or declines it; status is the column default, 'new'
+  const record = { ...row, id: saved.id, ref, status: saved.status ?? 'new', created_at: saved.created_at };
   const site = new URL(request.url).origin;
 
   // copies and the customer's email, best effort, never blocking the answer

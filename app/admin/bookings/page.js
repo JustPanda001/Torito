@@ -9,7 +9,9 @@
 // who reaches this page sees nothing and cannot update anything.
 //
 // No emails are sent from here: this only changes bookings.status, which the
-// customer sees on My bookings. Admin pages are English-only.
+// customer sees on My bookings. The change goes through
+// /api/admin/booking-status, which also updates the Status column of the
+// owner's Google Sheet. Admin pages are English-only.
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
@@ -155,15 +157,21 @@ export default function AdminBookingsPage() {
     setRows((list) => list.map((r) => (r.id === booking.id ? { ...r, status } : r)));
 
     try {
-      const { data, error } = await supabase
-        .from('bookings')
-        .update({ status })
-        .eq('id', booking.id)
-        .select('id, status');
-      if (error) throw error;
-      // RLS hides a row you may not change: no error, but nothing comes back
-      if (!data || data.length === 0) throw new Error('The database did not accept the change. Check that you are signed in as an admin.');
-      setRows((list) => list.map((r) => (r.id === booking.id ? { ...r, ...data[0] } : r)));
+      // The server route makes the change as this admin (their own token, so
+      // the database policy still decides) and then updates the Google Sheet.
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
+      if (!token) throw new Error('Your session has expired. Please sign in again.');
+
+      const res = await fetch('/api/admin/booking-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ id: booking.id, status }),
+      });
+      const result = await res.json().catch(() => null);
+      if (!res.ok) throw new Error(result?.error || 'The database did not accept the change. Check that you are signed in as an admin.');
+      if (!result?.id) throw new Error('The database did not accept the change. Check that you are signed in as an admin.');
+      setRows((list) => list.map((r) => (r.id === booking.id ? { ...r, id: result.id, status: result.status } : r)));
     } catch (error) {
       setRows((list) => list.map((r) => (r.id === booking.id ? { ...r, status: before } : r)));
       setRowErrors((prev) => ({

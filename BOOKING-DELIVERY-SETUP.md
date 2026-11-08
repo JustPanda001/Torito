@@ -62,11 +62,23 @@ const SECRET = 'put-your-own-random-string-here';
 // every booking is also copied here, so one tab shows what is coming up next
 const ALL_TAB = 'All bookings';
 
+// New columns go at the END, so the columns of tabs you already have keep
+// their positions. ref and status let the site find a row again when the admin
+// presses Confirm / Decline / Undo on /admin/bookings.
 const HEADERS = [
   'created_at', 'kind', 'tour_title', 'tour_slug', 'wanted_date',
   'lesson_time', 'people', 'skill_level', 'lesson_type', 'total',
-  'name', 'email', 'phone',
+  'name', 'email', 'phone', 'ref', 'status',
 ];
+const REF_COL = HEADERS.indexOf('ref') + 1;       // 14
+const STATUS_COL = HEADERS.indexOf('status') + 1; // 15
+
+// row colours per status; null = no fill / default text
+const LOOK = {
+  new: { bg: null, font: null },
+  confirmed: { bg: '#e3f4ea', font: null },
+  declined: { bg: '#eeeeee', font: '#888888' },
+};
 
 // open the /exec URL in a browser: "alive" means this code really is the
 // version being served. Apps Script keeps serving the old version until you
@@ -75,20 +87,29 @@ function doGet() {
   return ContentService.createTextOutput('alive');
 }
 
+// Two kinds of post, both carrying the secret:
+//   default            a new booking -> append a row to its trip tab and the
+//                      "All bookings" tab
+//   action 'status'    { ref, status } -> set the Status cell and the row colour
+//                      of every row with that ref, in every tab
 function doPost(e) {
   const body = JSON.parse(e.postData.contents);
   if (body.secret !== SECRET) {
     return ContentService.createTextOutput('no');
   }
 
-  const row = HEADERS.map(function (key) {
-    return literal(body[key]);
-  });
-
-  // two bookings at once must not sort the same tab over each other
+  // two bookings (or a booking and a status change) at once must not sort or
+  // edit the same tab over each other
   const lock = LockService.getScriptLock();
   lock.waitLock(20000);
   try {
+    if (body.action === 'status') {
+      return ContentService.createTextOutput(setStatus(body.ref, body.status));
+    }
+
+    const row = HEADERS.map(function (key) {
+      return literal(body[key]);
+    });
     addTo(tabFor(body.tour_title), row);
     addTo(tabFor(ALL_TAB), row);
   } finally {
@@ -96,6 +117,36 @@ function doPost(e) {
   }
 
   return ContentService.createTextOutput('ok');
+}
+
+// Finds every row whose Ref matches, in every tab, and sets its status and
+// colour. Answers 'ok', 'not found' (rows from before the Ref column existed
+// have no ref and are never found) or 'bad request'.
+function setStatus(ref, status) {
+  ref = String(ref || '').trim().toUpperCase();
+  if (!ref || !LOOK[status]) return 'bad request';
+
+  let found = 0;
+  SpreadsheetApp.getActiveSpreadsheet().getSheets().forEach(function (sheet) {
+    const last = sheet.getLastRow();
+    if (last < 2 || sheet.getMaxColumns() < STATUS_COL) return;
+
+    const refs = sheet.getRange(2, REF_COL, last - 1, 1).getValues();
+    refs.forEach(function (cell, i) {
+      if (String(cell[0]).trim().toUpperCase() !== ref) return;
+      sheet.getRange(i + 2, STATUS_COL).setValue(status);
+      paintRow(sheet, i + 2, status);
+      found += 1;
+    });
+  });
+  return found ? 'ok' : 'not found';
+}
+
+function paintRow(sheet, r, status) {
+  const look = LOOK[status] || LOOK.new;
+  sheet.getRange(r, 1, 1, HEADERS.length)
+    .setBackground(look.bg)
+    .setFontColor(look.font);
 }
 
 // One tab per trip, made the first time that trip is booked, and named after
@@ -107,13 +158,14 @@ function tabFor(title) {
 }
 
 function addTo(sheet, row) {
-  if (sheet.getLastRow() === 0) setUpSheet(sheet);
+  setUpSheet(sheet);   // also adds the Ref / Status headers to older tabs
   sheet.appendRow(row);
-  dressRow(sheet, sheet.getLastRow());
+  dressRow(sheet, sheet.getLastRow(), row[STATUS_COL - 1]);
   sortByDate(sheet);
 }
 
-// earliest date on top, then earliest time; requests with no date go last
+// earliest date on top, then earliest time; requests with no date go last.
+// The sort moves each row's colour with it.
 function sortByDate(sheet) {
   const rows = sheet.getLastRow() - 1;
   if (rows < 2) return;
@@ -124,11 +176,14 @@ function sortByDate(sheet) {
 }
 
 // Run this once by hand: it copies the rows already in Sheet1 into the new tabs.
-// Sheet1 itself is left as it is.
+// Sheet1 itself is left as it is. Those rows have no ref, so their status
+// cell stays empty and Confirm / Decline will not colour them.
 function splitOldRows() {
   const old = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Sheet1');
-  const rows = old.getRange(2, 1, old.getLastRow() - 1, HEADERS.length).getValues();
+  const cols = Math.min(HEADERS.length, old.getLastColumn());
+  const rows = old.getRange(2, 1, old.getLastRow() - 1, cols).getValues();
   rows.forEach(function (row) {
+    while (row.length < HEADERS.length) row.push('');
     addTo(tabFor(row[2]), row);
     addTo(tabFor(ALL_TAB), row);
   });
@@ -143,34 +198,64 @@ function literal(value) {
   return typeof value === 'string' && /^[-=+@]/.test(value) ? "'" + value : value;
 }
 
-// Header row, widths and formats. The phone column is forced to plain text:
-// a number starting with "+" is read as a formula and lands as #ERROR!
+const WIDTHS = {
+  created_at: 150, kind: 90, tour_title: 230, tour_slug: 190, wanted_date: 110,
+  lesson_time: 90, people: 70, skill_level: 110, lesson_type: 140, total: 90,
+  name: 200, email: 220, phone: 150, ref: 130, status: 100,
+};
+
+// The phone column is forced to plain text: a number starting with "+" is
+// read as a formula and lands as #ERROR!. Ref too, to be safe.
+const FORMATS = {
+  created_at: 'yyyy-mm-dd hh:mm',
+  total: '0 "GEL"',
+  phone: '@',
+  ref: '@',
+};
+
+// Header row, widths and formats. Safe to call on every booking: a brand-new
+// tab gets the whole header row; a tab that already has one only gets the
+// header cells it is missing (the Ref and Status columns on older tabs).
 function setUpSheet(sheet) {
-  sheet.appendRow(HEADERS.map(function (h) {
-    return h.replace(/_/g, ' ').replace(/^./, function (c) { return c.toUpperCase(); });
-  }));
+  const fresh = sheet.getLastRow() === 0;
 
-  sheet.getRange(1, 1, 1, HEADERS.length)
-    .setFontWeight('bold')
-    .setFontSize(11)
-    .setBackground('#4fb3a0')
-    .setFontColor('#ffffff')
-    .setVerticalAlignment('middle');
+  if (sheet.getMaxColumns() < HEADERS.length) {
+    sheet.insertColumnsAfter(sheet.getMaxColumns(), HEADERS.length - sheet.getMaxColumns());
+  }
 
-  sheet.setRowHeight(1, 34);
-  sheet.setFrozenRows(1);
+  const have = fresh ? [] : sheet.getRange(1, 1, 1, HEADERS.length).getValues()[0];
+  let added = false;
 
-  const widths = [150, 90, 230, 190, 110, 90, 70, 110, 140, 90, 200, 220, 150];
-  widths.forEach(function (w, i) { sheet.setColumnWidth(i + 1, w); });
+  HEADERS.forEach(function (h, i) {
+    if (have[i]) return;
+    added = true;
+    const col = i + 1;
 
-  sheet.getRange(2, 13, sheet.getMaxRows() - 1, 1).setNumberFormat('@');   // phone
-  sheet.getRange(2, 10, sheet.getMaxRows() - 1, 1).setNumberFormat('0 "GEL"');
-  sheet.getRange(2, 1, sheet.getMaxRows() - 1, 1).setNumberFormat('yyyy-mm-dd hh:mm');
+    sheet.getRange(1, col)
+      .setValue(h.replace(/_/g, ' ').replace(/^./, function (c) { return c.toUpperCase(); }))
+      .setFontWeight('bold')
+      .setFontSize(11)
+      .setBackground('#4fb3a0')
+      .setFontColor('#ffffff')
+      .setVerticalAlignment('middle');
+
+    sheet.setColumnWidth(col, WIDTHS[h]);
+    if (FORMATS[h] && sheet.getMaxRows() > 1) {
+      sheet.getRange(2, col, sheet.getMaxRows() - 1, 1).setNumberFormat(FORMATS[h]);
+    }
+  });
+
+  if (fresh) {
+    sheet.setRowHeight(1, 34);
+    sheet.setFrozenRows(1);
+  }
+  return added;
 }
 
-function dressRow(sheet, r) {
+function dressRow(sheet, r, status) {
   const range = sheet.getRange(r, 1, 1, HEADERS.length);
   range.setVerticalAlignment('middle').setFontSize(10);
+  paintRow(sheet, r, status);
 
   // the timestamp arrives as an ISO string; store a real date so the column
   // sorts and filters as one
@@ -199,11 +284,36 @@ function dressRow(sheet, r) {
 
 6. **Redeploy.**
 
-**Already set up?** Paste the new code over the old, keeping your own `SECRET`.
-Then **Deploy -> Manage deployments -> edit (pencil) -> Version: New version ->
-Deploy**, which keeps the same URL, so nothing changes in Vercel. To bring
-existing rows across, pick `splitOldRows` in the function menu and press **Run**
-once.
+**Already set up?** This is the update that adds the **Ref** and **Status**
+columns, so that Confirm / Decline / Undo on `/admin/bookings` colours the sheet.
+
+1. Open the sheet -> **Extensions -> Apps Script**, select all, and paste the
+   new code over the old.
+2. Put **your own existing `SECRET`** back on the first line. It must stay
+   exactly the same as `SHEETS_WEBHOOK_SECRET` in Vercel; if the placeholder is
+   left in, every post is refused with `no`.
+3. **Save**, then **Deploy -> Manage deployments -> edit (pencil) -> Version:
+   New version -> Deploy**. Do not make a *New deployment*: that gives a new URL
+   and you would have to change `SHEETS_WEBHOOK_URL` in Vercel. A new
+   *version* keeps the same URL, so nothing changes in Vercel and no redeploy
+   is needed.
+4. Check it: open the Web app URL in a browser. It should say `alive`.
+5. The next booking adds **Ref** and **Status** header cells at the end of the
+   tab it lands in (and of **All bookings**), then fills them in. Tabs nobody
+   books keep their old layout until they are used.
+6. To bring existing rows across from `Sheet1`, pick `splitOldRows` in the
+   function menu and press **Run** once.
+
+**Old rows have no ref.** Bookings added to the sheet before this update have
+an empty Ref cell (the sheet never stored an id), so the script cannot find
+them: pressing Confirm / Decline on those changes the site but not the sheet.
+Only bookings made after the update are tracked. The site logs
+`Sheet status update: no row with ref` for those; it is harmless.
+
+**Status colours:** `new` has no fill, `confirmed` is light green, `declined`
+is light grey with grey text. If the script is down, the admin page still
+works; the failure is logged in Vercel Runtime Logs as
+`Sheet status update failed`.
 
 ---
 
@@ -290,7 +400,8 @@ Send a test request from the site. Then:
 
 - **Supabase** → Table editor → `bookings` — the row is there
 - **Telegram** — the message arrives within a second or two
-- **Sheet** — a new row appears
+- **Sheet** — a new row appears, with its Ref filled in and Status `new`
+- **Sheet status** — on `/admin/bookings` press Confirm on that booking: its row turns light green and Status says `confirmed`
 
 If the row is in Supabase but nothing arrives in Telegram or the sheet, the
 failure is logged in Vercel → your deployment → **Runtime Logs**. Look for
