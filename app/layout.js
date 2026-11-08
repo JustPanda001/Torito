@@ -14,11 +14,25 @@ import ChatWidget from '@/components/ChatWidget';
 import { LanguageProvider } from '@/lib/i18n';
 import { FavoritesProvider } from '@/lib/favorites';
 import { RatingsProvider } from '@/lib/ratings';
+import { SITE_URL, SITE_NAME, SITE_TITLE, SITE_DESCRIPTION, OG_IMAGE, ORGANIZATION_JSON_LD } from '@/lib/seo';
 
 export const metadata = {
-  title: 'MTANI — Ski, Hikes, Camping & Climbs in Georgia',
-  description: 'Ski and snowboard instructors, snowmobiles and paragliding in Gudauri, plus hikes, camping and mountaineering across Georgia.',
+  metadataBase: new URL(SITE_URL),
+  title: { default: SITE_TITLE, template: '%s · MTANI' },
+  description: SITE_DESCRIPTION,
+  applicationName: SITE_NAME,
+  alternates: { canonical: '/' },
   icons: { icon: '/assets/mtani-favicon.svg' },
+  openGraph: {
+    type: 'website',
+    siteName: SITE_NAME,
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    url: '/',
+    locale: 'en_US',
+    images: [{ url: OG_IMAGE, width: 1200, height: 630, alt: 'MTANI — ski, hikes, camping and climbs in Georgia' }],
+  },
+  twitter: { card: 'summary_large_image', title: SITE_TITLE, description: SITE_DESCRIPTION, images: [OG_IMAGE] },
 };
 
 export const viewport = {
@@ -44,6 +58,7 @@ export default function RootLayout({ children }) {
     <html lang="en" className="js" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ORGANIZATION_JSON_LD) }} />
       </head>
       {/*
         Browser extensions (ColorZilla, Grammarly and friends) add attributes to
