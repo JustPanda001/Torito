@@ -2479,3 +2479,4 @@ a.feature-img:hover img{transform:scale(1.04)}
 .social-note{margin:0;font-size:.82rem;text-align:center;opacity:.75}
 .social-or{display:flex;align-items:center;gap:12px;font-size:.85rem;opacity:.7;margin-top:4px}
 .social-or::before,.social-or::after{content:'';flex:1;height:1px;background:currentColor;opacity:.3}
+.google-gsi{display:flex;justify-content:center;min-height:44px}
