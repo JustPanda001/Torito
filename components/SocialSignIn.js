@@ -73,7 +73,9 @@ function GoogleButton({ next, onError }) {
         type: 'standard', theme: dark ? 'filled_black' : 'outline', size: 'large', shape: 'pill',
         text: 'continue_with', logo_alignment: 'center',
         // Google caps the width at 400; never wider than the card on a phone
-        width: Math.max(200, Math.min(400, Math.floor(box.current.clientWidth))),
+        // a few px short of the box: the personalised button ("Continue as …") otherwise
+        // loses the right edge of its G badge
+        width: Math.max(200, Math.min(380, Math.floor(box.current.clientWidth) - 12)),
         locale: lang || 'en',
       });
     };

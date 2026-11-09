@@ -48,7 +48,9 @@ function BookingCard({ b }) {
   const requested = formatCreated(b.created_at, lang);
   // the stored title is English; show the translated one when we know the trip
   const found = b.tour_slug ? findTour(b.tour_slug) : null;
-  const title = (found && localizeTour(found, lang).title) || b.tour_title || b.tour_slug;
+  // full_title ('Gudauri Snowmobile Ride'), not the short card title ('Gudauri')
+  const loc = found ? localizeTour(found, lang) : null;
+  const title = loc?.full_title || b.tour_title || loc?.title || b.tour_slug;
 
   return (
     <article className="mybk-card">
