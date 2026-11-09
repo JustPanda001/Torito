@@ -182,10 +182,13 @@ function sortTab(sheet) {
 }
 
 // Run this once by hand after pasting the new code: it re-sorts every tab the
-// new way. Nothing is deleted.
+// new way and shows dates without times. Nothing is deleted.
 function resortAll() {
   SpreadsheetApp.getActiveSpreadsheet().getSheets().forEach(function (sheet) {
-    if (sheet.getLastRow() > 2 && sheet.getName() !== 'Sheet1') sortTab(sheet);
+    if (sheet.getName() === 'Sheet1' || sheet.getLastRow() < 2) return;
+    // show only the date in Created at, on rows already there too
+    sheet.getRange(2, 1, sheet.getLastRow() - 1, 1).setNumberFormat(FORMATS.created_at);
+    sortTab(sheet);
   });
 }
 
@@ -239,7 +242,8 @@ const WIDTHS = {
 // The phone column is forced to plain text: a number starting with "+" is
 // read as a formula and lands as #ERROR!. Ref too, to be safe.
 const FORMATS = {
-  created_at: 'yyyy-mm-dd hh:mm',
+  // the date only; the time is still stored, so newest-first sorting stays exact
+  created_at: 'd mmm yyyy',
   total: '0 "GEL"',
   phone: '@',
   ref: '@',
@@ -295,6 +299,7 @@ function dressRow(sheet, r, status) {
   if (typeof iso === 'string' && iso.indexOf('T') > 0) {
     sheet.getRange(r, 1).setValue(new Date(iso));
   }
+  sheet.getRange(r, 1).setNumberFormat(FORMATS.created_at);
 }
 ```
 
