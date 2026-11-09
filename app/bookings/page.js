@@ -51,9 +51,17 @@ function BookingCard({ b }) {
   // full_title ('Gudauri Snowmobile Ride'), not the short card title ('Gudauri')
   const loc = found ? localizeTour(found, lang) : null;
   const title = loc?.full_title || b.tour_title || loc?.title || b.tour_slug;
+  // the trip's first photo, beside the details
+  const photo = found ? (found.gallery?.[0] || found.cover_image) : null;
 
   return (
-    <article className="mybk-card">
+    <article className={`mybk-card${photo ? ' has-photo' : ''}`}>
+      {photo && (
+        b.tour_slug
+          ? <Link className="mybk-photo" href={`/activities/${b.tour_slug}`} tabIndex={-1} aria-hidden="true"><img src={photo} alt="" loading="lazy" /></Link>
+          : <span className="mybk-photo" aria-hidden="true"><img src={photo} alt="" loading="lazy" /></span>
+      )}
+      <div className="mybk-body">
       <div className="mybk-top">
         <h3 className="mybk-title">
           {b.tour_slug
@@ -69,6 +77,7 @@ function BookingCard({ b }) {
         {b.total != null && <div><dt>{t('bookings.total')}</dt><dd>{money(b.total)}</dd></div>}
       </dl>
       {requested && <p className="mybk-requested">{t('bookings.requested', { date: requested })}</p>}
+      </div>
     </article>
   );
 }
