@@ -64,6 +64,21 @@ function GoogleButton({ next, onError }) {
 
   useEffect(() => {
     let alive = true;
+    // dark site -> Google's dark button; drawn again when the theme changes
+    const draw = () => {
+      if (!alive || !box.current || !window.google?.accounts?.id) return;
+      const dark = document.documentElement.dataset.theme === 'dark';
+      box.current.innerHTML = '';
+      window.google.accounts.id.renderButton(box.current, {
+        type: 'standard', theme: dark ? 'filled_black' : 'outline', size: 'large', shape: 'pill',
+        text: 'continue_with', logo_alignment: 'center',
+        // Google caps the width at 400; never wider than the card on a phone
+        width: Math.max(200, Math.min(400, Math.floor(box.current.clientWidth))),
+        locale: lang || 'en',
+      });
+    };
+    const watch = new MutationObserver(draw);
+    watch.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
     (async () => {
       try {
         await loadGsi(lang);
@@ -78,22 +93,17 @@ function GoogleButton({ next, onError }) {
               provider: 'google', token: credential, nonce: nonce.raw,
             });
             if (error) { console.error('Google sign-in failed:', error.message); onError(); return; }
-            router.replace(next || '/');
+            // Google gives no phone: the next page asks once, then moves on
+            router.replace(`/complete-profile?next=${encodeURIComponent(next || '/')}`);
           },
         });
-        box.current.innerHTML = '';
-        window.google.accounts.id.renderButton(box.current, {
-          type: 'standard', theme: 'outline', size: 'large', shape: 'rectangular',
-          text: 'continue_with', logo_alignment: 'center',
-          width: Math.min(400, box.current.offsetWidth || 320),
-          locale: lang || 'en',
-        });
+        draw();
       } catch (e) {
         console.error(e);
         if (alive) onError();
       }
     })();
-    return () => { alive = false; };
+    return () => { alive = false; watch.disconnect(); };
   }, [next, lang]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return <div ref={box} className="google-gsi" />;

@@ -3,7 +3,15 @@
 // Everything uses currentColor so it follows the theme; `tagline` adds GEORGIA.
 const MARK = 'M2 76L26 4l14 40 14-28 24 60H64L54 46l-8 18H34l-8-24-10 36zM19 30l4-4 3 3 3-3 4 4v3.6l-4-4-3 3-3-3-4 4z';
 
-export default function MtaniLogo({ tagline = false, className = '', title = 'MTANI' }) {
+export default function MtaniLogo({ tagline = false, mark = false, className = '', title = 'MTANI' }) {
+  // mark: the M alone, no wordmark (the header)
+  if (mark) {
+    return (
+      <svg className={className} viewBox="0 2 80 76" role="img" aria-label={title} xmlns="http://www.w3.org/2000/svg">
+        <path d={MARK} fill="currentColor" fillRule="evenodd" />
+      </svg>
+    );
+  }
   return (
     <svg className={className} viewBox={tagline ? '0 2 254 100' : '0 2 254 76'} role="img" aria-label={title} xmlns="http://www.w3.org/2000/svg">
       <path d={MARK} fill="currentColor" fillRule="evenodd" />

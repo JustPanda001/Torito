@@ -96,7 +96,7 @@ export default function SiteHeader({ solid = false }) {
 
         <div className="header-left">
           <Link className="logo" href="/">
-            <MtaniLogo className="logo-word" title={t('header.logoAlt')} />
+            <MtaniLogo mark className="logo-word logo-mark" title={t('header.logoAlt')} />
           </Link>
           {/* phone only: sits next to the logo */}
           <button
@@ -132,13 +132,9 @@ export default function SiteHeader({ solid = false }) {
           <SearchSuggest query={query} open={typing} onPick={pickSuggestion} onSeeAll={() => submitSearch({ preventDefault() {} })} />
         </form>
 
-        {/* order, left to right: Ask AI, Menu, theme, favorites, profile (far right).
+        {/* order, left to right: theme, favorites, profile (far right).
             The language picker lives in the profile menu only. */}
         <div className="header-actions">
-          <button className="icon-btn ai-btn" type="button" title={t('nav.askAi')} aria-label={t('nav.askAi')} onClick={() => alert(t('header.aiSoon'))}>
-            <span className="ai-dot" /><span className="hide-sm">{t('nav.askAi')}</span>
-          </button>
-
           <ThemeToggle />
 
           {/* on very narrow phones this moves into the account menu */}

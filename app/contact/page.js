@@ -11,7 +11,7 @@ import SiteHeader from '@/components/SiteHeader';
 import SiteFooter from '@/components/SiteFooter';
 import { useT } from '@/lib/i18n';
 
-const EMAIL = 'info@mtani.ge';
+const EMAIL = 'support@mtani.ge';
 
 // [label key, value (or value key), href, value is a key?]
 const WAYS = [
