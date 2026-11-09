@@ -2498,5 +2498,5 @@ a.feature-img:hover img{transform:scale(1.04)}
 
 /* Google's button sits in an iframe: light colour-scheme keeps its corners
    see-through on the dark theme instead of a white strip */
-.google-gsi{width:100%;color-scheme:light;overflow:hidden;border-radius:999px}
+.google-gsi{width:100%;color-scheme:light}
 .google-gsi iframe{color-scheme:light}
