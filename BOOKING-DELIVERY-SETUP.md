@@ -243,7 +243,7 @@ const WIDTHS = {
 // read as a formula and lands as #ERROR!. Ref too, to be safe.
 const FORMATS = {
   // the date only; the time is still stored, so newest-first sorting stays exact
-  created_at: 'd mmm yyyy',
+  created_at: 'm/d/yyyy',
   total: '0 "GEL"',
   phone: '@',
   ref: '@',
