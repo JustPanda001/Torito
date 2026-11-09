@@ -25,6 +25,7 @@ import { isBookable } from '@/lib/bookable';
 import { TOURS } from '@/lib/tours-data';
 import { tourOptions } from '@/lib/options';
 import { bookingTitle, bookingTotal, findOption, unitPrice } from '@/lib/pricing';
+import { sendBookingEmail } from '@/lib/bookingEmail';
 
 export const runtime = 'nodejs';
 
@@ -35,9 +36,6 @@ const {
   TELEGRAM_CHAT_ID,
   SHEETS_WEBHOOK_URL,
   SHEETS_WEBHOOK_SECRET,
-  RESEND_API_KEY,
-  BOOKING_EMAIL_FROM,
-  BOOKING_EMAIL_REPLY_TO,
 } = process.env;
 
 /** Trims and caps a field, so one oversized paste cannot fill the table. */
@@ -290,7 +288,7 @@ export async function POST(request) {
 
   // copies and the customer's email, best effort, never blocking the answer
   const [, , mail] = await Promise.allSettled([
-    notifyTelegram(record), appendToSheet(record), emailCustomer(record, site),
+    notifyTelegram(record), appendToSheet(record), sendBookingEmail(record, site, record.kind === 'waitlist' ? 'waitlist' : 'received'),
   ]);
   if (mail.status === 'rejected') console.error('Confirmation email failed:', mail.reason?.message);
 
@@ -389,86 +387,4 @@ async function appendToSheet(row) {
   if (!res.ok || reply !== 'ok') {
     console.error('Sheet append failed:', res.status, reply.slice(0, 120));
   }
-}
-
-const MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-/** "28 Dec 2026" from a YYYY-MM-DD, read as a calendar date (no timezone). */
-function niceDate(value) {
-  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value ?? '');
-  return m ? `${Number(m[3])} ${MONTHS_SHORT[Number(m[2]) - 1]} ${m[1]}` : null;
-}
-
-const escapeHtml = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => (
-  { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
-));
-
-/**
- * The "request received" email, sent through Resend to the account's address.
- * Resolves true once Resend has taken it, false when email is not set up.
- */
-async function emailCustomer(row, site) {
-  if (!RESEND_API_KEY || !BOOKING_EMAIL_FROM || !row.email) return false;
-
-  const waitlist = row.kind === 'waitlist';
-  const date = niceDate(row.wanted_date);
-  const details = [
-    ['Reference', row.ref],
-    ['Trip', row.tour_title],
-    date && ['Date', `${date}${row.lesson_time ? ` at ${row.lesson_time}` : ''}`],
-    ['People', String(row.people)],
-    row.skill_level && ['Level', row.skill_level],
-    row.lesson_type && ['Lesson', row.lesson_type],
-    ...Object.entries(row.answers ?? {}).map(([k, v]) => [k, String(v)]),
-    row.total != null && ['Total', `${row.total} GEL, paid on the day`],
-  ].filter(Boolean);
-
-  const hello = row.name ? `Hello ${row.name.split(' ')[0]},` : 'Hello,';
-  const lead = waitlist
-    ? `You are on the waitlist for ${row.tour_title}. We will write to you as soon as a place frees up.`
-    : `Your booking request for ${row.tour_title} has gone through. We will check the date with the guide and email you again to confirm.`;
-  const subject = waitlist
-    ? `You're on the waitlist — ${row.tour_title} (${row.ref})`
-    : `Booking request received — ${row.tour_title} (${row.ref})`;
-  const link = `${site}/bookings`;
-
-  const text = [
-    hello, '', lead, '',
-    ...details.map(([k, v]) => `${k}: ${v}`), '',
-    `See all your bookings: ${link}`, '',
-    'Reply to this email if anything needs changing.', '', 'MTANI',
-  ].join('\n');
-
-  const cell = 'padding:8px 0;border-top:1px solid #d8f3e4';
-  const html = `<!doctype html><html><body style="margin:0;background:#f4f7f8;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;color:#2f4a55">
-<div style="max-width:560px;margin:0 auto;padding:28px 16px">
-  <div style="background:#fff;border-radius:20px;padding:28px;box-shadow:0 8px 24px rgba(47,74,85,.08)">
-    <p style="margin:0 0 6px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#3f8f80">${waitlist ? 'Waitlist' : 'Request received'}</p>
-    <h1 style="margin:0 0 16px;font-size:22px;line-height:1.3">${escapeHtml(row.tour_title)}</h1>
-    <p style="margin:0 0 12px;line-height:1.65">${escapeHtml(hello)}</p>
-    <p style="margin:0 0 20px;line-height:1.65">${escapeHtml(lead)}</p>
-    <table style="width:100%;border-collapse:collapse;font-size:15px">
-      ${details.map(([k, v]) => `<tr><td style="${cell};color:#5c7784">${escapeHtml(k)}</td><td style="${cell};text-align:right;font-weight:600">${escapeHtml(v)}</td></tr>`).join('')}
-    </table>
-    <p style="margin:24px 0 0"><a href="${escapeHtml(link)}" style="display:inline-block;background:#3f8f80;color:#fff;text-decoration:none;font-weight:600;padding:12px 24px;border-radius:999px">See my bookings</a></p>
-    <p style="margin:20px 0 0;font-size:14px;color:#5c7784;line-height:1.6">Reply to this email if anything needs changing.</p>
-  </div>
-  <p style="text-align:center;font-size:12px;color:#5c7784;margin:16px 0 0">MTANI · Georgia</p>
-</div></body></html>`;
-
-  const res = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      from: BOOKING_EMAIL_FROM,
-      to: [row.email],
-      ...(BOOKING_EMAIL_REPLY_TO ? { reply_to: BOOKING_EMAIL_REPLY_TO } : {}),
-      subject,
-      text,
-      html,
-    }),
-  });
-
-  if (!res.ok) throw new Error(`Resend ${res.status}: ${(await res.text()).slice(0, 200)}`);
-  return true;
 }

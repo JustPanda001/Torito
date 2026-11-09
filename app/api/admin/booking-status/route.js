@@ -12,6 +12,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { bookingRef } from '@/lib/bookingRef';
+import { sendBookingEmail } from '@/lib/bookingEmail';
 
 export const runtime = 'nodejs';
 
@@ -71,8 +72,13 @@ export async function POST(request) {
     return Response.json({ error: 'Admins only.' }, { status: 403 });
   }
 
+  // the status before the change, so pressing Confirm twice does not email twice
+  const { data: before } = await supabase
+    .from('bookings').select('status').eq('id', id).maybeSingle();
+
   const { data, error } = await supabase
-    .from('bookings').update({ status }).eq('id', id).select('id, status');
+    .from('bookings').update({ status }).eq('id', id)
+    .select('id, status, tour_slug, tour_title, kind, wanted_date, lesson_time, people, skill_level, lesson_type, answers, total, name, email');
   if (error) {
     console.error('Booking status update failed:', error.message);
     return Response.json({ error: error.message || 'Could not save the change.' }, { status: 500 });
@@ -83,11 +89,23 @@ export async function POST(request) {
   }
 
   const saved = data[0];
-  await updateSheet(bookingRef(saved.id), saved.status).catch((e) => {
-    console.error('Sheet status update failed:', e?.message);
-  });
+  const ref = bookingRef(saved.id);
+  const site = new URL(request.url).origin;
+  // the customer hears about Confirm and Decline once; Undo (back to new) is silent
+  const notify = (saved.status === 'confirmed' || saved.status === 'declined')
+    && before?.status !== saved.status;
 
-  return Response.json({ ok: true, ...saved });
+  const [sheet, mail] = await Promise.allSettled([
+    updateSheet(ref, saved.status),
+    notify ? sendBookingEmail({ ...saved, ref }, site, saved.status) : Promise.resolve(false),
+  ]);
+  if (sheet.status === 'rejected') console.error('Sheet status update failed:', sheet.reason?.message);
+  if (mail.status === 'rejected') console.error('Status email failed:', mail.reason?.message);
+
+  return Response.json({
+    ok: true, id: saved.id, status: saved.status,
+    emailed: mail.status === 'fulfilled' && mail.value === true,
+  });
 }
 
 /** Tells the sheet's script to set the Status cell and row colour for this ref. */
