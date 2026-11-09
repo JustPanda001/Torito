@@ -364,7 +364,7 @@ work and the dialog simply does not mention an email.
    |---|---|
    | `RESEND_API_KEY` | the key from step 2 |
    | `BOOKING_EMAIL_FROM` | e.g. `MTANI <bookings@mtani.ge>` — must be on the verified domain |
-   | `BOOKING_EMAIL_REPLY_TO` | optional: where customer replies go, e.g. `support@mtani.ge` |
+   | `BOOKING_EMAIL_REPLY_TO` | optional: where customer replies go, e.g. `info@mtani.ge` |
 
 4. **Redeploy.** A failed send shows in Runtime Logs as `Confirmation email failed`.
 
