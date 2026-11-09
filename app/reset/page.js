@@ -48,6 +48,14 @@ export default function ResetPage() {
   const [intro, setIntro] = useState(null);
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState(null);
+  // a short 'Email sent' popup after the link is requested; the note stays
+  const [toast, setToast] = useState(false);
+
+  useEffect(() => {
+    if (!toast) return undefined;
+    const id = setTimeout(() => setToast(false), 3000);
+    return () => clearTimeout(id);
+  }, [toast]);
 
   const loginHref = next ? `/login?next=${encodeURIComponent(next)}` : '/login';
 
@@ -97,6 +105,7 @@ export default function ResetPage() {
     // deliberately the same message either way, so this form cannot be used to
     // find out who has an account
     setNote({ error: false, key: 'auth.resetSent' });
+    setToast(true);
   }
 
   async function savePassword(e) {
@@ -126,6 +135,12 @@ export default function ResetPage() {
 
   return (
     <main className="auth-page">
+      {toast && (
+        <div className="sent-toast" role="status">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.4" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
+          <span>{t('auth.sentToast')}</span>
+        </div>
+      )}
       <div className="auth-card">
         <Link className="auth-logo" href="/">
           <img src="/assets/mtani-mark.svg" alt={t('auth.logoAlt')} />

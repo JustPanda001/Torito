@@ -2463,3 +2463,8 @@ a.feature-img:hover img{transform:scale(1.04)}
 .account-drop .bang{margin-left:auto}
 @keyframes bangIn{0%{transform:scale(.4);opacity:0}70%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
 @media (prefers-reduced-motion:reduce){.bang{animation:none}}
+
+/* reset page: short 'Email sent' popup */
+.sent-toast{position:fixed;left:50%;top:calc(24px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:1000;display:flex;align-items:center;gap:8px;padding:12px 20px;border-radius:999px;background:#2f8a5b;color:#fff;font-weight:600;box-shadow:0 10px 30px rgba(0,0,0,.18);animation:sent-toast 3s ease forwards}
+@keyframes sent-toast{0%{opacity:0;transform:translate(-50%,-10px)}10%,85%{opacity:1;transform:translate(-50%,0)}100%{opacity:0;transform:translate(-50%,-10px)}}
+@media (prefers-reduced-motion:reduce){.sent-toast{animation:none}}
