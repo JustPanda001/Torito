@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import { useT } from '@/lib/i18n';
+import SocialSignIn from '@/components/SocialSignIn';
 import { DEFAULT_DIAL, phoneDigits } from '@/lib/dial-codes';
 import DialSelect from '@/components/DialSelect';
 
@@ -114,6 +115,8 @@ export default function SignupPage() {
         </Link>
 
         <h1>{t('auth.createAccount')}</h1>
+
+        <SocialSignIn next={next || '/'} />
 
         <form className="auth-form" onSubmit={onSubmit} noValidate>
           <label className="field">

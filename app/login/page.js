@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import { useT } from '@/lib/i18n';
+import SocialSignIn from '@/components/SocialSignIn';
 
 /** Supabase error -> friendly, translated text; anything unknown gets a generic line. */
 function authMessage(error, t) {
@@ -71,6 +72,8 @@ export default function LoginPage() {
         </Link>
 
         <h1>{t('auth.signIn')}</h1>
+
+        <SocialSignIn next={next || '/'} />
 
         <form className="auth-form" onSubmit={onSubmit} noValidate>
           <label className="field">
