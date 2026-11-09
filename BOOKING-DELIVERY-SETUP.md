@@ -62,6 +62,12 @@ const SECRET = 'put-your-own-random-string-here';
 // every booking is also copied here, so one tab shows what is coming up next
 const ALL_TAB = 'All bookings';
 
+// Only these kinds of trip go into the sheet (the website sends each booking's
+// category). Winter only for now; add 'hiking', 'camping', 'mountaineering' or
+// 'transfer' here when those trips are running again. Other bookings still
+// reach the website admin and Telegram, just not this sheet.
+const KEEP = ['ski'];
+
 // New columns go at the END, so the columns of tabs you already have keep
 // their positions. ref and status let the site find a row again when the admin
 // presses Confirm / Decline / Undo on /admin/bookings.
@@ -105,6 +111,11 @@ function doPost(e) {
   try {
     if (body.action === 'status') {
       return ContentService.createTextOutput(setStatus(body.ref, body.status));
+    }
+
+    // bookings from before the site sent a category are kept
+    if (body.category && KEEP.indexOf(body.category) === -1) {
+      return ContentService.createTextOutput('ok');
     }
 
     const row = HEADERS.map(function (key) {
@@ -161,7 +172,28 @@ function addTo(sheet, row) {
   setUpSheet(sheet);   // also adds the Ref / Status headers to older tabs
   sheet.appendRow(row);
   dressRow(sheet, sheet.getLastRow(), row[STATUS_COL - 1]);
-  sortByDate(sheet);
+  sortTab(sheet);
+}
+
+// All bookings: newest request on top. Trip tabs: by the day of the service.
+function sortTab(sheet) {
+  if (sheet.getName() === ALL_TAB) sortNewestFirst(sheet);
+  else sortByDate(sheet);
+}
+
+// Run this once by hand after pasting the new code: it re-sorts every tab the
+// new way. Nothing is deleted.
+function resortAll() {
+  SpreadsheetApp.getActiveSpreadsheet().getSheets().forEach(function (sheet) {
+    if (sheet.getLastRow() > 2 && sheet.getName() !== 'Sheet1') sortTab(sheet);
+  });
+}
+
+// newest booking request (created_at) first
+function sortNewestFirst(sheet) {
+  const rows = sheet.getLastRow() - 1;
+  if (rows < 2) return;
+  sheet.getRange(2, 1, rows, HEADERS.length).sort({ column: 1, ascending: false });
 }
 
 // earliest date on top, then earliest time; requests with no date go last.
