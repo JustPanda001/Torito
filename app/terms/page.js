@@ -9,7 +9,7 @@ import { useT } from '@/lib/i18n';
 
 // Change the company name here (one place per page).
 const COMPANY = 'MTANI';
-const EMAIL = 'hello@mtani.ge';
+const EMAIL = 'support@mtani.ge';
 const ENTITY = '[TODO: legal entity name, registration number and registered address]';
 const RETENTION = '[TODO: confirm how long account and booking data are kept]';
 const LAW = '[TODO: governing law and court]';

@@ -24,7 +24,7 @@ export default function SiteFooter() {
           <Link href="/terms">{t('legal.terms.tag')}</Link><Link href="/privacy">{t('legal.privacy.tag')}</Link>
         </div>
         <div><h4>{t('nav.contact')}</h4>
-          <a href="mailto:hello@mtani.ge">hello@mtani.ge</a>
+          <a href="mailto:support@mtani.ge">support@mtani.ge</a>
           <a href="tel:+995000000000">+995 000 000 000</a>
           <span>{t('footer.location')}</span>
         </div>
