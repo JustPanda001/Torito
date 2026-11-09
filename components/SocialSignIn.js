@@ -28,13 +28,13 @@ const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
   || '768346774799-plt823vofi4n23ffiitec5cmnjqumn0b.apps.googleusercontent.com';
 
 /** Loads Google's sign-in script once. */
-function loadGsi() {
+function loadGsi(hl) {
   if (typeof window === 'undefined') return Promise.reject(new Error('no window'));
   if (window.google?.accounts?.id) return Promise.resolve();
   if (!window.__gsiLoading) {
     window.__gsiLoading = new Promise((resolve, reject) => {
       const s = document.createElement('script');
-      s.src = 'https://accounts.google.com/gsi/client';
+      s.src = `https://accounts.google.com/gsi/client?hl=${encodeURIComponent(hl || 'en')}`;
       s.async = true;
       s.onload = () => resolve();
       s.onerror = () => { window.__gsiLoading = null; reject(new Error('gsi load failed')); };
@@ -66,7 +66,7 @@ function GoogleButton({ next, onError }) {
     let alive = true;
     (async () => {
       try {
-        await loadGsi();
+        await loadGsi(lang);
         const nonce = await makeNonce();
         if (!alive || !box.current) return;
         window.google.accounts.id.initialize({
