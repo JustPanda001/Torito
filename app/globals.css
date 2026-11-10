@@ -2535,3 +2535,11 @@ a.feature-img:hover img{transform:scale(1.04)}
   .mybk-card.has-photo{grid-template-columns:1fr;gap:14px}
   .mybk-photo{aspect-ratio:16/7;min-height:0;width:100%}
 }
+/* My bookings on computers: every photo the same 180px square, and the
+   cancel button sits tight under the details, so cards line up */
+@media (min-width:641px){
+  .mybk-card.has-photo{align-items:start}
+  .mybk-photo{width:180px;height:180px;min-height:0;aspect-ratio:auto}
+  .mybk-card .mybk-cancel{margin-top:10px;padding-top:0;border-top:0}
+  .mybk-card .mybk-cancel .auth-btn{padding:7px 16px;font-size:13px}
+}
