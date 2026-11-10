@@ -19,6 +19,7 @@ import { requiredItems } from '@/lib/requiredItems';
 import { itineraryMode } from '@/lib/itinerary';
 import { filled } from '@/lib/filled';
 import { useT } from '@/lib/i18n';
+import { hourlyRates } from '@/lib/lessons';
 
 const CANVAS_WIDTH = 1100;
 const GAP = '…';
@@ -134,7 +135,9 @@ export default function AdminTripPreview({ row, focus }) {
                 <li className={hit('price').trim()}>
                   <span className="fact-label">{t('fact.price')}</span>
                   <span className="fact-value">
-                    {options.length > 1
+                    {hourlyRates(tour)
+                      ? t('trip.pricePerHour', { price: money(hourlyRates(tour)[0]) })
+                      : options.length > 1
                       ? t('trip.priceFromPer', { price: money(Math.min(...options.map((o) => o.price))) })
                       : t('trip.pricePer', { price: money(options[0]?.price ?? tour.price) })}
                   </span>

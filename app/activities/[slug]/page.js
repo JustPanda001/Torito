@@ -31,6 +31,7 @@ import { itineraryMode } from '@/lib/itinerary';
 import { filled } from '@/lib/filled';
 import { useT } from '@/lib/i18n';
 import { localizeTour } from '@/lib/trip-translations';
+import { hourlyRates } from '@/lib/lessons';
 
 // date locale per site language
 const DATE_LOCALE = { en: 'en-GB', ka: 'ka-GE', ru: 'ru-RU', zh: 'zh-CN' };
@@ -282,7 +283,9 @@ export default function TourPage({ params }) {
                 <Icon>{ICONS.clock}</Icon>
                 <span className="fact-label">{t('fact.price')}</span>
                 <span className="fact-value">
-                  {options.length > 1
+                  {hourlyRates(tour)
+                    ? t('trip.pricePerHour', { price: money(hourlyRates(tour)[0]) })
+                    : options.length > 1
                     ? t('trip.priceFromPer', { price: money(Math.min(...options.map((o) => o.price))) })
                     : t('trip.pricePer', { price: money(chosen ? chosen.price : tour.price) })}
                 </span>
