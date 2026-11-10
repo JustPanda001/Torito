@@ -210,7 +210,6 @@ export default function SiteHeader({ solid = false }) {
               <Link href="/activities?cat=hiking">{t('cat.hiking')}</Link>
               <Link href="/activities?cat=camping">{t('cat.camping')}</Link>
               <Link href="/activities?cat=mountaineering">{t('cat.mountaineering')}</Link>
-              <Link href="/activities?cat=transfer">{t('cat.transfer')}</Link>
             </div>
             <div><h4>{t('nav.winter')}</h4>
               <Link href="/activities?cat=ski&type=lessons">{t('header.instructors')}</Link>

@@ -16,7 +16,6 @@ export default function SiteFooter() {
         <div><h4>{t('footer.explore')}</h4>
           <Link href="/activities?cat=ski">{t('cat.ski')}</Link><Link href="/activities?cat=hiking">{t('cat.hiking')}</Link>
           <Link href="/activities?cat=camping">{t('cat.camping')}</Link><Link href="/activities?cat=mountaineering">{t('cat.mountaineering')}</Link>
-          <Link href="/activities?cat=transfer">{t('cat.transfer')}</Link>
         </div>
         <div><h4>{t('nav.info')}</h4>
           <Link href="/">{t('nav.home')}</Link><Link href="/about">{t('nav.about')}</Link>

@@ -34,7 +34,6 @@ const OPTION_LABELS = {
   hiking: 'Hiking',
   camping: 'Camping',
   mountaineering: 'Mountaineering',
-  transfer: 'Transfer',
   lessons: 'Instructors & schools (lessons)',
   freeride: 'Freeride',
   freestyle: 'Freestyle',

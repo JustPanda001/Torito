@@ -30,7 +30,6 @@ const ACTIVITIES = [
   [[A + 'svaneti-history-800.webp', null, 800, 457], 'cat.hiking', 'hiking'],
   [[A + 'camping fier.webp', null, 1000, 667], 'cat.camping', 'camping'],
   [[A + 'sameba.webp', null, 474, 634], 'cat.mountaineering', 'mountaineering'],
-  [[A + 'transfer.svg', null, 800, 600], 'cat.transfer', 'transfer'],
 ];
 
 // One place for the loading attributes. "first" marks the single picture that
@@ -184,19 +183,6 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className="feature">
-            <Link className="feature-img" href="/activities?cat=transfer">
-              <Pic p={[A + 'transfer.svg', null, 800, 600]} alt={t('home.transfer.alt')} />
-            </Link>
-            <div className="feature-text">
-              <span className="tag">{t('home.transfer.tag')}</span>
-              <h3>{t('home.transfer.title')}</h3>
-              <p>
-                {t('home.transfer.text')}
-              </p>
-              <Link className="link-more" href="/activities?cat=transfer">{t('home.transfer.more')} →</Link>
-            </div>
-          </div>
         </section>
       </main>
       <SiteFooter />
