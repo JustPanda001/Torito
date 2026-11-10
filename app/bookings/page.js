@@ -3,7 +3,7 @@
 // My bookings: the signed-in customer's requests, upcoming first then past.
 // RLS ("read own bookings") means the plain select only returns their rows.
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import SiteHeader from '@/components/SiteHeader';
 import SiteFooter from '@/components/SiteFooter';
@@ -14,9 +14,18 @@ import { markMyBookingsSeen } from '@/lib/badges';
 import { money } from '@/lib/season';
 import { findTour } from '@/lib/tours-data';
 import { localizeTour } from '@/lib/trip-translations';
+import '../styles/cancel.css';
 
 const LOCALE = { en: 'en-GB', ka: 'ka-GE', ru: 'ru-RU', zh: 'zh-CN' };
-const STATUS_KEY = { new: 'bookings.statusNew', confirmed: 'bookings.statusConfirmed', declined: 'bookings.statusDeclined' };
+const STATUS_KEY = {
+  new: 'bookings.statusNew',
+  confirmed: 'bookings.statusConfirmed',
+  declined: 'bookings.statusDeclined',
+  cancelled: 'bookings.cancelStatus',
+};
+// free cancellation closes this long before the service starts (the server
+// checks the same rule; this only decides what to show)
+const FREE_CANCEL_MS = 48 * 60 * 60 * 1000;
 // bookings are made for Georgian dates, whatever the visitor's own time zone
 const TBILISI = 'Asia/Tbilisi';
 
@@ -39,7 +48,82 @@ function formatCreated(value, lang) {
 // today as YYYY-MM-DD in Tbilisi (en-CA prints dates in that shape)
 const tbilisiToday = () => new Intl.DateTimeFormat('en-CA', { timeZone: TBILISI }).format(new Date());
 
-function BookingCard({ b }) {
+// When the service starts. Georgia is UTC+4 all year, so the date and time are
+// read as +04:00 whatever the visitor's own zone is. No time means 00:00 that day.
+function serviceStart(wantedDate, lessonTime) {
+  const day = /^(\d{4}-\d{2}-\d{2})/.exec(String(wantedDate ?? ''))?.[1];
+  if (!day) return null;
+  const m = /^(\d{1,2}):(\d{2})/.exec(String(lessonTime ?? '').trim());
+  const hh = m ? String(Math.min(Number(m[1]), 23)).padStart(2, '0') : '00';
+  const start = new Date(`${day}T${hh}:${m ? m[2] : '00'}:00+04:00`);
+  return Number.isNaN(start.getTime()) ? null : start.getTime();
+}
+
+// The cancel line of a card: a button, a short "too late" note, or nothing.
+function CancelBlock({ b, onCancelled }) {
+  const { t } = useT();
+  const [step, setStep] = useState('idle');   // idle | asking | working
+  const [error, setError] = useState('');
+
+  const start = b.kind === 'waitlist' ? null : serviceStart(b.wanted_date, b.lesson_time);
+  if (start === null || (b.status !== 'new' && b.status !== 'confirmed')) return null;
+
+  // already started, or inside the 48 hours
+  if (start - Date.now() < FREE_CANCEL_MS) {
+    // a service that is over has nothing left to cancel; keep the note for upcoming ones
+    return start > Date.now() ? <div className="mybk-cancel"><p className="mybk-cancel-late">{t('bookings.cancelLate')}</p></div> : null;
+  }
+
+  async function cancel() {
+    setStep('working');
+    setError('');
+    try {
+      const { data } = await supabase.auth.getSession();
+      const token = data?.session?.access_token;
+      if (!token) throw new Error('no session');
+      const res = await fetch('/api/bookings/cancel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ id: b.id }),
+      });
+      const result = await res.json().catch(() => null);
+      if (!res.ok || !result?.ok) {
+        setError(result?.code === 'too_late' ? t('bookings.cancelLate') : t('bookings.cancelFailed'));
+        setStep('idle');
+        return;
+      }
+      onCancelled(b.id);
+    } catch {
+      setError(t('bookings.cancelFailed'));
+      setStep('idle');
+    }
+  }
+
+  return (
+    <div className="mybk-cancel">
+      {step === 'idle' ? (
+        <button type="button" className="auth-btn mybk-cancel-btn" onClick={() => { setError(''); setStep('asking'); }}>
+          {t('bookings.cancelBtn')}
+        </button>
+      ) : (
+        <>
+          <p className="mybk-cancel-ask" role="alert">{t('bookings.cancelAsk')}</p>
+          <div className="mybk-cancel-row">
+            <button type="button" className="auth-btn mybk-cancel-yes" disabled={step === 'working'} onClick={cancel}>
+              {step === 'working' ? t('bookings.cancelWorking') : t('bookings.cancelYes')}
+            </button>
+            <button type="button" className="auth-btn mybk-cancel-keep" disabled={step === 'working'} onClick={() => setStep('idle')}>
+              {t('bookings.cancelNo')}
+            </button>
+          </div>
+        </>
+      )}
+      {error && <p className="mybk-cancel-error" role="alert">{error}</p>}
+    </div>
+  );
+}
+
+function BookingCard({ b, onCancelled }) {
   const { t, lang } = useT();
   const waitlist = b.kind === 'waitlist';
   const status = b.status in STATUS_KEY ? b.status : 'new';
@@ -77,6 +161,7 @@ function BookingCard({ b }) {
         {b.total != null && <div><dt>{t('bookings.total')}</dt><dd>{money(b.total)}</dd></div>}
       </dl>
       {requested && <p className="mybk-requested">{t('bookings.requested', { date: requested })}</p>}
+      <CancelBlock b={b} onCancelled={onCancelled} />
       </div>
     </article>
   );
@@ -87,12 +172,22 @@ export default function BookingsPage() {
   // checking | out | error | ready
   const [state, setState] = useState('checking');
   const [rows, setRows] = useState([]);
+  const userIdRef = useRef(null);
+
+  // The customer just cancelled this one: show it as cancelled, and count that
+  // as seen so their own action does not light the "!" on My bookings.
+  const onCancelled = (id) => {
+    const next = rows.map((r) => (r.id === id ? { ...r, status: 'cancelled' } : r));
+    setRows(next);
+    markMyBookingsSeen(userIdRef.current, next);
+  };
 
   const load = useCallback(async () => {
     setState('checking');
     try {
       const user = await currentUser();
       if (!user) { setRows([]); setState('out'); return; }
+      userIdRef.current = user.id;
       const { data, error } = await supabase
         .from('bookings')
         .select('*')
@@ -168,7 +263,7 @@ export default function BookingsPage() {
                 <>
                   <h2 className="mybk-heading">{t('bookings.upcoming')}</h2>
                   <div className="mybk-list">
-                    {upcoming.map((b) => <BookingCard key={b.id} b={b} />)}
+                    {upcoming.map((b) => <BookingCard key={b.id} b={b} onCancelled={onCancelled} />)}
                   </div>
                 </>
               )}
@@ -177,7 +272,7 @@ export default function BookingsPage() {
                 <>
                   <h2 className="mybk-heading">{t('bookings.past')}</h2>
                   <div className="mybk-list">
-                    {past.map((b) => <BookingCard key={b.id} b={b} />)}
+                    {past.map((b) => <BookingCard key={b.id} b={b} onCancelled={onCancelled} />)}
                   </div>
                 </>
               )}

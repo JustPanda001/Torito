@@ -25,6 +25,9 @@ import { isBookable } from '@/lib/bookable';
 import { TOURS } from '@/lib/tours-data';
 import { tourOptions } from '@/lib/options';
 import { bookingTitle, bookingTotal, findOption, unitPrice } from '@/lib/pricing';
+import {
+  HOURS_ANSWER, LESSON_MAX_HOURS, LESSON_MIN_HOURS, hourlyRates, validHours,
+} from '@/lib/lessons';
 import { sendBookingEmail } from '@/lib/bookingEmail';
 
 export const runtime = 'nodejs';
@@ -233,11 +236,27 @@ export async function POST(request) {
   }
 
   const people = body.people ?? 1;
+
+  // A lesson with a rate table is priced by group size and hours: both must
+  // be in range, and the hours are kept with the answers. A waitlist request
+  // has no price, so it needs neither.
+  const rates = kind !== 'waitlist' ? hourlyRates(trip) : null;
+  const hours = rates ? body.hours : null;
+  if (rates) {
+    if (!validHours(hours)) {
+      return Response.json({ error: `Please choose between ${LESSON_MIN_HOURS} and ${LESSON_MAX_HOURS} hours.` }, { status: 400 });
+    }
+    if (people > rates.length) {
+      return Response.json({ error: `Please choose between 1 and ${rates.length} people.` }, { status: 400 });
+    }
+  }
+
   // A trip with no price set (or a waitlist) has no total, rather than a
   // made-up 0. Rounded to cents so float noise never reaches the row.
   const unit = unitPrice(trip, option);
-  const priced = kind !== 'waitlist' && unit != null && unit !== '' && Number.isFinite(Number(unit));
-  const total = priced ? Math.round(bookingTotal(trip, option, people) * 100) / 100 : null;
+  const priced = kind !== 'waitlist'
+    && (rates != null || (unit != null && unit !== '' && Number.isFinite(Number(unit))));
+  const total = priced ? Math.round(bookingTotal(trip, option, people, hours) * 100) / 100 : null;
   if (total != null && Number.isFinite(body.total) && body.total !== total) {
     console.warn(`Booking total differs: browser said ${body.total}, server says ${total} (${slug})`);
   }
@@ -252,7 +271,11 @@ export async function POST(request) {
     lesson_time: clean(body.lesson_time, 20),
     skill_level: clean(body.skill_level, 40),
     lesson_type: clean(body.lesson_type, 40),
-    answers: cleanAnswers(body.answers),
+    // the hours of a rate-table lesson ride with the answers (no column for
+    // them); ours, checked above, win over anything the post put there
+    answers: hours != null
+      ? { ...(cleanAnswers(body.answers) ?? {}), [HOURS_ANSWER]: String(hours) }
+      : cleanAnswers(body.answers),
     confirmed_items: cleanItems(body.confirmed_items),
     user_id: user.id,
     name: clean(body.name, 120) ?? clean(user.user_metadata?.full_name, 120),

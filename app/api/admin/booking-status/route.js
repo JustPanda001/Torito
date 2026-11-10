@@ -75,6 +75,10 @@ export async function POST(request) {
   // the status before the change, so pressing Confirm twice does not email twice
   const { data: before } = await supabase
     .from('bookings').select('status').eq('id', id).maybeSingle();
+  // a booking the customer cancelled stays cancelled
+  if (before?.status === 'cancelled') {
+    return Response.json({ error: 'The customer cancelled this booking.' }, { status: 409 });
+  }
 
   const { data, error } = await supabase
     .from('bookings').update({ status }).eq('id', id)

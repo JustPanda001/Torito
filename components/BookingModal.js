@@ -15,6 +15,7 @@ import {
 } from '@/lib/season';
 import {
   isLesson, isTimed, timeQuestion, slotTimeState, defaultTimeQuestion, SKILL_LEVELS, LESSON_TYPES,
+  hourlyRates, LESSON_MIN_HOURS, LESSON_MAX_HOURS,
 } from '@/lib/lessons';
 import { useAvailability } from '@/lib/availability';
 import { supabase, currentProfile } from '@/lib/supabaseClient';
@@ -23,7 +24,8 @@ import DialSelect from './DialSelect';
 import { answersComplete, bookingQuestions, initialAnswer, packAnswers } from '@/lib/bookingQuestions';
 import { requiredItems } from '@/lib/requiredItems';
 import { isBookable } from '@/lib/bookable';
-import { bookingTitle, bookingTotal, unitPrice } from '@/lib/pricing';
+import { bookingTitle, bookingTotal, hourlyRate, unitPrice } from '@/lib/pricing';
+import '@/app/styles/lesson-pricing.css';
 import { useT } from '@/lib/i18n';
 import { refreshBadges } from '@/lib/badges';
 import { localizeTour } from '@/lib/trip-translations';
@@ -119,6 +121,10 @@ export default function BookingModal({ tour, option = null, onClose }) {
   const [date, setDate] = useState(null);
   const endDate = date && span > 1 ? addDays(date, span - 1) : null;
   const [people, setPeople] = useState(1);
+  // a lesson with a rate table is priced per hour by group size, and the
+  // visitor picks how many hours; null for everything else
+  const rates = useMemo(() => hourlyRates(tour), [tour]);
+  const [hours, setHours] = useState(LESSON_MIN_HOURS);
   // lesson requests only: when, and what they want out of it
   const [time, setTime] = useState('');
   const [level, setLevel] = useState('');
@@ -230,6 +236,8 @@ export default function BookingModal({ tour, option = null, onClose }) {
           // date backwards for anyone east of UTC, which is everyone here
           wanted_date: date ? iso(date) : null,
           people,
+          // the server checks these and works the price out again itself
+          hours: rates ? hours : null,
           total: requestKind === 'waitlist' ? null : total,
           lesson_time: timeQ ? time : null,
           skill_level: lesson ? level : null,
@@ -294,12 +302,18 @@ export default function BookingModal({ tour, option = null, onClose }) {
   const blocked = !isBookable(tour);
   useEffect(() => { if (blocked) onClose(); }, [blocked, onClose]);
 
-  const total = bookingTotal(tour, option, people);
+  const total = bookingTotal(tour, option, people, rates ? hours : null);
   // places still open on the chosen departure, once other bookings count
   const daySeats = date && !timed && tour.capacity
     ? Math.max(0, Math.min(seats, tour.capacity - avail.bookedOn(date)))
     : seats;
-  const step = (n) => setPeople((p) => Math.min(daySeats, Math.max(1, p + n)));
+  // a rate table covers groups up to its size (4), never more
+  const maxPeople = rates
+    ? Math.min(rates.length, Number.isFinite(daySeats) && daySeats > 0 ? daySeats : rates.length)
+    : daySeats;
+  const step = (n) => setPeople((p) => Math.min(maxPeople, Math.max(1, p + n)));
+  const stepHours = (n) => setHours((h) => Math.min(LESSON_MAX_HOURS, Math.max(LESSON_MIN_HOURS, h + n)));
+  const rate = rates ? hourlyRate(tour, people) : null;
 
   // why a time cannot be picked on the chosen day, or null when it can
   const slotWhy = (slot) => {
@@ -326,6 +340,7 @@ export default function BookingModal({ tour, option = null, onClose }) {
   const longDate = (d) => fmtDate(d, lang, { day: 'numeric', month: 'long', year: 'numeric' });
   const placesWord = t(`booking.placeWord${pluralForm(lang, people)}`);
   const peopleWord = t(`booking.peopleWord${pluralForm(lang, people)}`);
+  const hoursWord = t(`booking.hoursWord${pluralForm(lang, hours)}`);
   const timeLabel = timeQ && timeQ.label === DEFAULT_TIME_LABEL ? t('booking.whatTime') : timeQ?.label;
 
   return (
@@ -390,6 +405,7 @@ export default function BookingModal({ tour, option = null, onClose }) {
                 )}
                 {timeQ && <div className="bm-line"><span>{t('booking.time')}</span><span>{time}</span></div>}
                 <div className="bm-line"><span>{t('booking.peopleLabel')}</span><span>{people}</span></div>
+                {rates && <div className="bm-line"><span>{t('booking.hoursLabel')}</span><span>{hours}</span></div>}
                 {lesson && <div className="bm-line"><span>{t('booking.level')}</span><span>{t(LEVEL_KEYS[level] ?? level)}</span></div>}
                 {lesson && <div className="bm-line"><span>{t('booking.lesson')}</span><span>{t(KIND_KEYS[kind] ?? kind)}</span></div>}
                 {Object.entries(packAnswers(questions, answers)).map(([label, value]) => (
@@ -545,13 +561,56 @@ export default function BookingModal({ tour, option = null, onClose }) {
                 </section>
               ))}
 
+              {rates && (
+                <section className="bm-section">
+                  <h3>{t('booking.hoursQ')}</h3>
+                  <div className="bm-people">
+                    <button
+                      type="button"
+                      className="bm-step"
+                      onClick={() => stepHours(-1)}
+                      disabled={hours <= LESSON_MIN_HOURS}
+                      aria-label={t('booking.hoursFewer')}
+                    >
+                      −
+                    </button>
+                    <span className="bm-count" aria-live="polite"><strong>{hours}</strong> {hoursWord}</span>
+                    <button
+                      type="button"
+                      className="bm-step"
+                      onClick={() => stepHours(1)}
+                      disabled={hours >= LESSON_MAX_HOURS}
+                      aria-label={t('booking.hoursMore')}
+                    >
+                      +
+                    </button>
+                  </div>
+                  <p className="bm-hint">{t('booking.hoursHint', { min: LESSON_MIN_HOURS, max: LESSON_MAX_HOURS })}</p>
+                </section>
+              )}
+
               <section className="bm-section">
                 <h3>{t('booking.howMany')}</h3>
                 <div className="bm-people">
                   <button type="button" className="bm-step" onClick={() => step(-1)} aria-label={t('booking.oneFewer')}>−</button>
                   <span className="bm-count" aria-live="polite"><strong>{people}</strong> {peopleWord}</span>
-                  <button type="button" className="bm-step" onClick={() => step(1)} aria-label={t('booking.oneMore')}>+</button>
+                  <button
+                    type="button"
+                    className="bm-step"
+                    onClick={() => step(1)}
+                    disabled={rates ? people >= maxPeople : false}
+                    aria-label={t('booking.oneMore')}
+                  >
+                    +
+                  </button>
                 </div>
+                {rates && (
+                  <p className="bm-hint lp-rate">
+                    {t('booking.hoursRate', { n: people, people: peopleWord, rate: money(rate) })}
+                    {' · '}
+                    {t('booking.groupMax', { n: maxPeople })}
+                  </p>
+                )}
                 <p className="bm-hint">
                   {lesson
                     ? t('booking.groupTaught')
@@ -600,7 +659,10 @@ export default function BookingModal({ tour, option = null, onClose }) {
 
               <section className="bm-section bm-total">
                 <div className="bm-line">
-                  <span>{money(price)} × {people}</span><span>{money(total)}</span>
+                  {rates
+                    ? <span>{money(rate)} × {hours} {hoursWord}</span>
+                    : <span>{money(price)} × {people}</span>}
+                  <span>{money(total)}</span>
                 </div>
                 <div className="bm-line bm-grand"><span>{t('booking.total')}</span><span>{money(total)}</span></div>
                 <p className="bm-hint">{t('booking.priceNote')}</p>

@@ -1,0 +1,6 @@
+/* Lessons priced by the hour: the hours stepper and the rate line in the
+   booking dialog (components/BookingModal.js). Uses the site's colour
+   variables only, so it reads in both themes. */
+
+.booking-modal .bm-step:disabled{opacity:.4;cursor:default;background:transparent}
+.booking-modal .bm-hint.lp-rate{color:var(--ink)}

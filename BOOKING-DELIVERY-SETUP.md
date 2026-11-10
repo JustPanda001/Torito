@@ -84,6 +84,8 @@ const LOOK = {
   new: { bg: null, font: null },
   confirmed: { bg: '#e3f4ea', font: null },
   declined: { bg: '#eeeeee', font: '#888888' },
+  // cancelled by the customer (free cancellation up to 48 hours before)
+  cancelled: { bg: '#f6e3e1', font: '#9a5a52' },
 };
 
 // open the /exec URL in a browser: "alive" means this code really is the

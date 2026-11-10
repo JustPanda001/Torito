@@ -20,11 +20,13 @@ import { supabase, currentProfile, friendlyError } from '@/lib/supabaseClient';
 import { bookingRef } from '@/lib/bookingRef';
 import { markAdminBookingsSeen } from '@/lib/badges';
 import { money } from '@/lib/season';
+import '../../styles/cancel.css';
 
 const TABS = [
   ['new', 'Needs answer'],
   ['confirmed', 'Confirmed'],
   ['declined', 'Declined'],
+  ['cancelled', 'Cancelled'],
   ['all', 'All'],
 ];
 
@@ -32,10 +34,11 @@ const EMPTY = {
   new: 'Nothing is waiting for an answer.',
   confirmed: 'No confirmed bookings.',
   declined: 'No declined bookings.',
+  cancelled: 'No cancelled bookings.',
   all: 'No bookings yet.',
 };
 
-const STATUS_LABEL = { new: 'Needs answer', confirmed: 'Confirmed', declined: 'Declined' };
+const STATUS_LABEL = { new: 'Needs answer', confirmed: 'Confirmed', declined: 'Declined', cancelled: 'Cancelled' };
 // only ski/snowboard lessons are 'lesson'; paragliding, snowmobiles, hikes and
 // transfers are all 'trip'
 const KIND_LABEL = { trip: 'Activity', lesson: 'Lesson', waitlist: 'Waitlist' };
@@ -115,7 +118,7 @@ export default function AdminBookingsPage() {
   useEffect(() => { if (profile?.role === 'admin') load(); }, [profile, load]);
 
   const counts = useMemo(() => {
-    const c = { new: 0, confirmed: 0, declined: 0, all: 0 };
+    const c = { new: 0, confirmed: 0, declined: 0, cancelled: 0, all: 0 };
     for (const r of rows ?? []) {
       c.all += 1;
       if (c[r.status] !== undefined) c[r.status] += 1;
@@ -281,23 +284,28 @@ export default function AdminBookingsPage() {
 
                   {rowErrors[b.id] && <p className="rev-error" role="alert">{rowErrors[b.id]}</p>}
 
-                  <div className="rev-actions">
-                    {b.status !== 'confirmed' && (
-                      <button type="button" className="rev-btn approve" disabled={saving} onClick={() => change(b, 'confirmed')}>
-                        Confirm
-                      </button>
-                    )}
-                    {b.status !== 'declined' && (
-                      <button type="button" className="rev-btn reject" disabled={saving} onClick={() => change(b, 'declined')}>
-                        Decline
-                      </button>
-                    )}
-                    {b.status !== 'new' && (
-                      <button type="button" className="rev-btn" disabled={saving} onClick={() => change(b, 'new')}>
-                        Undo (back to needs answer)
-                      </button>
-                    )}
-                  </div>
+                  {b.status === 'cancelled' ? (
+                    // the customer cancelled it themselves: nothing to answer
+                    <p className="ab-cancelled-note">Cancelled by the customer.</p>
+                  ) : (
+                    <div className="rev-actions">
+                      {b.status !== 'confirmed' && (
+                        <button type="button" className="rev-btn approve" disabled={saving} onClick={() => change(b, 'confirmed')}>
+                          Confirm
+                        </button>
+                      )}
+                      {b.status !== 'declined' && (
+                        <button type="button" className="rev-btn reject" disabled={saving} onClick={() => change(b, 'declined')}>
+                          Decline
+                        </button>
+                      )}
+                      {b.status !== 'new' && (
+                        <button type="button" className="rev-btn" disabled={saving} onClick={() => change(b, 'new')}>
+                          Undo (back to needs answer)
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </li>
               );
             })}

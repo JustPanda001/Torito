@@ -1,0 +1,35 @@
+/* booking cancellation: My bookings card + the grey "Cancelled" label in admin.
+   Uses the --rev-bad-* tokens from reviews.css and the globals.css variables,
+   so both themes follow on their own. */
+
+.mybk-status.is-cancelled,
+.ab-status.is-cancelled{
+  background:var(--surface-2);color:var(--ink-soft);border-color:var(--line);
+}
+
+.mybk-cancel{margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
+.mybk-cancel-late,.mybk-cancel-ask{margin:0 0 10px;font-size:14px;line-height:1.55;color:var(--ink-soft)}
+.mybk-cancel-ask{color:var(--ink)}
+.mybk-cancel-late{margin:0}
+.mybk-cancel-row{display:flex;flex-wrap:wrap;gap:10px}
+
+.mybk-cancel .auth-btn{width:auto;padding:10px 18px;font-size:14px;border-radius:999px}
+.mybk-cancel .mybk-cancel-btn,.mybk-cancel .mybk-cancel-yes{
+  background:var(--surface);color:var(--rev-bad-ink);border:1.5px solid var(--rev-bad-line);
+}
+.mybk-cancel .mybk-cancel-btn:hover,.mybk-cancel .mybk-cancel-yes:hover{background:var(--rev-bad-bg)}
+.mybk-cancel .mybk-cancel-keep{background:var(--surface);color:var(--ink);border:1.5px solid var(--line)}
+.mybk-cancel .mybk-cancel-keep:hover{background:var(--surface-2)}
+.mybk-cancel .auth-btn[disabled]{opacity:.55;cursor:wait}
+.mybk-cancel .auth-btn:focus-visible{outline:2px solid var(--green-700);outline-offset:2px}
+.mybk-cancel-error{
+  margin:10px 0 0;padding:10px 14px;border-radius:12px;font-size:14px;line-height:1.5;
+  background:var(--rev-bad-bg);color:var(--rev-bad-ink);border:1px solid var(--rev-bad-line);
+}
+
+/* admin: a cancelled booking is the customer's doing, so it has no buttons */
+.ab-cancelled-note{margin:14px 0 0;font-size:14px;color:var(--ink-soft)}
+
+@media (max-width:600px){
+  .mybk-cancel .auth-btn{flex:1 1 140px}
+}

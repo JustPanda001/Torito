@@ -22,7 +22,9 @@ import { isTimed, isTimeQuestion, defaultTimeQuestion } from '@/lib/lessons';
 import { NO_TIMES } from '@/lib/bookingQuestions';
 import { supabase, currentProfile, friendlyError } from '@/lib/supabaseClient';
 import { slugify } from '@/lib/slug';
-import { LESSON } from '@/lib/lessons';
+import {
+  LESSON, HOURLY_RATES, SUGGESTED_HOURLY_RATES, LESSON_MAX_GROUP, LESSON_MIN_HOURS, LESSON_MAX_HOURS,
+} from '@/lib/lessons';
 import { ITINERARY_MODES, itineraryMode, stepLabel } from '@/lib/itinerary';
 import { CATEGORIES } from '@/lib/catalog';
 
@@ -144,6 +146,11 @@ export default function AdminPage() {
   }
   // kit the visitor brings themselves, ticked off before they can book
   const [requiredItems, setRequiredItems] = useState([]);
+  // lessons only: price per hour for 1, 2, 3 and 4 people, as typed. All
+  // empty = no rate table, so the lesson keeps the price-per-person rule.
+  const noRates = () => Array.from({ length: LESSON_MAX_GROUP }, () => '');
+  const [rates, setRates] = useState(noRates);
+  const setRate = (i, value) => setRates((prev) => prev.map((r, j) => (j === i ? value : r)));
   // whether the plan is counted in days or in places visited in one day
   const [itinMode, setItinMode] = useState('days');
   const dayTrip = itinMode === 'stops';
@@ -207,7 +214,14 @@ export default function AdminPage() {
       const raw = Array.isArray(tour.booking_fields) ? tour.booking_fields : [];
       const optedOut = raw.some((q) => q?.type === NO_TIMES);
       setNoTimes(optedOut);
-      setBookingFields(withTimeQuestion(raw.filter((q) => q?.type !== NO_TIMES), tour.category, tour.subtype, optedOut));
+      // the rate table is a hidden entry in the same list; it is edited in its
+      // own boxes, not as a question
+      const saved = raw.find((q) => q?.type === HOURLY_RATES)?.rates;
+      setRates(noRates().map((_, i) => (Array.isArray(saved) && saved[i] != null ? String(saved[i]) : '')));
+      setBookingFields(withTimeQuestion(
+        raw.filter((q) => q?.type !== NO_TIMES && q?.type !== HOURLY_RATES),
+        tour.category, tour.subtype, optedOut,
+      ));
     }
     setRequiredItems(asPairs(tour.required_items));
     setOptions(Array.isArray(tour.options) ? tour.options.map((o) => ({ ...o, price: o.price ?? '' })) : []);
@@ -269,6 +283,7 @@ export default function AdminPage() {
     setBookingFields([]);
     setNoTimes(false);
     setRequiredItems([]);
+    setRates(noRates());
     setOptions([]);
     setCompare([]);
     setItinMode('days');
@@ -346,6 +361,18 @@ export default function AdminPage() {
       .filter((q) => q.label && (q.type !== 'choice' || q.options.length > 0));
     if (noTimes && isTimed(row) && !row.booking_fields.some(isTimeQuestion)) {
       row.booking_fields.push({ label: 'no times', type: NO_TIMES });
+    }
+    // a lesson's rate table: all four rates, or none at all
+    if (lessonForm) {
+      const typed = rates.map((r) => String(r ?? '').trim());
+      if (typed.some((r) => r !== '')) {
+        const nums = typed.map(Number);
+        if (typed.some((r) => r === '') || !nums.every((n) => Number.isFinite(n) && n > 0)) {
+          setNote({ error: true, text: `Price per hour: fill in all ${LESSON_MAX_GROUP} rates with a number above 0, or leave them all empty.` });
+          return;
+        }
+        row.booking_fields.push({ type: HOURLY_RATES, rates: nums });
+      }
     }
 
     row.gallery = photos;
@@ -483,6 +510,46 @@ export default function AdminPage() {
                 </section>
               );
             })}
+
+            {lessonForm && (
+              <section className="admin-section">
+                <div className="admin-section-head">
+                  <h3>Price per hour</h3>
+                  <span className="field-hint">
+                    Customers pick {LESSON_MIN_HOURS} to {LESSON_MAX_HOURS} hours and up to {LESSON_MAX_GROUP} people.
+                    Total = rate for the group × hours. Leave all empty to use the price per person instead.
+                  </span>
+                </div>
+                <div className="admin-grid">
+                  {rates.map((value, i) => (
+                    <label className="field" key={i}>
+                      <span className="field-label">{i + 1} {i === 0 ? 'person' : 'people'} — ₾ per hour</span>
+                      {/* no name: these are saved into booking_fields, not as columns */}
+                      <input
+                        type="number"
+                        min={1}
+                        inputMode="decimal"
+                        value={value}
+                        placeholder={String(SUGGESTED_HOURLY_RATES[i])}
+                        onChange={(e) => setRate(i, e.target.value)}
+                      />
+                      {Number(value) > 0 && (
+                        <span className="field-hint">{LESSON_MIN_HOURS} h = {Number(value) * LESSON_MIN_HOURS} ₾</span>
+                      )}
+                    </label>
+                  ))}
+                </div>
+                {rates.every((r) => String(r).trim() === '') && (
+                  <button
+                    type="button"
+                    className="chip"
+                    onClick={() => setRates(SUGGESTED_HOURLY_RATES.map(String))}
+                  >
+                    Fill in {SUGGESTED_HOURLY_RATES.join(' / ')} ₾
+                  </button>
+                )}
+              </section>
+            )}
 
             <section className="admin-section">
               <div className="admin-section-head">
