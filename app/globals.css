@@ -2530,3 +2530,8 @@ a.feature-img:hover img{transform:scale(1.04)}
   .mybk-card.has-photo{align-items:start}
   .mybk-photo{min-height:0;aspect-ratio:1/1}
 }
+/* My bookings on phones: photo as a wide banner on top, details full width below */
+@media (max-width:640px){
+  .mybk-card.has-photo{grid-template-columns:1fr;gap:14px}
+  .mybk-photo{aspect-ratio:16/7;min-height:0;width:100%}
+}
