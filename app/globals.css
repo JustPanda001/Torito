@@ -2517,3 +2517,16 @@ a.feature-img:hover img{transform:scale(1.04)}
   .mybk-card.has-photo{grid-template-columns:96px minmax(0,1fr);gap:14px}
   .mybk-photo{min-height:96px}
 }
+
+/* header logo: full logo on computers, the M alone on phones */
+.logo .logo-word.logo-full{height:44px}
+.logo .logo-word.logo-mark{display:none}
+@media (max-width:640px){
+  .logo .logo-word.logo-full{display:none}
+  .logo .logo-word.logo-mark{display:block}
+}
+/* My bookings on phones: a square photo at the top, not a tall stretched strip */
+@media (max-width:640px){
+  .mybk-card.has-photo{align-items:start}
+  .mybk-photo{min-height:0;aspect-ratio:1/1}
+}

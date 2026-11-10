@@ -119,7 +119,7 @@ export default function AccountMenu() {
 
   const name = (profile.full_name || profile.email || t('header.account')).split(' ')[0];
   const isAdmin = profile.role === 'admin';
-  const anyBang = (isAdmin && (badges.chat || badges.bookings)) || badges.mine;
+  const anyBang = (isAdmin && (badges.chat || badges.bookings || badges.reviews)) || badges.mine;
 
   return (
     <div className="account-menu" ref={wrap}>
@@ -160,8 +160,9 @@ export default function AccountMenu() {
           )}
 
           {isAdmin && (
-            <Link href="/admin/reviews" className="admin-link" onClick={() => setOpen(false)}>
+            <Link href="/admin/reviews" className="admin-link has-bang" onClick={() => setOpen(false)}>
               {tr(t, 'account.reviews', 'Reviews')}
+              {badges.reviews && <Bang />}
             </Link>
           )}
 

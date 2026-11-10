@@ -12,6 +12,7 @@ import Link from 'next/link';
 import SiteHeader from '@/components/SiteHeader';
 import Stars from '@/components/Stars';
 import { supabase, currentProfile, friendlyError } from '@/lib/supabaseClient';
+import { refreshBadges } from '@/lib/badges';
 import { fetchAllReviews, setReviewStatus, useRatings } from '@/lib/ratings';
 import { findTour } from '@/lib/tours-data';
 import { useT } from '@/lib/i18n';
@@ -106,6 +107,7 @@ export default function AdminReviewsPage() {
     try {
       const saved = await setReviewStatus(review.id, status);
       setReviews((list) => list.map((r) => (r.id === review.id ? { ...r, ...saved } : r)));
+      refreshBadges();
       // the stars on cards and trip pages count approved reviews only
       refreshRatings();
     } catch (error) {

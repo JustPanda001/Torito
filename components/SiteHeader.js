@@ -96,6 +96,8 @@ export default function SiteHeader({ solid = false }) {
 
         <div className="header-left">
           <Link className="logo" href="/">
+            {/* full logo on computers, the M alone on phones (CSS) */}
+            <MtaniLogo className="logo-word logo-full" title={t('header.logoAlt')} />
             <MtaniLogo mark className="logo-word logo-mark" title={t('header.logoAlt')} />
           </Link>
           {/* phone only: sits next to the logo */}
