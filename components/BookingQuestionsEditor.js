@@ -73,6 +73,46 @@ export default function BookingQuestionsEditor({ rows, onChange }) {
             </label>
           )}
 
+          {/* a counter's limits and the word after it, e.g. 2 to 8 "hours" */}
+          {row.type === 'number' && (
+            <div className="bq-number">
+              <label className="field">
+                <span className="field-label">Lowest</span>
+                <input
+                  type="number"
+                  min={0}
+                  inputMode="numeric"
+                  value={row.min ?? ''}
+                  onChange={(e) => set(i, 'min', e.target.value)}
+                  placeholder="No limit"
+                />
+              </label>
+              <label className="field">
+                <span className="field-label">Highest</span>
+                <input
+                  type="number"
+                  min={0}
+                  inputMode="numeric"
+                  value={row.max ?? ''}
+                  onChange={(e) => set(i, 'max', e.target.value)}
+                  placeholder="No limit"
+                />
+              </label>
+              <label className="field">
+                <span className="field-label">Word after the number</span>
+                <input
+                  value={row.unit ?? ''}
+                  onChange={(e) => set(i, 'unit', e.target.value)}
+                  placeholder="hours"
+                  maxLength={30}
+                />
+              </label>
+              <span className="field-hint">
+                The visitor sees e.g. “− 2 hours +” and “From 2 to 8 hours.” Leave Lowest and Highest empty for no limit.
+              </span>
+            </div>
+          )}
+
           <label className="field">
             <span className="field-label">Note under the question</span>
             <input

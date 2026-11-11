@@ -29,6 +29,7 @@ import {
   HOURS_ANSWER, LESSON_MAX_HOURS, LESSON_MIN_HOURS, hourlyRates, validHours,
 } from '@/lib/lessons';
 import { sendBookingEmail } from '@/lib/bookingEmail';
+import { bookingQuestions, numberBounds } from '@/lib/bookingQuestions';
 
 export const runtime = 'nodejs';
 
@@ -236,6 +237,19 @@ export async function POST(request) {
   }
 
   const people = body.people ?? 1;
+
+  // A number question with a lowest / highest set must be answered inside it;
+  // the counter enforces this in the browser, this keeps a hand-made request out.
+  if (kind !== 'waitlist' && body.answers && typeof body.answers === 'object') {
+    for (const q of bookingQuestions(trip)) {
+      if (q.type !== 'number' || !(q.label in body.answers)) continue;
+      const n = Number(body.answers[q.label]);
+      const { lo, hi } = numberBounds(q);
+      if (!Number.isFinite(n) || (n !== 0 && (n < lo || n > hi))) {
+        return Response.json({ error: `"${q.label}" must be between ${lo} and ${Number.isFinite(hi) ? hi : 'any'}.` }, { status: 400 });
+      }
+    }
+  }
 
   // A lesson with a rate table is priced by group size and hours: both must
   // be in range, and the hours are kept with the answers. A waitlist request

@@ -19,7 +19,7 @@ import PlaceSearch from '@/components/PlaceSearch';
 import AdminNav from '@/components/AdminNav';
 import AdminTripPreview from '@/components/AdminTripPreview';
 import { isTimed, isTimeQuestion, defaultTimeQuestion } from '@/lib/lessons';
-import { NO_TIMES } from '@/lib/bookingQuestions';
+import { NO_TIMES, numberLimits } from '@/lib/bookingQuestions';
 import { supabase, currentProfile, friendlyError } from '@/lib/supabaseClient';
 import { slugify } from '@/lib/slug';
 import {
@@ -381,6 +381,7 @@ export default function AdminPage() {
         required: Boolean(q.required),
         hint: (q.hint ?? '').trim(),
         hintStrong: Boolean(q.hintStrong),
+        ...numberLimits({ ...q, type: q.type ?? 'choice' }),
       }))
       .filter((q) => q.label && (q.type !== 'choice' || q.options.length > 0));
     if (noTimes && isTimed(row) && !row.booking_fields.some(isTimeQuestion)) {

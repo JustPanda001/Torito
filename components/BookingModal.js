@@ -21,7 +21,7 @@ import { useAvailability } from '@/lib/availability';
 import { supabase, currentProfile } from '@/lib/supabaseClient';
 import { DEFAULT_DIAL, phoneDigits } from '@/lib/dial-codes';
 import DialSelect from './DialSelect';
-import { answersComplete, bookingQuestions, initialAnswer, packAnswers } from '@/lib/bookingQuestions';
+import { answersComplete, bookingQuestions, initialAnswer, numberBounds, packAnswers } from '@/lib/bookingQuestions';
 import { requiredItems } from '@/lib/requiredItems';
 import { isBookable } from '@/lib/bookable';
 import { bookingTitle, bookingTotal, hourlyRate, unitPrice } from '@/lib/pricing';
@@ -526,27 +526,42 @@ export default function BookingModal({ tour, option = null, onClose }) {
                     </div>
                   )}
 
-                  {q.type === 'number' && (
-                    <div className="bm-people">
-                      <button
-                        type="button"
-                        className="bm-step"
-                        aria-label={t('booking.oneFewer')}
-                        onClick={() => setAnswer(q.label, Math.max(0, Number(answers[q.label] || 0) - 1))}
-                      >
-                        −
-                      </button>
-                      <span className="bm-count"><strong>{Number(answers[q.label] || 0)}</strong></span>
-                      <button
-                        type="button"
-                        className="bm-step"
-                        aria-label={t('booking.oneMore')}
-                        onClick={() => setAnswer(q.label, Number(answers[q.label] || 0) + 1)}
-                      >
-                        +
-                      </button>
-                    </div>
-                  )}
+                  {q.type === 'number' && (() => {
+                    const { lo, hi } = numberBounds(q);
+                    const n = Number(answers[q.label] || 0);
+                    const range = q.min != null && q.max != null
+                      ? t('booking.numberRange', { min: q.min, max: q.max })
+                      : q.min != null ? t('booking.numberMin', { min: q.min })
+                        : q.max != null ? t('booking.numberMax', { max: q.max }) : '';
+                    return (
+                      <>
+                        <div className="bm-people">
+                          <button
+                            type="button"
+                            className="bm-step"
+                            aria-label={t('booking.oneFewer')}
+                            disabled={n <= lo}
+                            onClick={() => setAnswer(q.label, Math.max(lo, n - 1))}
+                          >
+                            −
+                          </button>
+                          <span className="bm-count" aria-live="polite">
+                            <strong>{n}</strong>{q.unit && <> {q.unit}</>}
+                          </span>
+                          <button
+                            type="button"
+                            className="bm-step"
+                            aria-label={t('booking.oneMore')}
+                            disabled={n >= hi}
+                            onClick={() => setAnswer(q.label, Math.min(hi, n + 1))}
+                          >
+                            +
+                          </button>
+                        </div>
+                        {range && <p className="bm-hint">{range}{q.unit ? ` ${q.unit}` : ''}.</p>}
+                      </>
+                    );
+                  })()}
 
                   {q.type === 'text' && (
                     <input
