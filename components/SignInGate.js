@@ -33,7 +33,13 @@ export default function SignInGate({ title, reason = 'book', onClose }) {
     };
   }, [onClose]);
 
-  const perks = rating ? [
+  const contact = reason === 'contact';
+
+  const perks = contact ? [
+    ['bell', t('gate.perkContactReply')],
+    ['user', t('gate.perkContactKeep')],
+    ['calendar', t('gate.perkContactFree')],
+  ] : rating ? [
     ['calendar', t('gate.perkRate')],
     ['user', t('gate.perkRateName')],
     ['bell', t('gate.perkRateEdit')],
@@ -55,7 +61,7 @@ export default function SignInGate({ title, reason = 'book', onClose }) {
 
         <div className="bm-head">
           <div>
-            <h2 id="gateTitle">{rating ? t('gate.titleRate') : t('gate.title')}</h2>
+            <h2 id="gateTitle">{contact ? t('gate.titleContact') : rating ? t('gate.titleRate') : t('gate.title')}</h2>
             <p className="bm-sub">{title}</p>
           </div>
           <button type="button" className="bm-close" aria-label={t('site.close')} onClick={onClose}>×</button>

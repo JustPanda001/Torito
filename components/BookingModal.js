@@ -447,7 +447,7 @@ export default function BookingModal({ tour, option = null, onClose }) {
                   rangeEnd={endDate}
                   span={span}
                   onPick={pickDate}
-                  isDisabled={(d) => !inSeason(tour, d) || avail.dayFull(d, timed)}
+                  isDisabled={(d) => !inSeason(tour, d) || avail.dayFull(d, timed, lessonSpan)}
                   className="bm-cal"
                   autoFocus
                 />

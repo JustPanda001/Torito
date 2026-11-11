@@ -18,7 +18,12 @@ const {
 
 const MAX_MESSAGE = 2000;
 const MAX_NAME = 80;
-const LANGS = ['en', 'ka', 'ru', 'zh'];
+// 3 per 10 minutes, 20 per day, per account
+const LIMITS = [
+  { ms: 10 * 60 * 1000, max: 3 },
+  { ms: 24 * 60 * 60 * 1000, max: 20 },
+];
+const LANGS =['en', 'ka', 'ru', 'zh'];
 
 export async function POST(request) {
   const token = (request.headers.get('authorization') ?? '').replace(/^Bearer\s+/i, '');
@@ -69,6 +74,33 @@ export async function POST(request) {
 
   if (!user.email) {
     return Response.json({ error: 'Your account has no email address to reply to.' }, { status: 400 });
+  }
+
+  // Rate limit, counted from public.contact_messages as the visitor. If the
+  // table is not there yet (CONTACT-RATE-LIMIT.sql not run) the message still
+  // goes out, unlimited, and the problem is logged.
+  const since = (ms) => new Date(Date.now() - ms).toISOString();
+  const [recent, day] = await Promise.all(LIMITS.map(({ ms }) => supabase
+    .from('contact_messages')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', user.id)
+    .gte('created_at', since(ms))));
+  const countError = recent.error || day.error;
+  let tableReady = !countError;
+  if (countError) {
+    console.error('Contact rate limit off (run CONTACT-RATE-LIMIT.sql):', countError.message);
+  } else if ((recent.count ?? 0) >= LIMITS[0].max || (day.count ?? 0) >= LIMITS[1].max) {
+    return Response.json({ error: 'You have sent a few messages already. Please try again later.' }, { status: 429 });
+  }
+
+  if (tableReady) {
+    const { error: insertError } = await supabase
+      .from('contact_messages')
+      .insert({ user_id: user.id, message });
+    if (insertError) {
+      tableReady = false;
+      console.error('Contact message not recorded:', insertError.message);
+    }
   }
 
   try {

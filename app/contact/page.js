@@ -7,7 +7,7 @@
 // visitor). Sending needs an account; a signed-out visitor is shown the
 // sign-in prompt instead.
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import SiteHeader from '@/components/SiteHeader';
 import SiteFooter from '@/components/SiteFooter';
 import SignInGate from '@/components/SignInGate';
@@ -15,6 +15,7 @@ import { supabase } from '@/lib/supabaseClient';
 import { useT } from '@/lib/i18n';
 
 const EMAIL = 'support@mtani.ge';
+const DRAFT_KEY = 'contactDraft';
 
 // [label key, value (or value key), href, value is a key?]
 const WAYS = [
@@ -32,6 +33,17 @@ export default function ContactPage() {
   // { kind: 'ok' | 'error', text }
   const [status, setStatus] = useState(null);
 
+  // bring back a draft saved before the visitor went off to sign in
+  useEffect(() => {
+    try {
+      const draft = JSON.parse(sessionStorage.getItem(DRAFT_KEY) ?? 'null');
+      if (draft && typeof draft === 'object') {
+        if (typeof draft.name === 'string') setName(draft.name.slice(0, 80));
+        if (typeof draft.message === 'string') setMessage(draft.message.slice(0, 2000));
+      }
+    } catch { /* no storage or bad draft */ }
+  }, []);
+
   async function send(e) {
     e.preventDefault();
     if (busy) return;
@@ -39,6 +51,8 @@ export default function ContactPage() {
 
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
+      // keep what they typed through the sign-in round trip
+      try { sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ name, message })); } catch { /* storage blocked */ }
       setStatus({ kind: 'error', text: t('contact.signInFirst') });
       setGate(true);
       return;
@@ -53,10 +67,14 @@ export default function ContactPage() {
       });
       if (res.ok) {
         setMessage('');
+        try { sessionStorage.removeItem(DRAFT_KEY); } catch { /* storage blocked */ }
         setStatus({ kind: 'ok', text: t('contact.sent') });
       } else if (res.status === 401) {
+        try { sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ name, message })); } catch { /* storage blocked */ }
         setStatus({ kind: 'error', text: t('contact.signInFirst') });
         setGate(true);
+      } else if (res.status === 429) {
+        setStatus({ kind: 'error', text: t('contact.tooMany') });
       } else {
         setStatus({ kind: 'error', text: t('contact.error') });
       }
