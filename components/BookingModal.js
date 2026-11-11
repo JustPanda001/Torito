@@ -145,10 +145,18 @@ export default function BookingModal({ tour, option = null, onClose }) {
   const allQuestions = useMemo(() => bookingQuestions(tour), [tour]);
   // the time question is drawn as the time picker, not with the others
   const timeQ = useMemo(() => timeQuestion(tour, allQuestions), [tour, allQuestions]);
+  // A lesson with hourly prices already has its own hours counter (it sets the
+  // price), so an admin "How many hours?" number question would be a second,
+  // unpriced copy of it: leave that one out.
   const questions = useMemo(
-    () => allQuestions.filter((q) => !timeQ || q.label !== timeQ.label),
-    [allQuestions, timeQ],
+    () => allQuestions.filter((q) => (!timeQ || q.label !== timeQ.label)
+      && !(rates && q.type === 'number' && /hour|საათ|час|小时/i.test(q.label))),
+    [allQuestions, timeQ, rates],
   );
+  // The older built-in lesson questions (level, kind of lesson) only show on a
+  // lesson whose admin wrote no questions of its own; once it has any, the
+  // admin's list is the whole list.
+  const builtInLessonQs = lesson && questions.length === 0;
   const [answers, setAnswers] = useState(() => Object.fromEntries(
     bookingQuestions(tour).map((q) => [q.label, initialAnswer(q)]),
   ));
@@ -240,8 +248,8 @@ export default function BookingModal({ tour, option = null, onClose }) {
           hours: rates ? hours : null,
           total: requestKind === 'waitlist' ? null : total,
           lesson_time: timeQ ? time : null,
-          skill_level: lesson ? level : null,
-          lesson_type: lesson ? kind : null,
+          skill_level: builtInLessonQs ? level : null,
+          lesson_type: builtInLessonQs ? kind : null,
           // the trip's own questions; a waitlist request is only a phone
           // number, so it carries none of them
           answers: packed,
@@ -406,8 +414,8 @@ export default function BookingModal({ tour, option = null, onClose }) {
                 {timeQ && <div className="bm-line"><span>{t('booking.time')}</span><span>{time}</span></div>}
                 <div className="bm-line"><span>{t('booking.peopleLabel')}</span><span>{people}</span></div>
                 {rates && <div className="bm-line"><span>{t('booking.hoursLabel')}</span><span>{hours}</span></div>}
-                {lesson && <div className="bm-line"><span>{t('booking.level')}</span><span>{t(LEVEL_KEYS[level] ?? level)}</span></div>}
-                {lesson && <div className="bm-line"><span>{t('booking.lesson')}</span><span>{t(KIND_KEYS[kind] ?? kind)}</span></div>}
+                {builtInLessonQs && <div className="bm-line"><span>{t('booking.level')}</span><span>{t(LEVEL_KEYS[level] ?? level)}</span></div>}
+                {builtInLessonQs && <div className="bm-line"><span>{t('booking.lesson')}</span><span>{t(KIND_KEYS[kind] ?? kind)}</span></div>}
                 {Object.entries(packAnswers(questions, answers)).map(([label, value]) => (
                   <div className="bm-line" key={label}><span>{label}</span><span>{value}</span></div>
                 ))}
@@ -465,7 +473,7 @@ export default function BookingModal({ tour, option = null, onClose }) {
                 </section>
               )}
 
-              {lesson && (
+              {builtInLessonQs && (
                 <>
 
                   <section className="bm-section">
@@ -687,14 +695,14 @@ export default function BookingModal({ tour, option = null, onClose }) {
                 type="button"
                 className="book-btn"
                 disabled={sending || !date || !phoneOk || !questionsOk || !kitOk
-                  || (timeQ?.required && !time) || (lesson && (!level || !kind))}
+                  || (timeQ?.required && !time) || (builtInLessonQs && (!level || !kind))}
                 onClick={() => submit(lesson ? 'lesson' : 'trip')}
               >
                 {sending ? t('booking.sending')
                   : !date ? t('booking.chooseDate')
                     : timeQ?.required && !time ? t('booking.pickTime')
-                      : lesson && !level ? t('booking.pickLevel')
-                        : lesson && !kind ? t('booking.pickKind')
+                      : builtInLessonQs && !level ? t('booking.pickLevel')
+                        : builtInLessonQs && !kind ? t('booking.pickKind')
                           : !kitOk ? t('booking.confirmKit')
                             : !questionsOk ? t('booking.answerRequired')
                               : !profileReady ? t('booking.checkingAccount')
