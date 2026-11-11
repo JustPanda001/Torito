@@ -2543,3 +2543,7 @@ a.feature-img:hover img{transform:scale(1.04)}
   .mybk-card .mybk-cancel{margin-top:10px;padding-top:0;border-top:0}
   .mybk-card .mybk-cancel .auth-btn{padding:7px 16px;font-size:13px}
 }
+
+/* admin: Group size picked as two dropdowns, From – To people */
+.group-size-pick{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.group-size-pick select{width:auto;min-width:72px}

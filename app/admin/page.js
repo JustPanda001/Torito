@@ -24,7 +24,14 @@ import { supabase, currentProfile, friendlyError } from '@/lib/supabaseClient';
 import { slugify } from '@/lib/slug';
 import {
   LESSON, HOURLY_RATES, SUGGESTED_HOURLY_RATES, LESSON_MAX_GROUP, LESSON_MIN_HOURS, LESSON_MAX_HOURS,
+  parseGroupSize, formatGroupSize,
 } from '@/lib/lessons';
+
+// the "Group size" dropdowns offer 1 to 30 people (tours run bigger groups
+// than lessons; a lesson still shows at most LESSON_MAX_GROUP rate boxes)
+const GROUP_SIZE_OPTIONS = Array.from({ length: 30 }, (_, i) => i + 1);
+// rate boxes a lesson shows before a group size is picked
+const DEFAULT_LESSON_GROUP = 4;
 import { ITINERARY_MODES, itineraryMode, stepLabel } from '@/lib/itinerary';
 import { CATEGORIES } from '@/lib/catalog';
 
@@ -105,7 +112,7 @@ const FIELDS = [
   ['badge', 'Badge', { options: ['', 'top', 'new'] }],
   ['departure_time', 'Departure time', { placeholder: '07:00' }],
   ['return_info', 'Return', { placeholder: 'Day 4, ~21:00 Tbilisi' }],
-  ['group_size', 'Group size', { placeholder: '6 – 12 people' }],
+  ['group_size', 'Group size', { group: true }],
   ['walking_per_day', 'Walking per day', { placeholder: '5 – 7 hours' }],
 ];
 
@@ -150,6 +157,20 @@ export default function AdminPage() {
   const noRates = () => Array.from({ length: LESSON_MAX_GROUP }, () => '');
   const [rates, setRates] = useState(noRates);
   const setRate = (i, value) => setRates((prev) => prev.map((r, j) => (j === i ? value : r)));
+  // "Group size" as { min, max, note }, or null when none is set. A lesson
+  // shows one rate box per group size up to max.
+  const [group, setGroup] = useState(null);
+  // an older free-text group size with no number in it ("Small groups"),
+  // kept as typed until a size is picked, so saving never wipes it
+  const [groupText, setGroupText] = useState('');
+  const groupMax = Math.min(LESSON_MAX_GROUP, group?.max ?? DEFAULT_LESSON_GROUP);
+  const pickGroup = (key, value) => setGroup((g) => {
+    const n = Number(value);
+    const next = { min: 1, max: DEFAULT_LESSON_GROUP, note: '', ...g, [key]: n };
+    // keep From ≤ To whichever one moved
+    if (next.min > next.max) { if (key === 'min') next.max = n; else next.min = n; }
+    return next;
+  });
   // whether the plan is counted in days or in places visited in one day
   const [itinMode, setItinMode] = useState('days');
   const dayTrip = itinMode === 'stops';
@@ -166,7 +187,7 @@ export default function AdminPage() {
     if (form.current) setDraft(Object.fromEntries(new FormData(form.current).entries()));
   }, []);
   // switching category adds and removes fields
-  useEffect(syncPreview, [syncPreview, profile, category, subtype]);
+  useEffect(syncPreview, [syncPreview, profile, category, subtype, group]);
 
   useEffect(() => {
     // ?mockuser=admin renders the panel without a real session so the form can
@@ -222,6 +243,8 @@ export default function AdminPage() {
         tour.category, tour.subtype, optedOut,
       ));
     }
+    setGroup(parseGroupSize(tour.group_size));
+    setGroupText(parseGroupSize(tour.group_size) ? '' : String(tour.group_size ?? ''));
     setRequiredItems(asPairs(tour.required_items));
     setOptions(Array.isArray(tour.options) ? tour.options.map((o) => ({ ...o, price: o.price ?? '' })) : []);
     setCompare(Array.isArray(tour.compare) ? tour.compare : []);
@@ -283,6 +306,8 @@ export default function AdminPage() {
     setNoTimes(false);
     setRequiredItems([]);
     setRates(noRates());
+    setGroup(null);
+    setGroupText('');
     setOptions([]);
     setCompare([]);
     setItinMode('days');
@@ -361,13 +386,14 @@ export default function AdminPage() {
     if (noTimes && isTimed(row) && !row.booking_fields.some(isTimeQuestion)) {
       row.booking_fields.push({ label: 'no times', type: NO_TIMES });
     }
-    // a lesson's rate table: all four rates, or none at all
+    // a lesson's rate table: one rate per group size up to Group size's
+    // maximum, all filled in, or none at all
     if (lessonForm) {
-      const typed = rates.map((r) => String(r ?? '').trim());
+      const typed = rates.slice(0, groupMax).map((r) => String(r ?? '').trim());
       if (typed.some((r) => r !== '')) {
         const nums = typed.map(Number);
         if (typed.some((r) => r === '') || !nums.every((n) => Number.isFinite(n) && n > 0)) {
-          setNote({ error: true, text: `Price per hour: fill in all ${LESSON_MAX_GROUP} rates with a number above 0, or leave them all empty.` });
+          setNote({ error: true, text: `Price per hour: fill in all ${groupMax} rates with a number above 0, or leave them all empty.` });
           return;
         }
         row.booking_fields.push({ type: HOURLY_RATES, rates: nums });
@@ -463,7 +489,26 @@ export default function AdminPage() {
                     {fields.map(([name, label, opts = {}]) => (
                 <label className="field" key={name}>
                   <span className="field-label">{label}</span>
-                  {opts.options ? (
+                  {opts.group ? (
+                    <span className="group-size-pick">
+                      {/* the column keeps its "1 – 5 people" text; the dropdowns write it */}
+                      <input type="hidden" name={name} value={group ? formatGroupSize(group) : groupText} readOnly />
+                      <select aria-label="Group size from" value={group?.min ?? ''} onChange={(e) => pickGroup('min', e.target.value)}>
+                        {!group && <option value="">From</option>}
+                        {GROUP_SIZE_OPTIONS.map((n) => <option key={n} value={n}>{n}</option>)}
+                      </select>
+                      <span aria-hidden="true">–</span>
+                      <select aria-label="Group size to" value={group?.max ?? ''} onChange={(e) => pickGroup('max', e.target.value)}>
+                        {!group && <option value="">To</option>}
+                        {GROUP_SIZE_OPTIONS.map((n) => <option key={n} value={n}>{n}</option>)}
+                      </select>
+                      <span>people</span>
+                      {group && (
+                        <button type="button" className="chip" onClick={() => { setGroup(null); setGroupText(''); }}>Clear</button>
+                      )}
+                      {!group && groupText && <span className="field-hint">Now: “{groupText}”</span>}
+                    </span>
+                  ) : opts.options ? (
                     <select
                       name={name}
                       required={opts.required}
@@ -515,12 +560,12 @@ export default function AdminPage() {
                 <div className="admin-section-head">
                   <h3>Price per hour</h3>
                   <span className="field-hint">
-                    Customers pick {LESSON_MIN_HOURS} to {LESSON_MAX_HOURS} hours and up to {LESSON_MAX_GROUP} people.
+                    Customers pick {LESSON_MIN_HOURS} to {LESSON_MAX_HOURS} hours and up to {groupMax} people (set by Group size).
                     Total = rate for the group × hours. Leave all empty to use the price per person instead.
                   </span>
                 </div>
                 <div className="admin-grid">
-                  {rates.map((value, i) => (
+                  {rates.slice(0, groupMax).map((value, i) => (
                     <label className="field" key={i}>
                       <span className="field-label">{i + 1} {i === 0 ? 'person' : 'people'} — ₾ per hour</span>
                       {/* no name: these are saved into booking_fields, not as columns */}
@@ -538,13 +583,13 @@ export default function AdminPage() {
                     </label>
                   ))}
                 </div>
-                {rates.every((r) => String(r).trim() === '') && (
+                {rates.slice(0, groupMax).every((r) => String(r).trim() === '') && (
                   <button
                     type="button"
                     className="chip"
-                    onClick={() => setRates(SUGGESTED_HOURLY_RATES.map(String))}
+                    onClick={() => setRates(noRates().map((_, i) => (i < groupMax ? String(SUGGESTED_HOURLY_RATES[i]) : '')))}
                   >
-                    Fill in {SUGGESTED_HOURLY_RATES.join(' / ')} ₾
+                    Fill in {SUGGESTED_HOURLY_RATES.slice(0, groupMax).join(' / ')} ₾
                   </button>
                 )}
               </section>
