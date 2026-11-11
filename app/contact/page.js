@@ -3,12 +3,15 @@
 // Contact details and a short message form. Placeholder details — the owner
 // will replace the email, phone and address.
 //
-// The form has no backend of its own: it opens the visitor's mail app with the
-// message already written, so nothing is lost if a webhook is down.
+// The form posts to /api/contact, which emails the team (Reply-To is the
+// visitor). Sending needs an account; a signed-out visitor is shown the
+// sign-in prompt instead.
 
 import { useState } from 'react';
 import SiteHeader from '@/components/SiteHeader';
 import SiteFooter from '@/components/SiteFooter';
+import SignInGate from '@/components/SignInGate';
+import { supabase } from '@/lib/supabaseClient';
 import { useT } from '@/lib/i18n';
 
 const EMAIL = 'support@mtani.ge';
@@ -21,16 +24,47 @@ const WAYS = [
 ];
 
 export default function ContactPage() {
-  const { t } = useT();
+  const { t, lang } = useT();
   const [name, setName] = useState('');
   const [message, setMessage] = useState('');
+  const [gate, setGate] = useState(false);
+  const [busy, setBusy] = useState(false);
+  // { kind: 'ok' | 'error', text }
+  const [status, setStatus] = useState(null);
 
-  function send(e) {
+  async function send(e) {
     e.preventDefault();
-    // the subject is read by our team, not the visitor, so it stays in English
-    const subject = encodeURIComponent(`Question from ${name || 'the website'}`);
-    const body = encodeURIComponent(message);
-    window.location.href = `mailto:${EMAIL}?subject=${subject}&body=${body}`;
+    if (busy) return;
+    setStatus(null);
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      setStatus({ kind: 'error', text: t('contact.signInFirst') });
+      setGate(true);
+      return;
+    }
+
+    setBusy(true);
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ name: name.trim(), message: message.trim(), lang }),
+      });
+      if (res.ok) {
+        setMessage('');
+        setStatus({ kind: 'ok', text: t('contact.sent') });
+      } else if (res.status === 401) {
+        setStatus({ kind: 'error', text: t('contact.signInFirst') });
+        setGate(true);
+      } else {
+        setStatus({ kind: 'error', text: t('contact.error') });
+      }
+    } catch {
+      setStatus({ kind: 'error', text: t('contact.error') });
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -56,7 +90,7 @@ export default function ContactPage() {
               <h3>{t('contact.sendTitle')}</h3>
               <label className="field">
                 <span className="field-label">{t('contact.yourName')}</span>
-                <input className="bm-text" value={name} onChange={(e) => setName(e.target.value)} />
+                <input className="bm-text" maxLength={80} value={name} onChange={(e) => setName(e.target.value)} />
               </label>
               <label className="field">
                 <span className="field-label">{t('contact.message')}</span>
@@ -64,17 +98,24 @@ export default function ContactPage() {
                   className="bm-text"
                   rows={5}
                   required
+                  maxLength={2000}
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                 />
               </label>
-              <button type="submit" className="hot-btn" disabled={!message.trim()}>
-                {t('contact.send')} <span aria-hidden="true">→</span>
+              {status && (
+                <p className={`bm-note ${status.kind}`} role={status.kind === 'error' ? 'alert' : 'status'}>
+                  {status.text}
+                </p>
+              )}
+              <button type="submit" className="hot-btn" disabled={busy || !message.trim()}>
+                {busy ? t('contact.sending') : t('contact.send')} <span aria-hidden="true">→</span>
               </button>
             </form>
           </div>
         </section>
       </main>
+      {gate && <SignInGate title={t('contact.sendTitle')} reason="contact" onClose={() => setGate(false)} />}
       <SiteFooter />
     </div>
   );

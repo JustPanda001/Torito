@@ -333,7 +333,6 @@ export default function TourPage({ params }) {
             ) : (
               <>
                 <button type="button" className="book-btn book-btn-unavailable" disabled aria-disabled="true">{t('trip.unavailable')}</button>
-                <p className="form-note">{t('trip.unavailableNote')}</p>
               </>
             )}
             <button type="button" className="book-btn secondary" onClick={() => openChat(tour)}>{t('detail.ask')}</button>

@@ -1,0 +1,141 @@
+/* Admin page layout: a roomy two-column form beside a narrow, sticky preview.
+   Loaded after globals.css; the .admin-page prefix makes these win over the
+   older .admin-edit / .admin-grid rules there. */
+
+:root { --admin-sticky-top: max(90px, calc(var(--header-h, 64px) + 16px)); }
+
+.admin-page .admin-edit {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) clamp(320px, 32%, 420px);
+  gap: 28px;
+  align-items: start;
+}
+
+/* inputs: two columns at most; long text takes the full row */
+.admin-page .admin-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px 22px;
+}
+.admin-page .admin-grid > .field.wide { grid-column: 1 / -1; }
+.admin-page .admin-grid .field,
+.admin-page .admin-grid .option-field { min-width: 0; }
+.admin-page .admin-grid select,
+.admin-page .admin-grid input { text-overflow: ellipsis; }
+
+/* ---------- Preview: a review sidebar ---------- */
+.admin-page .admin-preview {
+  position: sticky;
+  top: var(--admin-sticky-top);
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - var(--admin-sticky-top) - 16px);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  overflow: hidden;
+}
+.admin-page .admin-preview-head {
+  flex-shrink: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+}
+.admin-page .admin-preview-head .field-hint { flex-basis: 100%; }
+.admin-preview-btns { margin-left: auto; display: inline-flex; gap: 6px; }
+.admin-preview-head .chip.active { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+.admin-page .admin-preview-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+}
+.admin-page .admin-preview.folded .admin-preview-scroll { display: none; }
+.admin-page .admin-preview.folded .admin-preview-head { border-bottom: 0; }
+.admin-page .admin-preview-canvas { padding: 18px; }
+.admin-preview-canvas .pv-block { margin-bottom: 28px; }
+.admin-preview-canvas .pv-url {
+  margin: 8px 0 0; font-size: 13px; color: var(--ink-soft); font-family: ui-monospace, monospace;
+}
+.admin-preview-canvas .pv-facts { max-width: 400px; }
+.admin-preview-canvas .pv-thumbs {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 10px;
+}
+.admin-preview-canvas .pv-thumbs img {
+  width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 8px; display: block;
+}
+.pv-empty { margin: 8px 0; font-size: 14px; color: var(--ink-soft); font-style: italic; }
+
+/* tabs picking the part of the page shown */
+.pv-tabs { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 4px; }
+.pv-tab {
+  font: inherit; font-size: 12.5px; cursor: pointer; padding: 3px 10px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--surface); color: var(--ink-soft);
+}
+.pv-tab.on { background: var(--ink); color: var(--surface); border-color: var(--ink); font-weight: 700; }
+
+/* the booking window mock */
+.pv-book {
+  border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface);
+  padding: 22px; display: grid; gap: 18px; color: var(--ink);
+}
+.pv-book-head { display: grid; gap: 2px; }
+.pv-book-head strong { font-size: 20px; }
+.pv-book-head span { font-size: 13px; color: var(--ink-soft); }
+.pv-book-fixed { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.pv-book-fixed span {
+  padding: 10px 12px; border-radius: 10px; border: 1px dashed var(--line);
+  font-size: 14px; color: var(--ink-soft);
+}
+.pv-q { display: grid; gap: 8px; }
+.pv-q-label { font-weight: 700; font-size: 16px; }
+.pv-req { color: #b4462a; }
+.pv-q-hint { font-size: 14px; color: var(--ink-soft); }
+.pv-q-hint.strong { font-weight: 700; color: var(--ink); }
+.pv-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.pv-chip {
+  padding: 8px 16px; border-radius: 999px; border: 1.5px solid var(--line);
+  font-size: 15px; background: var(--surface);
+}
+.pv-counter-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.pv-counter {
+  display: inline-flex; align-items: center; gap: 14px; padding: 4px 6px;
+  border: 1.5px solid var(--line); border-radius: 999px; font-size: 17px;
+}
+.pv-step {
+  width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--surface-2); font-size: 18px;
+}
+.pv-counter strong { min-width: 22px; text-align: center; }
+.pv-unit { font-size: 15px; }
+.pv-minmax { font-size: 13px; color: var(--ink-soft); }
+.pv-input {
+  padding: 11px 14px; border-radius: 10px; border: 1.5px solid var(--line);
+  color: var(--ink-soft); font-size: 15px;
+}
+.pv-book-send {
+  text-align: center; padding: 12px; border-radius: 999px; font-weight: 700;
+  background: var(--green-500); color: #fff;
+}
+.pv-map { display: grid; gap: 8px; }
+.pv-map-line {
+  padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; font-size: 15px; word-break: break-all;
+}
+
+/* ---------- Narrower windows: preview moves under the form ---------- */
+@media (max-width: 1100px) {
+  .admin-page .admin-edit { grid-template-columns: minmax(0, 1fr); }
+  .admin-page .admin-preview {
+    position: static;
+    order: 2;
+    max-height: none;
+  }
+  .admin-page .admin-preview-scroll { max-height: 70vh; }
+}
+@media (max-width: 640px) {
+  .admin-page .admin-grid { grid-template-columns: minmax(0, 1fr); }
+}

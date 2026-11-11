@@ -11,6 +11,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabaseClient';
 
+let nextId = 0;
 const label = (el) => el.querySelector('h2, h3')?.textContent?.trim() ?? '';
 
 export default function AdminNav({ rootRef }) {
@@ -35,11 +36,13 @@ export default function AdminNav({ rootRef }) {
     const root = rootRef.current;
     if (!root) return;
     const found = [];
-    root.querySelectorAll('.detail-block, .admin-section').forEach((el, i) => {
+    root.querySelectorAll('.detail-block, .admin-section').forEach((el) => {
       const text = label(el);
       // the preview repeats the trip page's blocks; they are not form sections
       if (!text || el.closest('.admin-preview')) return;
-      if (!el.id) el.id = `admin-sec-${i}`;
+      // a counter, not the index: the index shifts as sections come and go, and
+      // would hand a new section an id an older one already holds
+      if (!el.id) el.id = `admin-sec-${nextId += 1}`;
       found.push({ id: el.id, text, top: el.classList.contains('detail-block') });
     });
     setItems((prev) => (

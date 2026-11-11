@@ -17,7 +17,7 @@ import BookingQuestionsEditor from '@/components/BookingQuestionsEditor';
 import OptionsEditor from '@/components/OptionsEditor';
 import PlaceSearch from '@/components/PlaceSearch';
 import AdminNav from '@/components/AdminNav';
-import AdminTripPreview from '@/components/AdminTripPreview';
+import AdminTripPreview, { FIELD_BLOCK } from '@/components/AdminTripPreview';
 import { isTimed, isTimeQuestion, defaultTimeQuestion } from '@/lib/lessons';
 import { NO_TIMES, numberLimits } from '@/lib/bookingQuestions';
 import { supabase, currentProfile, friendlyError } from '@/lib/supabaseClient';
@@ -60,6 +60,13 @@ const OPTION_FIELDS = [
   ['transport', 'Transport'],
 ];
 
+// the dropdown-backed fields a lesson keeps; the rest of OPTION_FIELDS is
+// travel (difficulty, stay, transport) and is hidden and saved as null
+const LESSON_OPTION_FIELDS = new Set(['languages', 'departure_point']);
+const OPTION_HINTS = {
+  languages: 'Shown as EN · GE · RU on the trip page. Pick a combination, + adds a new one, edit removes one.',
+};
+
 // name -> label; the name must match the tours table column exactly
 // Fields a ski or snowboard lesson actually has. A lesson goes nowhere, so
 // everything about distance, transport and the shape of a journey is dropped —
@@ -81,17 +88,17 @@ const SECTIONS = [
 ];
 
 const FIELDS = [
-  ['title', 'Title *', { required: true, placeholder: 'Mestia – Ushguli Trek' }],
-  ['category', 'Category *', { required: true, options: CATEGORIES }],
+  ['title', 'Title *', { required: true, wide: true, placeholder: 'Mestia – Ushguli Trek' }],
+  ['category', 'Category *', { required: true, wide: true, options: CATEGORIES }],
   // ski only: what the visitor is actually booking. A lesson has no journey,
   // so choosing it strips the form down the same way the category used to.
-  ['subtype', 'Winter type *', { options: ['', 'lessons', 'freeride', 'freestyle', 'snowmobile', 'paragliding'], onlyFor: 'ski' }],
-  ['slug', 'URL slug *', { required: true, placeholder: 'mestia-ushguli-trek', hint: 'Fills itself from the title — edit it if you want a different address' }],
-  ['subtitle', 'Subtitle', { placeholder: '4 days' }],
+  ['subtype', 'Winter type *', { options: ['', 'lessons', 'freeride', 'freestyle', 'snowmobile', 'paragliding'], wide: true, onlyFor: 'ski' }],
+  ['slug', 'URL slug *', { required: true, wide: true, placeholder: 'mestia-ushguli-trek', hint: 'Fills itself from the title — edit it if you want a different address' }],
+  ['subtitle', 'Subtitle', { wide: true, placeholder: '4 days' }],
   ['region', 'Region', { placeholder: 'Svaneti' }],
   ['lat', 'Latitude', { placeholder: `43.0451 or 43°02'42.4"N`, hint: 'Paste either form — or paste the whole pair here and the longitude fills itself' }],
   ['lng', 'Longitude', { placeholder: `42.7280 or 42°43'40.8"E` }],
-  ['strava', 'Strava route', { placeholder: 'https://www.strava.com/routes/123456789', hint: 'Optional. A public route or activity — its map and elevation replace the plain map' }],
+  ['strava', 'Strava route', { wide: true, placeholder: 'https://www.strava.com/routes/123456789', hint: 'Optional. A public route or activity — its map and elevation replace the plain map' }],
   ['price', 'Price per person', { type: 'number', min: 0, placeholder: '890' }],
   ['distance', 'Distance', { placeholder: '58 km' }],
   ['duration', 'Duration', { placeholder: '4 days' }],
@@ -198,6 +205,13 @@ export default function AdminPage() {
   // the form is uncontrolled, so the preview reads a copy of it after each change
   const [draft, setDraft] = useState({});
   const [focusField, setFocusField] = useState(null);
+  // which block of the preview the focused field belongs to
+  const [focusBlock, setFocusBlock] = useState(null);
+  // edit() and the after-save reload fill the form from a saved row; the fields
+  // a category adds only exist after the next render, so the fill waits for it
+  const pendingFill = useRef(null);
+  const [fillTick, setFillTick] = useState(0);
+  const noteRef = useRef(null);
   const syncPreview = useCallback(() => {
     if (form.current) setDraft(Object.fromEntries(new FormData(form.current).entries()));
   }, []);
@@ -225,6 +239,20 @@ export default function AdminPage() {
 
   useEffect(() => { if (profile?.role === 'admin') load(); }, [profile, load]);
 
+  useEffect(() => {
+    const job = pendingFill.current;
+    if (!job) return;
+    pendingFill.current = null;
+    fillFormValues(job.tour);
+    syncPreview();
+    if (job.scrollY != null) {
+      // after a save: stay where the save button is, with the note in view
+      window.scrollTo({ top: job.scrollY });
+      requestAnimationFrame(() => noteRef.current?.scrollIntoView({ block: 'nearest' }));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fillTick]);
+
   if (profile === undefined) {
     return <Denied message="Checking your account…" />;
   }
@@ -235,7 +263,7 @@ export default function AdminPage() {
     return <Denied message={`Signed in as ${profile.email}, but this account is not an admin.`} />;
   }
 
-  function edit(tour) {
+  function edit(tour, opts = {}) {
     setEditingId(tour.id);
     slugTouched.current = true;
     setCategory(tour.category ?? 'ski');
@@ -268,6 +296,16 @@ export default function AdminPage() {
     setSubtype(tour.subtype ?? '');
     setPhotos(Array.isArray(tour.gallery) ? tour.gallery : []);
     setCover(tour.cover_image ?? '');
+    pendingFill.current = { tour, scrollY: opts.scrollY ?? null };
+    setFillTick((n) => n + 1);
+    if (opts.scrollY == null) {
+      setNote(null);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }
+
+  // writes a saved row into the form's inputs
+  function fillFormValues(tour) {
     for (const [key, value] of Object.entries(tour)) {
       const input = form.current?.elements[key];
       if (!input) continue;
@@ -287,8 +325,6 @@ export default function AdminPage() {
       }
       input.value = v;
     }
-    syncPreview();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   function onCoordInput(e) {
@@ -374,6 +410,7 @@ export default function AdminPage() {
 
     if (lessonForm) {
       for (const [name] of FIELDS) if (!LESSON_FIELDS.has(name)) row[name] = null;
+      for (const [name] of OPTION_FIELDS) if (!LESSON_OPTION_FIELDS.has(name)) row[name] = null;
     }
     if (row.subtype === '') row.subtype = null;
 
@@ -422,6 +459,8 @@ export default function AdminPage() {
     // a starred photo wins; otherwise fall back to the first one
     row.cover_image = cover || photos[0] || null;
 
+    const scrollY = window.scrollY;
+    const wasEditing = editingId;
     setSaving(true);
     const { error } = editingId
       ? await supabase.from('tours').update(row).eq('id', editingId)
@@ -430,9 +469,18 @@ export default function AdminPage() {
 
     if (error) { setNote({ error: true, text: friendlyError(error) }); return; }
 
-    setNote({ error: false, text: editingId ? 'Changes saved.' : `Added "${row.title}".` });
-    resetForm();
+    // stay on this trip: read the saved row back and put it in the form, so
+    // what is on screen is what is stored (and a new trip becomes an edit)
+    const fresh = wasEditing
+      ? await supabase.from('tours').select('*').eq('id', wasEditing).maybeSingle()
+      : await supabase.from('tours').select('*').eq('slug', row.slug).maybeSingle();
     load();
+    if (fresh.error || !fresh.data) {
+      setNote({ error: false, text: wasEditing ? 'Changes saved.' : `Added "${row.title}".` });
+      return;
+    }
+    edit(fresh.data, { scrollY });
+    setNote({ error: false, text: wasEditing ? 'Changes saved.' : `Added "${row.title}". You are now editing it.` });
   }
 
   return (
@@ -466,7 +514,14 @@ export default function AdminPage() {
             ref={form}
             onSubmit={onSubmit}
             onChange={syncPreview}
-            onFocus={(e) => setFocusField(e.target.name || null)}
+            onFocus={(e) => {
+              const el = e.target;
+              const sec = el.closest?.('[data-pv]');
+              // fields inside the list editors only pick the preview block
+              setFocusField(sec ? (el.name === 'summary' ? 'summary' : null) : (el.name || null));
+              const b = sec?.dataset.pv || FIELD_BLOCK[el.name];
+              if (b) setFocusBlock(b);
+            }}
             onBlur={() => setFocusField(null)}
           >
             {SECTIONS.map(([sectionTitle, sectionHint, names]) => {
@@ -476,9 +531,9 @@ export default function AdminPage() {
                 .filter(([name]) => !lessonForm || LESSON_FIELDS.has(name));
 
               // the dropdown-backed fields sit in whichever section names them
-              const options = lessonForm
-                ? []
-                : OPTION_FIELDS.filter(([name]) => names.includes(name));
+              const options = OPTION_FIELDS
+                .filter(([name]) => names.includes(name))
+                .filter(([name]) => !lessonForm || LESSON_OPTION_FIELDS.has(name));
 
               // a section whose every field belongs to another category would
               // otherwise render as a heading over nothing
@@ -505,7 +560,7 @@ export default function AdminPage() {
                   )}
                   <div className="admin-grid">
                     {fields.map(([name, label, opts = {}]) => (
-                <label className="field" key={name}>
+                <label className={`field${opts.wide ? ' wide' : ''}`} key={name}>
                   <span className="field-label">{label}</span>
                   {opts.group ? (
                     <span className="group-size-pick">
@@ -566,7 +621,15 @@ export default function AdminPage() {
                     ))}
 
                     {options.map(([name, label]) => (
-                      <OptionSelect key={name} name={name} field={name} label={label} />
+                      <OptionSelect
+                        key={name}
+                        name={name}
+                        field={name}
+                        label={name === 'departure_point' && lessonForm ? 'Meeting point' : label}
+                        hint={name === 'departure_point' && lessonForm
+                          ? 'Where the instructor meets the group. Shown as MEETING POINT on the lesson page.'
+                          : OPTION_HINTS[name]}
+                      />
                     ))}
                   </div>
                 </section>
@@ -574,7 +637,7 @@ export default function AdminPage() {
             })}
 
             {lessonForm && (
-              <section className="admin-section">
+              <section className="admin-section" data-pv="facts">
                 <div className="admin-section-head">
                   <h3>Price per hour</h3>
                   <span className="field-hint">
@@ -613,7 +676,7 @@ export default function AdminPage() {
               </section>
             )}
 
-            <section className="admin-section">
+            <section className="admin-section" data-pv="photos">
               <div className="admin-section-head">
                 <h3>Photos</h3>
                 <span className="field-hint">The first is the cover, shown on the listing card</span>
@@ -625,7 +688,7 @@ export default function AdminPage() {
               />
             </section>
 
-            <section className="admin-section">
+            <section className="admin-section" data-pv="about">
               <div className="admin-section-head">
                 <h3>About this trip</h3>
                 <span className="field-hint">The paragraph under the photos</span>
@@ -637,7 +700,7 @@ export default function AdminPage() {
             </section>
 
             {!lessonForm && (
-              <section className="admin-section">
+              <section className="admin-section" data-pv="about">
                 <PairListEditor
                   label="Where we go"
                   hint={dayTrip
@@ -668,15 +731,15 @@ export default function AdminPage() {
               </section>
             )}
 
-            <section className="admin-section">
+            <section className="admin-section" data-pv="included">
               <InclusionEditor kind="included" category={category} rows={included} onChange={setIncluded} />
             </section>
 
-            <section className="admin-section">
+            <section className="admin-section" data-pv="included">
               <InclusionEditor kind="excluded" category={category} rows={excluded} onChange={setExcluded} />
             </section>
 
-            <section className="admin-section">
+            <section className="admin-section" data-pv="bring">
               <PairListEditor
                 label="What they must bring"
                 hint="Kit without which they cannot come. Shown on the trip page, and every line has to be ticked before the booking window will send a request."
@@ -688,7 +751,7 @@ export default function AdminPage() {
               />
             </section>
 
-            <section className="admin-section">
+            <section className="admin-section" data-pv="facts">
               <OptionsEditor
                 options={options}
                 compare={compare}
@@ -696,7 +759,7 @@ export default function AdminPage() {
               />
             </section>
 
-            <section className="admin-section">
+            <section className="admin-section" data-pv="booking">
               <BookingQuestionsEditor rows={bookingFields} onChange={editQuestions} />
             </section>
 
@@ -714,12 +777,14 @@ export default function AdminPage() {
               )}
             </div>
 
-            {note && <p className={`form-note${note.error ? ' error' : ''}`}>{note.text}</p>}
+            {note && <p ref={noteRef} className={`form-note${note.error ? ' error' : ''}`}>{note.text}</p>}
           </form>
 
           <AdminTripPreview
             focus={focusField}
+            block={focusBlock}
             row={{
+              booking_fields: bookingFields,
               ...draft,
               slug: draft.slug || 'preview',
               category,

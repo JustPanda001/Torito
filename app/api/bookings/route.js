@@ -26,7 +26,7 @@ import { TOURS } from '@/lib/tours-data';
 import { tourOptions } from '@/lib/options';
 import { bookingTitle, bookingTotal, findOption, unitPrice } from '@/lib/pricing';
 import {
-  HOURS_ANSWER, hourlyRates, lessonHours, validHours,
+  HOURS_ANSWER, hourlyRates, lessonHours, validHours, timeQuestion, spanFull, fitsDay,
 } from '@/lib/lessons';
 import { sendBookingEmail } from '@/lib/bookingEmail';
 import { bookingQuestions, numberBounds } from '@/lib/bookingQuestions';
@@ -301,7 +301,7 @@ export async function POST(request) {
 
   // The dialog already greys out what is taken, but two people can have it
   // open at once, so the check is repeated here against the live table.
-  const clash = await alreadyTaken(supabase, row);
+  const clash = await alreadyTaken(supabase, row, trip, hours);
   if (clash) return Response.json({ error: clash }, { status: 409 });
   // the row is the visitor's own, so "read own bookings" lets it come back —
   // that is where the reference comes from
@@ -342,8 +342,17 @@ export async function POST(request) {
  * once the departure would go over capacity. Without booked_slots() in the
  * database this lets everything through, as before.
  */
-async function alreadyTaken(supabase, row) {
+async function alreadyTaken(supabase, row, tour, hours) {
   if (row.kind === 'waitlist' || !row.wanted_date) return null;
+
+  // the day closes an hour after the last time offered; a lesson that would
+  // run past it is refused, booked_slots() or not
+  if (row.lesson_time) {
+    const offered = timeQuestion(tour, bookingQuestions(tour))?.options ?? [];
+    if (!fitsDay(row.lesson_time, hours ?? 1, offered)) {
+      return 'Sorry — a lesson that long would run past closing time. Please pick an earlier time or fewer hours.';
+    }
+  }
 
   const { data, error } = await supabase.rpc('booked_slots', { p_slug: row.tour_slug });
   if (error || !Array.isArray(data)) return null;
@@ -355,10 +364,8 @@ async function alreadyTaken(supabase, row) {
   if (row.lesson_time) {
     if (trip?.slot_limit === 'unlimited') return null;
     const limit = Number(trip?.slot_limit) || 1;
-    const held = sameDay
-      .filter((r) => r.lesson_time === row.lesson_time)
-      .reduce((n, r) => n + (r.bookings ?? 1), 0);
-    return held >= limit
+    // a lesson holds every hour it covers (start + hours − 1)
+    return spanFull(sameDay, row.lesson_time, hours ?? 1, limit)
       ? 'Sorry — that time was just booked by someone else. Please pick another.'
       : null;
   }

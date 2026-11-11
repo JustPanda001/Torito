@@ -327,12 +327,20 @@ export default function BookingModal({ tour, option = null, onClose }) {
     ? Math.min(groupTop, Number.isFinite(daySeats) && daySeats > 0 ? daySeats : groupTop)
     : daySeats;
   const step = (n) => setPeople((p) => Math.min(maxPeople, Math.max(1, p + n)));
-  const stepHours = (n) => setHours((h) => Math.min(hourSpan.max, Math.max(hourSpan.min, h + n)));
+  const stepHours = (n) => {
+    const next = Math.min(hourSpan.max, Math.max(hourSpan.min, hours + n));
+    setHours(next);
+    // a longer lesson may now meet a full hour or run past closing
+    if (time && (avail.tooLong(time, next) || avail.timeTaken(date, time, next))) setTime('');
+  };
   const rate = rates ? hourlyRate(tour, people) : null;
 
+  // a lesson holds every hour it covers, so its length counts too
+  const lessonSpan = rates ? hours : 1;
   // why a time cannot be picked on the chosen day, or null when it can
   const slotWhy = (slot) => {
-    if (avail.timeTaken(date, slot)) return t('booking.alreadyBooked');
+    if (avail.tooLong(slot, lessonSpan)) return t('booking.runsPastClose');
+    if (avail.timeTaken(date, slot, lessonSpan)) return t('booking.alreadyBooked');
     const state = slotTimeState(date, slot);
     if (state === 'passed') return t('booking.timePassed');
     if (state === 'soon') return t('booking.tooSoon');
@@ -341,7 +349,7 @@ export default function BookingModal({ tour, option = null, onClose }) {
 
   function pickDate(d) {
     setDate(d);
-    if (time && (avail.timeTaken(d, time) || slotTimeState(d, time))) setTime('');
+    if (time && (avail.timeTaken(d, time, lessonSpan) || avail.tooLong(time, lessonSpan) || slotTimeState(d, time))) setTime('');
     if (!timed && tour.capacity) {
       const left = Math.max(1, Math.min(seats, tour.capacity - avail.bookedOn(d)));
       setPeople((p) => Math.min(p, left));
