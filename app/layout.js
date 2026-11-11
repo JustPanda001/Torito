@@ -22,7 +22,14 @@ export const metadata = {
   description: SITE_DESCRIPTION,
   applicationName: SITE_NAME,
   alternates: { canonical: '/' },
-  icons: { icon: '/assets/mtani-favicon.svg' },
+  icons: {
+    icon: [
+      { url: '/assets/mtani-favicon.svg?v=2', type: 'image/svg+xml' },
+      { url: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icon-512.png', sizes: '512x512', type: 'image/png' },
+    ],
+    apple: '/apple-touch-icon.png',
+  },
   openGraph: {
     type: 'website',
     siteName: SITE_NAME,
