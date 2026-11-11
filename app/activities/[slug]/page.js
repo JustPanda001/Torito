@@ -260,8 +260,10 @@ export default function TourPage({ params }) {
               <FavoriteButton slug={tour.slug} />
             </div>
 
-            {/* spot counts mean nothing on a trip that cannot be booked this season */}
-            {bookable && (
+            {/* spot counts mean nothing on a trip that cannot be booked this
+                season, and with no number set the row is left out rather
+                than shown as an empty icon */}
+            {bookable && (full || tour.spots_left != null) && (
               <div className="book-capacity">
                 <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" strokeWidth="1.7">
                   <circle cx="9" cy="8" r="3.2" /><path d="M2.5 19c0-3.4 2.9-5.5 6.5-5.5s6.5 2.1 6.5 5.5" />
