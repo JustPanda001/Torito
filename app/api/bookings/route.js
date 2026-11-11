@@ -26,7 +26,7 @@ import { TOURS } from '@/lib/tours-data';
 import { tourOptions } from '@/lib/options';
 import { bookingTitle, bookingTotal, findOption, unitPrice } from '@/lib/pricing';
 import {
-  HOURS_ANSWER, LESSON_MAX_HOURS, LESSON_MIN_HOURS, hourlyRates, validHours,
+  HOURS_ANSWER, hourlyRates, lessonHours, validHours,
 } from '@/lib/lessons';
 import { sendBookingEmail } from '@/lib/bookingEmail';
 import { bookingQuestions, numberBounds } from '@/lib/bookingQuestions';
@@ -257,8 +257,9 @@ export async function POST(request) {
   const rates = kind !== 'waitlist' ? hourlyRates(trip) : null;
   const hours = rates ? body.hours : null;
   if (rates) {
-    if (!validHours(hours)) {
-      return Response.json({ error: `Please choose between ${LESSON_MIN_HOURS} and ${LESSON_MAX_HOURS} hours.` }, { status: 400 });
+    if (!validHours(hours, trip)) {
+      const span = lessonHours(trip);
+      return Response.json({ error: `Please choose between ${span.min} and ${span.max} hours.` }, { status: 400 });
     }
     if (people > rates.length) {
       return Response.json({ error: `Please choose between 1 and ${rates.length} people.` }, { status: 400 });

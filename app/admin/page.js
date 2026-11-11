@@ -25,6 +25,7 @@ import { slugify } from '@/lib/slug';
 import {
   LESSON, HOURLY_RATES, SUGGESTED_HOURLY_RATES, LESSON_MAX_GROUP, LESSON_MIN_HOURS, LESSON_MAX_HOURS,
   parseGroupSize, formatGroupSize,
+  HOURS_ROLE, PEOPLE_ROLE, lessonHours, isHoursQuestion, isPeopleQuestion, defaultHoursQuestion, defaultPeopleQuestion,
 } from '@/lib/lessons';
 
 // the "Group size" dropdowns offer 1 to 30 people (tours run bigger groups
@@ -146,9 +147,21 @@ export default function AdminPage() {
   }
   // a timed service shows its time picker here as an ordinary question, so it
   // can be edited or removed like any other
-  function withTimeQuestion(list, cat, sub, optedOut) {
-    if (optedOut || !isTimed({ category: cat, subtype: sub }) || list.some(isTimeQuestion)) return list;
-    return [defaultTimeQuestion(), ...list];
+  function withTimeQuestion(list, cat, sub, optedOut, groupTop = DEFAULT_LESSON_GROUP) {
+    let out = list;
+    if (!optedOut && isTimed({ category: cat, subtype: sub }) && !out.some(isTimeQuestion)) {
+      out = [defaultTimeQuestion(), ...out];
+    }
+    // a lesson's hours and people counters are questions here too, so their
+    // wording and limits can be edited like everything else
+    if (cat === 'ski' && sub === LESSON) {
+      out = out.map((q) => (q.role ? q
+        : isHoursQuestion(q) ? { ...q, role: HOURS_ROLE }
+          : isPeopleQuestion(q) ? { ...q, role: PEOPLE_ROLE } : q));
+      if (!out.some((q) => q.role === HOURS_ROLE)) out = [...out, defaultHoursQuestion()];
+      if (!out.some((q) => q.role === PEOPLE_ROLE)) out = [...out, defaultPeopleQuestion(groupTop)];
+    }
+    return out;
   }
   // kit the visitor brings themselves, ticked off before they can book
   const [requiredItems, setRequiredItems] = useState([]);
@@ -177,6 +190,8 @@ export default function AdminPage() {
   // ski's second choice, which decides whether this is a lesson
   const [subtype, setSubtype] = useState('');
   const lessonForm = category === 'ski' && subtype === LESSON;
+  // the hours a lesson can be booked for, as its hours question says
+  const adminHours = lessonHours({ booking_fields: bookingFields });
   const form = useRef(null);
   // once the slug has been typed in by hand, the title stops overwriting it
   const slugTouched = useRef(false);
@@ -241,6 +256,7 @@ export default function AdminPage() {
       setBookingFields(withTimeQuestion(
         raw.filter((q) => q?.type !== NO_TIMES && q?.type !== HOURLY_RATES),
         tour.category, tour.subtype, optedOut,
+        Array.isArray(saved) && saved.length ? saved.length : (parseGroupSize(tour.group_size)?.max ?? DEFAULT_LESSON_GROUP),
       ));
     }
     setGroup(parseGroupSize(tour.group_size));
@@ -382,6 +398,7 @@ export default function AdminPage() {
         hint: (q.hint ?? '').trim(),
         hintStrong: Boolean(q.hintStrong),
         ...numberLimits({ ...q, type: q.type ?? 'choice' }),
+        ...(q.role && (q.type ?? 'choice') === 'number' ? { role: q.role } : {}),
       }))
       .filter((q) => q.label && (q.type !== 'choice' || q.options.length > 0));
     if (noTimes && isTimed(row) && !row.booking_fields.some(isTimeQuestion)) {
@@ -518,7 +535,7 @@ export default function AdminPage() {
                         name === 'category' ? (e) => { setCategory(e.target.value); setSubtype(''); }
                           : name === 'subtype' ? (e) => {
                             setSubtype(e.target.value);
-                            setBookingFields((list) => withTimeQuestion(list, category, e.target.value, noTimes));
+                            setBookingFields((list) => withTimeQuestion(list, category, e.target.value, noTimes, groupMax));
                           }
                             : undefined
                       }
@@ -561,7 +578,7 @@ export default function AdminPage() {
                 <div className="admin-section-head">
                   <h3>Price per hour</h3>
                   <span className="field-hint">
-                    Customers pick {LESSON_MIN_HOURS} to {LESSON_MAX_HOURS} hours and up to {groupMax} people (set by Group size).
+                    Customers pick {adminHours.min} to {adminHours.max} hours (set in the hours question below) and up to {groupMax} people (set by Group size).
                     Total = rate for the group × hours. Leave all empty to use the price per person instead.
                   </span>
                 </div>
@@ -579,7 +596,7 @@ export default function AdminPage() {
                         onChange={(e) => setRate(i, e.target.value)}
                       />
                       {Number(value) > 0 && (
-                        <span className="field-hint">{LESSON_MIN_HOURS} h = {Number(value) * LESSON_MIN_HOURS} ₾</span>
+                        <span className="field-hint">{adminHours.min} h = {Number(value) * adminHours.min} ₾</span>
                       )}
                     </label>
                   ))}

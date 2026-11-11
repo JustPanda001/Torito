@@ -15,7 +15,7 @@ import {
 } from '@/lib/season';
 import {
   isLesson, isTimed, timeQuestion, slotTimeState, defaultTimeQuestion, SKILL_LEVELS, LESSON_TYPES,
-  hourlyRates, LESSON_MIN_HOURS, LESSON_MAX_HOURS,
+  hourlyRates, lessonHours, isHoursQuestion, isPeopleQuestion,
 } from '@/lib/lessons';
 import { useAvailability } from '@/lib/availability';
 import { supabase, currentProfile } from '@/lib/supabaseClient';
@@ -124,7 +124,9 @@ export default function BookingModal({ tour, option = null, onClose }) {
   // a lesson with a rate table is priced per hour by group size, and the
   // visitor picks how many hours; null for everything else
   const rates = useMemo(() => hourlyRates(tour), [tour]);
-  const [hours, setHours] = useState(LESSON_MIN_HOURS);
+  // the hours this lesson can be booked for, from its admin hours question
+  const hourSpan = useMemo(() => lessonHours(tour), [tour]);
+  const [hours, setHours] = useState(hourSpan.min);
   // lesson requests only: when, and what they want out of it
   const [time, setTime] = useState('');
   const [level, setLevel] = useState('');
@@ -148,15 +150,19 @@ export default function BookingModal({ tour, option = null, onClose }) {
   // A lesson with hourly prices already has its own hours counter (it sets the
   // price), so an admin "How many hours?" number question would be a second,
   // unpriced copy of it: leave that one out.
+  // A lesson's hours and people counters are drawn as the built-in counters
+  // (they set the price), worded by these admin questions; they are not
+  // drawn a second time with the others.
+  const hoursQ = rates ? allQuestions.find(isHoursQuestion) ?? null : null;
+  const peopleQ = lesson ? allQuestions.find(isPeopleQuestion) ?? null : null;
   const questions = useMemo(
-    () => allQuestions.filter((q) => (!timeQ || q.label !== timeQ.label)
-      && !(rates && q.type === 'number' && /hour|საათ|час|小时/i.test(q.label))),
-    [allQuestions, timeQ, rates],
+    () => allQuestions.filter((q) => (!timeQ || q.label !== timeQ.label) && q !== hoursQ && q !== peopleQ),
+    [allQuestions, timeQ, hoursQ, peopleQ],
   );
   // The older built-in lesson questions (level, kind of lesson) only show on a
   // lesson whose admin wrote no questions of its own; once it has any, the
   // admin's list is the whole list.
-  const builtInLessonQs = lesson && questions.length === 0;
+  const builtInLessonQs = lesson && allQuestions.length === 0;
   const [answers, setAnswers] = useState(() => Object.fromEntries(
     bookingQuestions(tour).map((q) => [q.label, initialAnswer(q)]),
   ));
@@ -316,11 +322,12 @@ export default function BookingModal({ tour, option = null, onClose }) {
     ? Math.max(0, Math.min(seats, tour.capacity - avail.bookedOn(date)))
     : seats;
   // a rate table covers groups up to its size (4), never more
+  const groupTop = rates ? Math.min(rates.length, peopleQ?.max ?? rates.length) : null;
   const maxPeople = rates
-    ? Math.min(rates.length, Number.isFinite(daySeats) && daySeats > 0 ? daySeats : rates.length)
+    ? Math.min(groupTop, Number.isFinite(daySeats) && daySeats > 0 ? daySeats : groupTop)
     : daySeats;
   const step = (n) => setPeople((p) => Math.min(maxPeople, Math.max(1, p + n)));
-  const stepHours = (n) => setHours((h) => Math.min(LESSON_MAX_HOURS, Math.max(LESSON_MIN_HOURS, h + n)));
+  const stepHours = (n) => setHours((h) => Math.min(hourSpan.max, Math.max(hourSpan.min, h + n)));
   const rate = rates ? hourlyRate(tour, people) : null;
 
   // why a time cannot be picked on the chosen day, or null when it can
@@ -566,7 +573,7 @@ export default function BookingModal({ tour, option = null, onClose }) {
                             +
                           </button>
                         </div>
-                        {range && <p className="bm-hint">{range}{q.unit ? ` ${q.unit}` : ''}.</p>}
+                        {range && !q.hint && <p className="bm-hint">{range}{q.unit ? ` ${q.unit}` : ''}.</p>}
                       </>
                     );
                   })()}
@@ -586,13 +593,13 @@ export default function BookingModal({ tour, option = null, onClose }) {
 
               {rates && (
                 <section className="bm-section">
-                  <h3>{t('booking.hoursQ')}</h3>
+                  <h3>{hoursQ?.label || t('booking.hoursQ')}</h3>
                   <div className="bm-people">
                     <button
                       type="button"
                       className="bm-step"
                       onClick={() => stepHours(-1)}
-                      disabled={hours <= LESSON_MIN_HOURS}
+                      disabled={hours <= hourSpan.min}
                       aria-label={t('booking.hoursFewer')}
                     >
                       −
@@ -602,18 +609,20 @@ export default function BookingModal({ tour, option = null, onClose }) {
                       type="button"
                       className="bm-step"
                       onClick={() => stepHours(1)}
-                      disabled={hours >= LESSON_MAX_HOURS}
+                      disabled={hours >= hourSpan.max}
                       aria-label={t('booking.hoursMore')}
                     >
                       +
                     </button>
                   </div>
-                  <p className="bm-hint">{t('booking.hoursHint', { min: LESSON_MIN_HOURS, max: LESSON_MAX_HOURS })}</p>
+                  <p className={`bm-hint${hoursQ?.hintStrong ? ' strong' : ''}`}>
+                    {hoursQ?.hint || t('booking.hoursHint', { min: hourSpan.min, max: hourSpan.max })}
+                  </p>
                 </section>
               )}
 
               <section className="bm-section">
-                <h3>{t('booking.howMany')}</h3>
+                <h3>{peopleQ?.label || t('booking.howMany')}</h3>
                 <div className="bm-people">
                   <button type="button" className="bm-step" onClick={() => step(-1)} aria-label={t('booking.oneFewer')}>−</button>
                   <span className="bm-count" aria-live="polite"><strong>{people}</strong> {peopleWord}</span>
@@ -636,7 +645,7 @@ export default function BookingModal({ tour, option = null, onClose }) {
                 )}
                 <p className="bm-hint">
                   {lesson
-                    ? t('booking.groupTaught')
+                    ? (peopleQ ? peopleQ.hint : t('booking.groupTaught'))
                     : timed
                       ? t('booking.slotYours')
                       : t('booking.left', { n: daySeats })}
