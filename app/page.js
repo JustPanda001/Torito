@@ -111,7 +111,12 @@ export default function HomePage() {
         </section>
 
         <section className="section" id="activities">
-          <h2 className="section-title">{t('home.catalog')}</h2>
+          <div className="section-head">
+            <h2 className="section-title">{t('home.catalog')}</h2>
+            <Link className="hot-btn" href="/activities">
+              {t('home.seeAll')} <span aria-hidden="true">→</span>
+            </Link>
+          </div>
           <div className="activity-row">
             {ACTIVITIES.map(([src, key, cat]) => (
               <Link className="activity-card" href={`/activities?cat=${cat}`} key={key}>

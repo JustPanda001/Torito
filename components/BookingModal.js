@@ -28,6 +28,33 @@ import { bookingTitle, bookingTotal, hourlyRate, unitPrice } from '@/lib/pricing
 import '@/app/styles/lesson-pricing.css';
 import { useT } from '@/lib/i18n';
 import { refreshBadges } from '@/lib/badges';
+
+// little burst of colour around the success tick
+const CONFETTI = Array.from({ length: 14 }, (_, i) => {
+  const a = (i / 14) * Math.PI * 2;
+  return [Math.round(Math.cos(a) * (70 + (i % 3) * 20)), Math.round(Math.sin(a) * (50 + (i % 2) * 20)),
+    ['#5fd0b2', '#e0b04a', '#e0607a', '#8fa8ff', '#2e7d6e'][i % 5]];
+});
+
+// counts the total up from 0 once, after the summary rows have slid in
+function CountUp({ value, format }) {
+  const [shown, setShown] = useState(0);
+  useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { setShown(value); return undefined; }
+    let raf; let t0;
+    const timer = setTimeout(() => {
+      const step = (t) => {
+        t0 ??= t;
+        const p = Math.min(1, (t - t0) / 600);
+        setShown(Math.round(value * (1 - (1 - p) ** 3)));
+        if (p < 1) raf = requestAnimationFrame(step);
+      };
+      raf = requestAnimationFrame(step);
+    }, 900);
+    return () => { clearTimeout(timer); cancelAnimationFrame(raf); };
+  }, [value]);
+  return format(shown);
+}
 import { localizeTour } from '@/lib/trip-translations';
 
 // the stored values stay English (the team reads them); only the buttons are
@@ -414,8 +441,16 @@ export default function BookingModal({ tour, option = null, onClose }) {
             )
           ) : done ? (
             <>
-              <p className="bm-note ok">{t('booking.requestSent')}</p>
-              <div className="bm-summary">
+              <div className="bm-success" aria-hidden="true">
+                <span className="bm-check">
+                  <svg viewBox="0 0 40 40"><path d="M9 21 l7 7 l15 -16" /></svg>
+                </span>
+                {CONFETTI.map(([x, y, c], i) => (
+                  <i key={i} className="bm-confetti" style={{ '--x': `${x}px`, '--y': `${y}px`, background: c }} />
+                ))}
+              </div>
+              <p className="bm-note ok bm-pop">{t('booking.requestSent')}</p>
+              <div className="bm-summary bm-stagger">
                 {receipt?.ref && <div className="bm-line"><span>{t('booking.reference')}</span><span>{receipt.ref}</span></div>}
                 <div className="bm-line"><span>{t('booking.trip')}</span><span>{tripName}</span></div>
                 {endDate ? (
@@ -434,7 +469,7 @@ export default function BookingModal({ tour, option = null, onClose }) {
                 {Object.entries(packAnswers(questions, answers)).map(([label, value]) => (
                   <div className="bm-line" key={label}><span>{label}</span><span>{value}</span></div>
                 ))}
-                <div className="bm-line bm-grand"><span>{t('booking.total')}</span><span>{money(total)}</span></div>
+                <div className="bm-line bm-grand"><span>{t('booking.total')}</span><span><CountUp value={total} format={money} /></span></div>
               </div>
               <Receipt receipt={receipt} email={profile?.email} />
             </>
@@ -710,12 +745,12 @@ export default function BookingModal({ tour, option = null, onClose }) {
 
               <button
                 type="button"
-                className="book-btn"
+                className={`book-btn${sending ? ' is-sending' : ''}`}
                 disabled={sending || !date || !phoneOk || !questionsOk || !kitOk
                   || (timeQ?.required && !time) || (builtInLessonQs && (!level || !kind))}
                 onClick={() => submit(lesson ? 'lesson' : 'trip')}
               >
-                {sending ? t('booking.sending')
+                {sending ? <><span className="btn-spinner" aria-hidden="true" />{t('booking.sending')}</>
                   : !date ? t('booking.chooseDate')
                     : timeQ?.required && !time ? t('booking.pickTime')
                       : builtInLessonQs && !level ? t('booking.pickLevel')

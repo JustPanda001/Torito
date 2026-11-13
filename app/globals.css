@@ -2552,3 +2552,53 @@ a.feature-img:hover img{transform:scale(1.04)}
 .bq-number{display:grid;grid-template-columns:1fr 1fr 2fr;gap:12px}
 .bq-number .field-hint{grid-column:1/-1}
 @media (max-width:600px){.bq-number{grid-template-columns:1fr 1fr}}
+
+/* section title with a "See all" button on the right */
+.section-head{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:18px}
+.section-head .section-title{margin:0}
+
+/* ---------- Feedback animations ---------- */
+/* booking success: tick pops, draws, ripples, confetti bursts, rows slide in */
+.bm-success{position:relative;display:flex;justify-content:center;margin:6px 0 10px;height:64px}
+.bm-check{width:64px;height:64px;border-radius:50%;background:var(--green-600,#2e7d6e);display:flex;align-items:center;justify-content:center;position:relative;animation:fx-pop .6s .1s cubic-bezier(.3,1.8,.5,1) both}
+.bm-check svg{width:34px}
+.bm-check path{stroke:#fff;stroke-width:5;fill:none;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:50;stroke-dashoffset:50;animation:fx-draw .35s .55s ease-out forwards}
+.bm-check::after{content:"";position:absolute;inset:0;border-radius:50%;border:3px solid #5fd0b2;opacity:0;animation:fx-wave .8s .6s ease-out}
+.bm-confetti{position:absolute;left:50%;top:28px;width:7px;height:7px;border-radius:2px;opacity:0;animation:fx-burst .9s .6s ease-out forwards}
+.bm-pop{text-align:center;animation:fx-up .4s .8s both}
+.bm-stagger .bm-line{animation:fx-up .35s both}
+.bm-stagger .bm-line:nth-child(1){animation-delay:.9s}.bm-stagger .bm-line:nth-child(2){animation-delay:.97s}
+.bm-stagger .bm-line:nth-child(3){animation-delay:1.04s}.bm-stagger .bm-line:nth-child(4){animation-delay:1.11s}
+.bm-stagger .bm-line:nth-child(5){animation-delay:1.18s}.bm-stagger .bm-line:nth-child(6){animation-delay:1.25s}
+.bm-stagger .bm-line:nth-child(n+7){animation-delay:1.32s}
+@keyframes fx-pop{0%{transform:scale(0) rotate(-45deg)}100%{transform:scale(1) rotate(0)}}
+@keyframes fx-draw{to{stroke-dashoffset:0}}
+@keyframes fx-wave{0%{opacity:.9;transform:scale(1)}100%{opacity:0;transform:scale(1.9)}}
+@keyframes fx-burst{0%{opacity:1;transform:translate(0,0) rotate(0)}100%{opacity:0;transform:translate(var(--x),var(--y)) rotate(260deg)}}
+@keyframes fx-up{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+/* send button: squish on press, spinner while sending */
+.book-btn:active:not(:disabled){transform:scale(.96)}
+.book-btn.is-sending{display:inline-flex;align-items:center;justify-content:center;gap:10px}
+.book-btn.is-sending:disabled{opacity:1;cursor:progress}
+.btn-spinner{width:18px;height:18px;border:2.5px solid currentColor;border-top-color:transparent;border-radius:50%;animation:fx-spin .7s linear infinite}
+@keyframes fx-spin{to{transform:rotate(360deg)}}
+
+/* favourite heart: squish-pop and a ring pulse when saved */
+.fav-btn{position:relative}
+.fav-btn.is-saved svg{animation:fx-heart .5s cubic-bezier(.3,1.8,.5,1)}
+.fav-btn.is-saved::after{content:"";position:absolute;inset:-2px;border-radius:inherit;border:2px solid #d8574a;opacity:0;animation:fx-wave .6s ease-out}
+@keyframes fx-heart{0%{transform:scale(1)}30%{transform:scale(.7)}100%{transform:scale(1)}}
+
+/* See all arrow springs right; activity cards lift */
+.hot-btn span[aria-hidden]{display:inline-block;transition:transform .3s cubic-bezier(.3,1.8,.5,1)}
+.hot-btn:hover{transform:translateY(-2px)}
+.hot-btn:hover span[aria-hidden]{transform:translateX(5px)}
+.activity-card{transition:transform .3s cubic-bezier(.3,1.4,.5,1),box-shadow .3s}
+.js .reveal.visible .activity-card:hover,.activity-card:hover{transform:translateY(-6px);box-shadow:0 14px 26px rgba(0,0,0,.25)}
+
+@media (prefers-reduced-motion:reduce){
+  .bm-check,.bm-check path,.bm-check::after,.bm-confetti,.bm-pop,.bm-stagger .bm-line,
+  .fav-btn.is-saved svg,.fav-btn.is-saved::after{animation:none!important;opacity:1;stroke-dashoffset:0}
+  .bm-confetti,.fav-btn.is-saved::after,.bm-check::after{display:none}
+}
