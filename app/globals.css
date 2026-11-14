@@ -2645,3 +2645,12 @@ a.feature-img:hover img{transform:scale(1.04)}
 @media (prefers-reduced-motion:reduce){.pkg-card,.pkg-card:hover{transition:none;transform:none}.pkg-info{animation:none}}
 .pkg-edit-opt{border-left:3px solid var(--line);padding:8px 0 8px 12px;margin:10px 0;display:grid;gap:6px}
 .pkg-edit-actions{display:flex;flex-wrap:wrap;gap:14px;margin-top:6px}
+/* the builder as a pop-up */
+.pkg-modal{position:relative;width:min(1180px,calc(100vw - 32px));max-height:calc(100dvh - 48px);overflow:auto;background:var(--surface);border-radius:var(--radius-lg);padding:28px;box-shadow:0 24px 60px rgba(0,0,0,.35);animation:pkgIn .2s ease}
+:root[data-theme="dark"] .pkg-modal{border:1px solid var(--line)}
+.pkg-modal .pkg-head{padding-right:44px}
+.pkg-modal .pkg-head h2{margin:0}
+.pkg-close{position:absolute;top:16px;right:16px}
+.pkg-modal .pkg-summary{top:0}
+@media (max-width:640px){.pkg-modal{padding:20px 16px;width:calc(100vw - 16px);max-height:calc(100dvh - 16px)}}
+@media (prefers-reduced-motion:reduce){.pkg-modal{animation:none}}

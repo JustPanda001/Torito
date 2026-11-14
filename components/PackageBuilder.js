@@ -4,12 +4,22 @@
 // One step at a time: options from ₾₾₾ to ₾, a "more info" summary with tags
 // for each, a budget filter, and a live summary with the price per person.
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { LEVELS, levelMark, resolveChoices } from '@/lib/packageBuilder';
 
 const money = (n) => `${Math.round(n).toLocaleString('en-US')} ₾`;
 
-export default function PackageBuilder({ steps, base, choices, onChange, onBook, bookLabel }) {
+export default function PackageBuilder({ steps, base, choices, onChange, onBook, bookLabel, onClose }) {
+  useEffect(() => {
+    const esc = (e) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', esc);
+    document.body.classList.add('modal-open');
+    return () => {
+      document.removeEventListener('keydown', esc);
+      document.body.classList.remove('modal-open');
+    };
+  }, [onClose]);
+
   const [budget, setBudget] = useState(0); // 0 = every level
   const [open, setOpen] = useState(null);  // "step|option" whose info is showing
 
@@ -28,10 +38,12 @@ export default function PackageBuilder({ steps, base, choices, onChange, onBook,
   const missing = steps.filter((s) => !s.optional && !choices[s.title]);
 
   return (
-    <section className="detail-block pkg" id="build">
+    <div className="modal-backdrop" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+    <div className="pkg pkg-modal" role="dialog" aria-modal="true" aria-labelledby="pkgTitle">
+      <button type="button" className="bm-close pkg-close" aria-label="Close" onClick={onClose}>×</button>
       <div className="pkg-head">
         <div>
-          <h2>Build your week</h2>
+          <h2 id="pkgTitle">Build your week</h2>
           <p className="lead">Pick one option per step. Optional steps can be skipped; tap again to remove.</p>
         </div>
         <div className="pkg-budget" role="group" aria-label="Budget">
@@ -113,6 +125,7 @@ export default function PackageBuilder({ steps, base, choices, onChange, onBook,
           <p className="pkg-note">Pick dates and group size next. Nothing is charged now.</p>
         </aside>
       </div>
-    </section>
+    </div>
+    </div>
   );
 }

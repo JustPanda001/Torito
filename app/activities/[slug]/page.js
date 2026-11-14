@@ -100,6 +100,9 @@ export default function TourPage({ params }) {
   const [optIdx, setOptIdx] = useState(0);
   // build-your-own trips: the visitor's picks, null until they touch one
   const [pkgPicks, setPkgPicks] = useState(null);
+  // the builder opens as a pop-up from "Build your week"
+  const [building, setBuilding] = useState(false);
+  const closeBuilder = useCallback(() => setBuilding(false), []);
   // which button a signed-out visitor pressed: 'book', 'rate', or null
   const [gate, setGate] = useState(null);
   // undefined while we are still asking; null means signed out
@@ -200,7 +203,7 @@ export default function TourPage({ params }) {
   const showCompare = options.length > 1;
   const steps = packageSteps(tour);
   const pkg = steps ? (pkgPicks ?? defaultChoices(steps)) : null;
-  const toBuilder = () => document.getElementById('build')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const toBuilder = () => setBuilding(true);
   const learnMore = () => document.getElementById('compare')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
   const facts = allFacts.filter(([, , value]) => filled(value));
@@ -348,17 +351,6 @@ export default function TourPage({ params }) {
             <button type="button" className="book-btn secondary" onClick={() => openChat(tour)}>{t('detail.ask')}</button>
           </aside>
         </div>
-
-        {steps && bookable && !full && (
-          <PackageBuilder
-            steps={steps}
-            base={chosen ? chosen.price : tour.price}
-            choices={pkg}
-            onChange={setPkgPicks}
-            bookLabel={t('trip.bookSpot')}
-            onBook={() => (profile ? setBooking(true) : profile === null && setGate('book'))}
-          />
-        )}
 
         <section className="detail-block">
           <h2>{lesson ? t('trip.aboutLessons') : t('detail.about')}</h2>
@@ -518,6 +510,20 @@ export default function TourPage({ params }) {
         </section>
       </main>
 
+      {building && steps && bookable && !full && (
+        <PackageBuilder
+          steps={steps}
+          base={chosen ? chosen.price : tour.price}
+          choices={pkg}
+          onChange={setPkgPicks}
+          bookLabel={t('trip.bookSpot')}
+          onClose={closeBuilder}
+          onBook={() => {
+            setBuilding(false);
+            if (profile) setBooking(true); else if (profile === null) setGate('book');
+          }}
+        />
+      )}
       {booking && bookable && <BookingModal tour={tour} option={chosen} pkg={pkg} onClose={() => setBooking(false)} />}
       {rating && (
         <ReviewModal
