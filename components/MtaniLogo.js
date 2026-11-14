@@ -3,6 +3,9 @@
 // (public/assets/mtani-mark.png) used as an SVG mask, so it is painted in
 // currentColor and follows the theme like the old vector did. `tagline` adds GEORGIA.
 import { useId } from 'react';
+import { Fredoka } from 'next/font/google';
+
+const wordFont = Fredoka({ subsets: ['latin'], weight: ['700'], display: 'swap' });
 
 // each logo needs its own mask id: a mask inside a hidden logo (the header shows
 // only one of its two) cannot be borrowed by the visible one
@@ -32,13 +35,9 @@ export default function MtaniLogo({ tagline = false, mark = false, className = '
   return (
     <svg className={className} viewBox={tagline ? '0 2 240 108' : '0 2 240 84'} role="img" aria-label={title} xmlns="http://www.w3.org/2000/svg">
       <Mark />
-      <g fill="none" stroke="currentColor" strokeWidth="5" strokeLinejoin="miter" strokeMiterlimit="10" transform="translate(84 47) scale(1.25)">
-        <path d="M8 30V2l11 20 11-20v28" />
-        <path d="M40 2.5h18M49 2.5V30" />
-        <path d="M66 30l9-28 9 28M70.5 21h9" />
-        <path d="M94.5 30V2l13 28V2" />
-        <path d="M120.5 2v28" />
-      </g>
+      {/* rounded, heavy wordmark to match the soft shapes of the rider */}
+      <text x="94" y="81" fill="currentColor" fontFamily={wordFont.style.fontFamily} fontWeight="700"
+        fontSize="46" textLength="142" lengthAdjust="spacingAndGlyphs">MTANI</text>
       {tagline && (
         <text x="164" y="106" textAnchor="middle" fill="currentColor" fontFamily="Helvetica, Arial, sans-serif"
           fontSize="13" fontWeight="600" letterSpacing="10">GEORGIA</text>
