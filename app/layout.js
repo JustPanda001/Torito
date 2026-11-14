@@ -25,7 +25,7 @@ export const metadata = {
   alternates: { canonical: '/' },
   icons: {
     icon: [
-      { url: '/assets/mtani-favicon.svg?v=2', type: 'image/svg+xml' },
+      { url: '/assets/mtani-favicon.png?v=3', sizes: '64x64', type: 'image/png' },
       { url: '/icon-192.png', sizes: '192x192', type: 'image/png' },
       { url: '/icon-512.png', sizes: '512x512', type: 'image/png' },
     ],
