@@ -2602,3 +2602,7 @@ a.feature-img:hover img{transform:scale(1.04)}
   .fav-btn.is-saved svg,.fav-btn.is-saved::after{animation:none!important;opacity:1;stroke-dashoffset:0}
   .bm-confetti,.fav-btn.is-saved::after,.bm-check::after{display:none}
 }
+
+/* a bubble fits its own text; it used to stretch to the (longer) time line under it */
+.chat-msg p{width:fit-content;max-width:100%;text-align:left}
+.chat-msg.mine p,.chat-thread .chat-msg.admin p{margin-left:auto}
