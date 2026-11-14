@@ -2654,3 +2654,29 @@ a.feature-img:hover img{transform:scale(1.04)}
 .pkg-modal .pkg-summary{top:0}
 @media (max-width:640px){.pkg-modal{padding:20px 16px;width:calc(100vw - 16px);max-height:calc(100dvh - 16px)}}
 @media (prefers-reduced-motion:reduce){.pkg-modal{animation:none}}
+.pkg-card{cursor:pointer}
+.pkg-card:focus-visible{outline:2px solid var(--green-500);outline-offset:2px}
+.pkg-pick{cursor:inherit;grid-template-columns:auto 1fr}
+.pkg-price{grid-column:2}
+/* admin: compact package editor */
+.pkg-ed-step{border:1px solid var(--line);border-radius:14px;padding:10px 12px;margin:8px 0;display:grid;gap:6px}
+.pkg-ed-steprow,.pkg-ed-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.pkg-ed-steprow .pkg-ed-title{flex:1;min-width:160px;font-weight:700}
+.pkg-ed-row>input:first-child{flex:1;min-width:150px}
+.pkg-ed-price{display:inline-flex;align-items:center;gap:4px;color:var(--ink-soft)}
+.pkg-ed-price input{width:80px}
+.pkg-ed-check{display:inline-flex;align-items:center;gap:6px;font-size:.85rem;color:var(--ink-soft);white-space:nowrap}
+.pkg-ed-x{all:unset;cursor:pointer;width:26px;height:26px;display:grid;place-items:center;border-radius:50%;color:var(--ink-soft)}
+.pkg-ed-x:hover{background:var(--line);color:var(--ink)}
+.pkg-ed-opt{padding-left:12px;border-left:2px solid var(--line);display:grid;gap:6px}
+.pkg-ed-info{display:grid;gap:6px}
+.pkg-ed input,.pkg-ed select,.pkg-ed textarea{padding:8px 10px;border-radius:10px;font-size:.9rem}
+.admin-edit.no-preview{grid-template-columns:minmax(0,1fr);max-width:980px}
+.pkg-ed input:not([type=checkbox]),.pkg-ed select,.pkg-ed textarea{font:inherit;font-size:14px;color:var(--ink);border:1.5px solid #dbe7ea;background:#fbfdfd;width:auto}
+.pkg-ed textarea{width:100%;resize:vertical}
+.pkg-ed input:focus,.pkg-ed select:focus,.pkg-ed textarea:focus{outline:none;border-color:var(--green-500)}
+:root[data-theme="dark"] .pkg-ed input:not([type=checkbox]),:root[data-theme="dark"] .pkg-ed select,:root[data-theme="dark"] .pkg-ed textarea{background:var(--surface-2);border-color:var(--line)}
+.pkg-ed-check input{accent-color:var(--green-500);width:16px;height:16px}
+.pkg-ed-link{all:unset;cursor:pointer;font-size:.88rem;font-weight:600;color:var(--green-500);justify-self:start;white-space:nowrap}
+.pkg-ed-link:hover{text-decoration:underline}
+.pkg-ed-row select{flex:none}

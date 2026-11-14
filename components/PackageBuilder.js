@@ -5,7 +5,7 @@
 // for each, a budget filter, and a live summary with the price per person.
 
 import { useEffect, useState } from 'react';
-import { LEVELS, levelMark, resolveChoices } from '@/lib/packageBuilder';
+import { LEVELS, resolveChoices } from '@/lib/packageBuilder';
 
 const money = (n) => `${Math.round(n).toLocaleString('en-US')} ₾`;
 
@@ -21,7 +21,13 @@ export default function PackageBuilder({ steps, base, choices, onChange, onBook,
   }, [onClose]);
 
   const [budget, setBudget] = useState(0); // 0 = every level
-  const [open, setOpen] = useState(null);  // "step|option" whose info is showing
+  // "step|option" keys whose info is showing; several at once, to compare
+  const [open, setOpen] = useState(() => new Set());
+  const toggleInfo = (key) => setOpen((prev) => {
+    const next = new Set(prev);
+    if (next.has(key)) next.delete(key); else next.add(key);
+    return next;
+  });
 
   const pick = (step, name) => {
     const next = { ...choices };
@@ -49,8 +55,8 @@ export default function PackageBuilder({ steps, base, choices, onChange, onBook,
         <div className="pkg-budget" role="group" aria-label="Budget">
           <button type="button" className={`chip${budget === 0 ? ' active' : ''}`} onClick={() => setBudget(0)}>All</button>
           {LEVELS.map(([v, mark, label]) => (
-            <button type="button" key={v} className={`chip${budget === v ? ' active' : ''}`} onClick={() => setBudget(v)} title={label}>
-              {mark}
+            <button type="button" key={v} className={`chip${budget === v ? ' active' : ''}`} onClick={() => setBudget(v)} title={mark}>
+              {label}
             </button>
           ))}
         </div>
@@ -74,22 +80,32 @@ export default function PackageBuilder({ steps, base, choices, onChange, onBook,
                     const on = choices[step.title] === o.name;
                     const key = `${step.title}|${o.name}`;
                     return (
-                      <div className={`pkg-card${on ? ' on' : ''}`} key={o.name}>
-                        <button type="button" className="pkg-pick" aria-pressed={on} onClick={() => pick(step, o.name)}>
+                      // the whole card picks the option; "More info" only opens the text
+                      <div
+                        className={`pkg-card${on ? ' on' : ''}`}
+                        key={o.name}
+                        role="button"
+                        tabIndex={0}
+                        aria-pressed={on}
+                        onClick={() => pick(step, o.name)}
+                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(step, o.name); } }}
+                      >
+                        <div className="pkg-pick">
                           <span className="opt-dot" aria-hidden="true" />
                           <span className="pkg-name">{o.name}</span>
-                          <span className="pkg-level" title={LEVELS.find(([v]) => v === o.level)?.[2]}>{levelMark(o.level)}</span>
                           <span className="pkg-price">
                             {o.price ? `+${money(o.price)}` : 'Included'}
                             {o.price > 0 && <small>{o.per === 'group' ? ' / group' : ' / person'}</small>}
                           </span>
-                        </button>
+                        </div>
                         {(o.summary || o.tags.length > 0) && (
                           <>
-                            <button type="button" className="pkg-more" aria-expanded={open === key} onClick={() => setOpen(open === key ? null : key)}>
-                              {open === key ? 'Less info' : 'More info'}
+                            <button type="button" className="pkg-more" aria-expanded={open.has(key)}
+                              onClick={(e) => { e.stopPropagation(); toggleInfo(key); }}
+                              onKeyDown={(e) => e.stopPropagation()}>
+                              {open.has(key) ? 'Less info' : 'More info'}
                             </button>
-                            {open === key && (
+                            {open.has(key) && (
                               <div className="pkg-info">
                                 {o.summary && <p>{o.summary}</p>}
                                 {o.tags.length > 0 && (

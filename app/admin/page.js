@@ -19,7 +19,7 @@ import PackageEditor, { packageEntryFrom } from '@/components/PackageEditor';
 import { PACKAGE, packageSteps } from '@/lib/packageBuilder';
 import PlaceSearch from '@/components/PlaceSearch';
 import AdminNav from '@/components/AdminNav';
-import AdminTripPreview, { FIELD_BLOCK } from '@/components/AdminTripPreview';
+import { FIELD_BLOCK } from '@/components/AdminTripPreview';
 import { isTimed, isTimeQuestion, defaultTimeQuestion } from '@/lib/lessons';
 import { NO_TIMES, numberLimits } from '@/lib/bookingQuestions';
 import { supabase, currentProfile, friendlyError } from '@/lib/supabaseClient';
@@ -519,7 +519,7 @@ export default function AdminPage() {
             </p>
           )}
 
-          <div className="admin-edit">
+          <div className="admin-edit no-preview">
           <form
             className="admin-form"
             ref={form}
@@ -797,30 +797,6 @@ export default function AdminPage() {
             {note && <p ref={noteRef} className={`form-note${note.error ? ' error' : ''}`}>{note.text}</p>}
           </form>
 
-          <AdminTripPreview
-            focus={focusField}
-            block={focusBlock}
-            row={{
-              booking_fields: bookingFields,
-              ...draft,
-              slug: draft.slug || 'preview',
-              category,
-              subtype,
-              capacity: Number(draft.capacity),
-              spots_left: draft.spots_left ? Number(draft.spots_left) : draft.spots_left === '0' ? 0 : null,
-              price: draft.price ? Number(draft.price) : null,
-              badge: draft.badge || null,
-              options: options.filter((o) => o.name).map((o) => ({ ...o, price: Number(o.price) })),
-              compare,
-              gallery: photos,
-              cover_image: cover || photos[0] || null,
-              itinerary: itinerary.map((r) => [r.title, r.note]),
-              itinerary_mode: itinMode,
-              included,
-              excluded,
-              required_items: requiredItems.filter((r) => r.title).map((r) => [r.title, r.note]),
-            }}
-          />
           </div>
         </section>
 
