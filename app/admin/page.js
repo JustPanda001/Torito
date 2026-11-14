@@ -15,6 +15,8 @@ import PairListEditor from '@/components/PairListEditor';
 import InclusionEditor from '@/components/InclusionEditor';
 import BookingQuestionsEditor from '@/components/BookingQuestionsEditor';
 import OptionsEditor from '@/components/OptionsEditor';
+import PackageEditor, { packageEntryFrom } from '@/components/PackageEditor';
+import { PACKAGE, packageSteps } from '@/lib/packageBuilder';
 import PlaceSearch from '@/components/PlaceSearch';
 import AdminNav from '@/components/AdminNav';
 import AdminTripPreview, { FIELD_BLOCK } from '@/components/AdminTripPreview';
@@ -144,6 +146,8 @@ export default function AdminPage() {
   // versions of the service (10 min / 20 min flight) and the table comparing them
   const [options, setOptions] = useState([]);
   const [compare, setCompare] = useState([]);
+  // build-your-own package steps (empty = a normal trip)
+  const [pkgSteps, setPkgSteps] = useState([]);
   // set once a timed service's time question is removed on purpose, so the
   // default times are not put back when the trip is saved or reopened
   const [noTimes, setNoTimes] = useState(false);
@@ -281,8 +285,10 @@ export default function AdminPage() {
       // own boxes, not as a question
       const saved = raw.find((q) => q?.type === HOURLY_RATES)?.rates;
       setRates(noRates().map((_, i) => (Array.isArray(saved) && saved[i] != null ? String(saved[i]) : '')));
+      // the package steps are another hidden entry, edited in PackageEditor
+      setPkgSteps(packageSteps({ booking_fields: raw }) ?? []);
       setBookingFields(withTimeQuestion(
-        raw.filter((q) => q?.type !== NO_TIMES && q?.type !== HOURLY_RATES),
+        raw.filter((q) => q?.type !== NO_TIMES && q?.type !== HOURLY_RATES && q?.type !== PACKAGE),
         tour.category, tour.subtype, optedOut,
         Array.isArray(saved) && saved.length ? saved.length : (parseGroupSize(tour.group_size)?.max ?? DEFAULT_LESSON_GROUP),
       ));
@@ -362,6 +368,7 @@ export default function AdminPage() {
     setGroupText('');
     setOptions([]);
     setCompare([]);
+    setPkgSteps([]);
     setItinMode('days');
     form.current?.reset();
     syncPreview();
@@ -440,6 +447,10 @@ export default function AdminPage() {
       .filter((q) => q.label && (q.type !== 'choice' || q.options.length > 0));
     if (noTimes && isTimed(row) && !row.booking_fields.some(isTimeQuestion)) {
       row.booking_fields.push({ label: 'no times', type: NO_TIMES });
+    }
+    if (!lessonForm) {
+      const entry = packageEntryFrom(pkgSteps);
+      if (entry) row.booking_fields.push(entry);
     }
     // a lesson's rate table: one rate per group size up to Group size's
     // maximum, all filled in, or none at all
@@ -758,6 +769,12 @@ export default function AdminPage() {
                 onChange={(o, c) => { setOptions(o); setCompare(c); }}
               />
             </section>
+
+            {!lessonForm && (
+              <section className="admin-section" data-pv="booking">
+                <PackageEditor steps={pkgSteps} onChange={setPkgSteps} />
+              </section>
+            )}
 
             <section className="admin-section" data-pv="booking">
               <BookingQuestionsEditor rows={bookingFields} onChange={editQuestions} />

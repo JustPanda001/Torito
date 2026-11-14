@@ -25,6 +25,7 @@ import { answersComplete, bookingQuestions, initialAnswer, numberBounds, packAns
 import { requiredItems } from '@/lib/requiredItems';
 import { isBookable } from '@/lib/bookable';
 import { bookingTitle, bookingTotal, hourlyRate, unitPrice } from '@/lib/pricing';
+import { packageSteps, packageAnswers } from '@/lib/packageBuilder';
 import '@/app/styles/lesson-pricing.css';
 import { useT } from '@/lib/i18n';
 import { refreshBadges } from '@/lib/badges';
@@ -128,7 +129,9 @@ function Receipt({ receipt, email }) {
 }
 
 // option: the version picked on the trip page, if the service has several
-export default function BookingModal({ tour, option = null, onClose }) {
+// pkg: the build-your-own plan picked on the trip page, { stepTitle: optionName }
+export default function BookingModal({ tour, option = null, pkg = null, onClose }) {
+  const planLines = Object.entries(packageAnswers(packageSteps(tour) ?? [], pkg));
   const { t, lang } = useT();
   // trip text in the visitor's language, for display only — the slug, price
   // and the title sent to the team come from `tour`
@@ -272,6 +275,8 @@ export default function BookingModal({ tour, option = null, onClose }) {
           tour_title: bookingTitle(tour, option),
           // the server prices the booking from this option's price in the database
           option: option?.name ?? null,
+          // option names only; the server prices them from the trip's own list
+          package: requestKind === 'waitlist' ? null : pkg,
           kind: requestKind,
           // a plain YYYY-MM-DD, built locally: toISOString() would shift the
           // date backwards for anyone east of UTC, which is everyone here
@@ -343,7 +348,7 @@ export default function BookingModal({ tour, option = null, onClose }) {
   const blocked = !isBookable(tour);
   useEffect(() => { if (blocked) onClose(); }, [blocked, onClose]);
 
-  const total = bookingTotal(tour, option, people, rates ? hours : null);
+  const total = bookingTotal(tour, option, people, rates ? hours : null, pkg);
   // places still open on the chosen departure, once other bookings count
   const daySeats = date && !timed && tour.capacity
     ? Math.max(0, Math.min(seats, tour.capacity - avail.bookedOn(date)))
@@ -405,6 +410,9 @@ export default function BookingModal({ tour, option = null, onClose }) {
                   : timed ? t('booking.titleTime') : t('booking.title')}
             </h2>
             <p className="bm-sub">{tripName}{option && <> · <strong>{option.name}</strong></>}</p>
+            {planLines.length > 0 && (
+              <p className="bm-sub bm-plan">{planLines.map(([, v]) => v).join(' · ')}</p>
+            )}
           </div>
           <button type="button" className="bm-close" aria-label={t('booking.close')} onClick={onClose}>×</button>
         </div>
@@ -466,6 +474,9 @@ export default function BookingModal({ tour, option = null, onClose }) {
                 {rates && <div className="bm-line"><span>{t('booking.hoursLabel')}</span><span>{hours}</span></div>}
                 {builtInLessonQs && <div className="bm-line"><span>{t('booking.level')}</span><span>{t(LEVEL_KEYS[level] ?? level)}</span></div>}
                 {builtInLessonQs && <div className="bm-line"><span>{t('booking.lesson')}</span><span>{t(KIND_KEYS[kind] ?? kind)}</span></div>}
+                {planLines.map(([label, value]) => (
+                  <div className="bm-line" key={`p-${label}`}><span>{label}</span><span>{value}</span></div>
+                ))}
                 {Object.entries(packAnswers(questions, answers)).map(([label, value]) => (
                   <div className="bm-line" key={label}><span>{label}</span><span>{value}</span></div>
                 ))}

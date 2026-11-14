@@ -32,6 +32,8 @@ import { filled } from '@/lib/filled';
 import { useT } from '@/lib/i18n';
 import { localizeTour } from '@/lib/trip-translations';
 import { hourlyRates } from '@/lib/lessons';
+import PackageBuilder from '@/components/PackageBuilder';
+import { packageSteps, defaultChoices } from '@/lib/packageBuilder';
 
 // date locale per site language
 const DATE_LOCALE = { en: 'en-GB', ka: 'ka-GE', ru: 'ru-RU', zh: 'zh-CN' };
@@ -96,6 +98,8 @@ export default function TourPage({ params }) {
   const [booking, setBooking] = useState(false);
   // which of the service's options is picked; the first one to begin with
   const [optIdx, setOptIdx] = useState(0);
+  // build-your-own trips: the visitor's picks, null until they touch one
+  const [pkgPicks, setPkgPicks] = useState(null);
   // which button a signed-out visitor pressed: 'book', 'rate', or null
   const [gate, setGate] = useState(null);
   // undefined while we are still asking; null means signed out
@@ -194,6 +198,9 @@ export default function TourPage({ params }) {
   const chosen = options[Math.min(optIdx, options.length - 1)] ?? null;
   const rows = compareRows(tour, options.length);
   const showCompare = options.length > 1;
+  const steps = packageSteps(tour);
+  const pkg = steps ? (pkgPicks ?? defaultChoices(steps)) : null;
+  const toBuilder = () => document.getElementById('build')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   const learnMore = () => document.getElementById('compare')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
   const facts = allFacts.filter(([, , value]) => filled(value));
@@ -328,9 +335,10 @@ export default function TourPage({ params }) {
                 type="button"
                 className={`book-btn${full ? ' secondary' : ''}`}
                 // still checking the account: wait rather than wrongly asking them to sign in
-                onClick={() => (profile ? setBooking(true) : profile === null && setGate('book'))}
+                onClick={() => (steps && !full ? toBuilder()
+                  : profile ? setBooking(true) : profile === null && setGate('book'))}
               >
-                {full ? t('listing.waitlist') : lesson ? t('trip.bookLesson') : isTimed(tour) ? t('trip.bookTime') : t('trip.bookSpot')}
+                {steps && !full ? 'Build your week' : full ? t('listing.waitlist') : lesson ? t('trip.bookLesson') : isTimed(tour) ? t('trip.bookTime') : t('trip.bookSpot')}
               </button>
             ) : (
               <>
@@ -340,6 +348,17 @@ export default function TourPage({ params }) {
             <button type="button" className="book-btn secondary" onClick={() => openChat(tour)}>{t('detail.ask')}</button>
           </aside>
         </div>
+
+        {steps && bookable && !full && (
+          <PackageBuilder
+            steps={steps}
+            base={chosen ? chosen.price : tour.price}
+            choices={pkg}
+            onChange={setPkgPicks}
+            bookLabel={t('trip.bookSpot')}
+            onBook={() => (profile ? setBooking(true) : profile === null && setGate('book'))}
+          />
+        )}
 
         <section className="detail-block">
           <h2>{lesson ? t('trip.aboutLessons') : t('detail.about')}</h2>
@@ -499,7 +518,7 @@ export default function TourPage({ params }) {
         </section>
       </main>
 
-      {booking && bookable && <BookingModal tour={tour} option={chosen} onClose={() => setBooking(false)} />}
+      {booking && bookable && <BookingModal tour={tour} option={chosen} pkg={pkg} onClose={() => setBooking(false)} />}
       {rating && (
         <ReviewModal
           tour={tour}

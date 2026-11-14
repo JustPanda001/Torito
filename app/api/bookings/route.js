@@ -30,6 +30,7 @@ import {
 } from '@/lib/lessons';
 import { sendBookingEmail } from '@/lib/bookingEmail';
 import { bookingQuestions, numberBounds } from '@/lib/bookingQuestions';
+import { packageSteps, packageExtra, packageAnswers } from '@/lib/packageBuilder';
 
 export const runtime = 'nodejs';
 
@@ -266,12 +267,21 @@ export async function POST(request) {
     }
   }
 
+  // A build-your-own package: every required step picked, every pick one of
+  // the trip's own options. Only the names come from the browser.
+  const steps = kind !== 'waitlist' ? packageSteps(trip) : null;
+  const pkg = steps && body.package && typeof body.package === 'object' && !Array.isArray(body.package)
+    ? body.package : null;
+  if (steps && packageExtra(steps, pkg, people) == null) {
+    return Response.json({ error: 'Please pick an option for every step of the package.' }, { status: 400 });
+  }
+
   // A trip with no price set (or a waitlist) has no total, rather than a
   // made-up 0. Rounded to cents so float noise never reaches the row.
   const unit = unitPrice(trip, option);
   const priced = kind !== 'waitlist'
-    && (rates != null || (unit != null && unit !== '' && Number.isFinite(Number(unit))));
-  const total = priced ? Math.round(bookingTotal(trip, option, people, hours) * 100) / 100 : null;
+    && (rates != null || steps != null || (unit != null && unit !== '' && Number.isFinite(Number(unit))));
+  const total = priced ? Math.round(bookingTotal(trip, option, people, hours, pkg) * 100) / 100 : null;
   if (total != null && Number.isFinite(body.total) && body.total !== total) {
     console.warn(`Booking total differs: browser said ${body.total}, server says ${total} (${slug})`);
   }
@@ -290,7 +300,10 @@ export async function POST(request) {
     // them); ours, checked above, win over anything the post put there
     answers: hours != null
       ? { ...(cleanAnswers(body.answers) ?? {}), [HOURS_ANSWER]: String(hours) }
-      : cleanAnswers(body.answers),
+      : steps
+        // the package plan, as checked above, wins over anything posted
+        ? { ...(cleanAnswers(body.answers) ?? {}), ...packageAnswers(steps, pkg) }
+        : cleanAnswers(body.answers),
     confirmed_items: cleanItems(body.confirmed_items),
     user_id: user.id,
     name: clean(body.name, 120) ?? clean(user.user_metadata?.full_name, 120),
