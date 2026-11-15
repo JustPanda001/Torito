@@ -2680,3 +2680,7 @@ a.feature-img:hover img{transform:scale(1.04)}
 .pkg-ed-link{all:unset;cursor:pointer;font-size:.88rem;font-weight:600;color:var(--green-500);justify-self:start;white-space:nowrap}
 .pkg-ed-link:hover{text-decoration:underline}
 .pkg-ed-row select{flex:none}
+/* a pop-up keeps the wheel to itself: the page behind never scrolls */
+html:has(body.modal-open){overflow:hidden}
+.modal-backdrop{overscroll-behavior:contain}
+.pkg-modal,.booking-modal{overscroll-behavior:contain}
