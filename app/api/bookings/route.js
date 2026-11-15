@@ -38,6 +38,7 @@ export const runtime = 'nodejs';
 const {
   NEXT_PUBLIC_SUPABASE_URL: SUPABASE_URL,
   NEXT_PUBLIC_SUPABASE_ANON_KEY: SUPABASE_KEY,
+  SUPABASE_SERVICE_ROLE_KEY,
   TELEGRAM_BOT_TOKEN,
   TELEGRAM_CHAT_ID,
   SHEETS_WEBHOOK_URL,
@@ -324,8 +325,19 @@ export async function POST(request) {
   if (clash) return Response.json({ error: clash }, { status: 409 });
   // the row is the visitor's own, so "read own bookings" lets it come back —
   // that is where the reference comes from
-  const { data: saved, error } = await supabase
-    .from('bookings').insert(row).select('id, created_at, status').single();
+  // Saved with the service key, here and only here (SEC-01): visitors can no
+  // longer insert into bookings themselves, so the price, title and email are
+  // always the ones this route worked out. user_id is the verified caller.
+  // The rate-limit trigger still counts this account's requests.
+  if (!SUPABASE_SERVICE_ROLE_KEY) {
+    console.error('Booking insert: SUPABASE_SERVICE_ROLE_KEY is not set.');
+    return Response.json({ error: 'Could not save the request.' }, { status: 500 });
+  }
+  const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const { data: saved, error } = await admin
+    .from('bookings').insert({ ...row, user_id: user.id }).select('id, created_at, status').single();
 
   if (error) {
     // two requests sent at the same moment can both pass the count above; the

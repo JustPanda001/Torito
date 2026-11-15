@@ -19,6 +19,7 @@ export const runtime = 'nodejs';
 const {
   NEXT_PUBLIC_SUPABASE_URL: SUPABASE_URL,
   NEXT_PUBLIC_SUPABASE_ANON_KEY: SUPABASE_KEY,
+  SUPABASE_SERVICE_ROLE_KEY,
   SHEETS_WEBHOOK_URL,
   SHEETS_WEBHOOK_SECRET,
 } = process.env;
@@ -82,7 +83,7 @@ export async function POST(request) {
 
   const { data, error } = await supabase
     .from('bookings').update({ status }).eq('id', id)
-    .select('id, status, tour_slug, tour_title, kind, wanted_date, lesson_time, people, skill_level, lesson_type, answers, total, name, email');
+    .select('id, status, tour_slug, tour_title, kind, wanted_date, lesson_time, people, skill_level, lesson_type, answers, total, name, email, user_id');
   if (error) {
     console.error('Booking status update failed:', error.message);
     return Response.json({ error: error.message || 'Could not save the change.' }, { status: 500 });
@@ -98,10 +99,13 @@ export async function POST(request) {
   // the customer hears about Confirm and Decline once; Undo (back to new) is silent
   const notify = (saved.status === 'confirmed' || saved.status === 'declined')
     && before?.status !== saved.status;
+  // the email goes to the customer's account address, never the one stored on
+  // the booking row (SEC-01); no account address, no email
+  const to = notify ? await accountEmail(saved.user_id) : null;
 
   const [sheet, mail] = await Promise.allSettled([
     updateSheet(ref, saved.status),
-    notify ? sendBookingEmail({ ...saved, ref }, site, saved.status) : Promise.resolve(false),
+    notify && to ? sendBookingEmail({ ...saved, email: to, ref }, site, saved.status) : Promise.resolve(false),
   ]);
   if (sheet.status === 'rejected') console.error('Sheet status update failed:', sheet.reason?.message);
   if (mail.status === 'rejected') console.error('Status email failed:', mail.reason?.message);
@@ -131,4 +135,15 @@ async function updateSheet(ref, status) {
   } else if (!res.ok || reply !== 'ok') {
     console.error('Sheet status update failed:', res.status, reply.slice(0, 120));
   }
+}
+
+/** The verified email of the account that made a booking, or null. */
+async function accountEmail(userId) {
+  if (!userId || !SUPABASE_SERVICE_ROLE_KEY) return null;
+  const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const { data, error } = await admin.auth.admin.getUserById(userId);
+  if (error) { console.error('Account email lookup failed:', error.message); return null; }
+  return data?.user?.email ?? null;
 }

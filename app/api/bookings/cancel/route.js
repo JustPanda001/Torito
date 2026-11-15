@@ -140,7 +140,8 @@ export async function POST(request) {
 
   const ref = bookingRef(booking.id);
   const site = new URL(request.url).origin;
-  const row = { ...booking, status: 'cancelled', ref, email: booking.email || user.email || null };
+  // the account's own verified address, never the one stored on the row (SEC-01)
+  const row = { ...booking, status: 'cancelled', ref, email: user.email ?? null };
 
   const [mail, telegram, sheet] = await Promise.allSettled([
     sendBookingEmail(row, site, 'cancelled'),
