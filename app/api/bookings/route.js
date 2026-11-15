@@ -31,6 +31,7 @@ import {
 import { sendBookingEmail } from '@/lib/bookingEmail';
 import { bookingQuestions, numberBounds } from '@/lib/bookingQuestions';
 import { packageSteps, packageExtra, packageAnswers } from '@/lib/packageBuilder';
+import { groupMax, groupsLimit } from '@/lib/groups';
 
 export const runtime = 'nodejs';
 
@@ -239,6 +240,11 @@ export async function POST(request) {
 
   const people = body.people ?? 1;
 
+  // one booking is one group: never more people than the trip's group size
+  if (kind !== 'waitlist' && people > groupMax(trip)) {
+    return Response.json({ error: `One booking can be at most ${groupMax(trip)} people.` }, { status: 400 });
+  }
+
   // A number question with a lowest / highest set must be answered inside it;
   // the counter enforces this in the browser, this keeps a hand-made request out.
   if (kind !== 'waitlist' && body.answers && typeof body.answers === 'object') {
@@ -352,7 +358,7 @@ export async function POST(request) {
 /**
  * Why this request cannot be taken, or null when it can. A timed booking
  * (lesson, snowmobile, paragliding) owns its slot outright; a trip is refused
- * once the departure would go over capacity. Without booked_slots() in the
+ * once its date holds as many groups as "Groups at the same time" allows. Without booked_slots() in the
  * database this lets everything through, as before.
  */
 async function alreadyTaken(supabase, row, tour, hours) {
@@ -372,22 +378,20 @@ async function alreadyTaken(supabase, row, tour, hours) {
   const sameDay = data.filter((r) => r.wanted_date === row.wanted_date);
 
   const { data: trip } = await supabase
-    .from('tours').select('capacity, slot_limit').eq('slug', row.tour_slug).maybeSingle();
+    .from('tours').select('slot_limit').eq('slug', row.tour_slug).maybeSingle();
+  const limit = groupsLimit(trip);
+  if (limit === Infinity) return null;
 
   if (row.lesson_time) {
-    if (trip?.slot_limit === 'unlimited') return null;
-    const limit = Number(trip?.slot_limit) || 1;
     // a lesson holds every hour it covers (start + hours − 1)
     return spanFull(sameDay, row.lesson_time, hours ?? 1, limit)
       ? 'Sorry — that time was just booked by someone else. Please pick another.'
       : null;
   }
 
-  if (!trip?.capacity) return null;
-
-  const booked = sameDay.reduce((sum, r) => sum + (r.people ?? 0), 0);
-  return booked + row.people > trip.capacity
-    ? `Sorry — only ${Math.max(0, trip.capacity - booked)} places are left on that date.`
+  // a trip's date takes `limit` groups, whatever their size
+  return sameDay.length >= limit
+    ? 'Sorry — that date is fully booked. Please pick another.'
     : null;
 }
 

@@ -76,7 +76,7 @@ const OPTION_HINTS = {
 // saved as null, rather than sitting empty on the trip page.
 const LESSON_FIELDS = new Set([
   'title', 'slug', 'subtitle', 'category', 'subtype', 'region', 'price',
-  'duration', 'capacity', 'spots_left', 'season', 'season_from', 'season_to',
+  'duration', 'spots_left', 'season', 'season_from', 'season_to',
   'badge', 'group_size', 'lat', 'lng', 'slot_limit',
 ]);
 
@@ -84,7 +84,7 @@ const LESSON_FIELDS = new Set([
 // order here is the order of the page it produces
 const SECTIONS = [
   ['The basics', 'Title and category decide everything else', ['title', 'category', 'subtype', 'slug', 'subtitle', 'price']],
-  ['The facts panel', 'The list beside the photos on the trip page', ['distance', 'duration', 'difficulty', 'capacity', 'slot_limit', 'spots_left', 'elevation_gain', 'season', 'season_from', 'season_to', 'stay', 'languages', 'badge']],
+  ['The facts panel', 'The list beside the photos on the trip page', ['distance', 'duration', 'difficulty', 'slot_limit', 'spots_left', 'elevation_gain', 'season', 'season_from', 'season_to', 'stay', 'languages', 'badge']],
   ['Getting there', 'The grid under "About this trip"', ['departure_point', 'departure_time', 'return_info', 'transport', 'group_size', 'walking_per_day']],
   ['On the map', 'Drives the little map and the weather tile', ['region', 'lat', 'lng', 'strava']],
 ];
@@ -104,10 +104,9 @@ const FIELDS = [
   ['price', 'Price per person', { type: 'number', min: 0, placeholder: '890' }],
   ['distance', 'Distance', { placeholder: '58 km' }],
   ['duration', 'Duration', { placeholder: '4 days' }],
-  ['capacity', 'Capacity *', { type: 'number', min: 1, required: true, defaultValue: 10 }],
   // team-only: never shown on the trip page. How many separate bookings one
   // time slot takes — one per free instructor or pilot.
-  ['slot_limit', 'Bookings per time slot', { options: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '15', '20', 'unlimited'], hint: 'Team only, not shown to customers. For lessons, snowmobile and paragliding' }],
+  ['slot_limit', 'Groups at the same time', { options: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '15', '20', 'unlimited'], hint: 'How many separate groups can book the same hour (lessons, snowmobile, paragliding) or the same date (trips). Team only' }],
   // Empty = open, no number shown. 0 = fully booked, only the waitlist is
   // offered. A number = shown as "N spots left" and caps one booking's size.
   ['spots_left', 'Spots left', {
@@ -122,7 +121,7 @@ const FIELDS = [
   ['badge', 'Badge', { options: ['', 'top', 'new'] }],
   ['departure_time', 'Departure time', { placeholder: '07:00' }],
   ['return_info', 'Return', { placeholder: 'Day 4, ~21:00 Tbilisi' }],
-  ['group_size', 'Group size', { group: true }],
+  ['group_size', 'Group size', { group: true, hint: 'People in one group (one booking). The top number is the most one booking can bring' }],
   ['walking_per_day', 'Walking per day', { placeholder: '5 – 7 hours' }],
 ];
 
@@ -407,7 +406,6 @@ export default function AdminPage() {
     const row = Object.fromEntries(new FormData(e.currentTarget).entries());
 
     row.published = e.currentTarget.elements.published.checked;
-    row.capacity = Number(row.capacity);
     row.spots_left = row.spots_left === '' ? null : Number(row.spots_left);
     row.price = row.price === '' ? null : Number(row.price);
 
@@ -842,7 +840,7 @@ export default function AdminPage() {
                 <div className="admin-row-main">
                   <strong>{t.title}</strong>
                   <span>
-                    {t.region || '—'} · {t.duration || '—'} · {t.capacity} people
+                    {t.region || '—'} · {t.duration || '—'}{t.group_size ? ` · ${t.group_size}` : ''}
                     {!t.published && ' · draft'}
                   </span>
                 </div>

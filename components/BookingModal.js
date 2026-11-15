@@ -26,6 +26,7 @@ import { requiredItems } from '@/lib/requiredItems';
 import { isBookable } from '@/lib/bookable';
 import { bookingTitle, bookingTotal, hourlyRate, unitPrice } from '@/lib/pricing';
 import { packageSteps, packageAnswers } from '@/lib/packageBuilder';
+import { groupMax } from '@/lib/groups';
 import '@/app/styles/lesson-pricing.css';
 import { useT } from '@/lib/i18n';
 import { refreshBadges } from '@/lib/badges';
@@ -139,7 +140,8 @@ export default function BookingModal({ tour, option = null, pkg = null, onClose 
   const tripName = view.full_title || view.title;
 
   const price = unitPrice(tour, option);
-  const seats = tour.spots_left ?? tour.capacity;
+  // one booking is one group: at most the group size, or the spots left if fewer
+  const seats = Math.min(tour.spots_left ?? Infinity, groupMax(tour));
   const full = seats === 0;
 
   const lesson = isLesson(tour);
@@ -350,9 +352,7 @@ export default function BookingModal({ tour, option = null, pkg = null, onClose 
 
   const total = bookingTotal(tour, option, people, rates ? hours : null, pkg);
   // places still open on the chosen departure, once other bookings count
-  const daySeats = date && !timed && tour.capacity
-    ? Math.max(0, Math.min(seats, tour.capacity - avail.bookedOn(date)))
-    : seats;
+  const daySeats = seats;
   // a rate table covers groups up to its size (4), never more
   const groupTop = rates ? Math.min(rates.length, peopleQ?.max ?? rates.length) : null;
   const maxPeople = rates
@@ -382,10 +382,6 @@ export default function BookingModal({ tour, option = null, pkg = null, onClose 
   function pickDate(d) {
     setDate(d);
     if (time && (avail.timeTaken(d, time, lessonSpan) || avail.tooLong(time, lessonSpan) || slotTimeState(d, time))) setTime('');
-    if (!timed && tour.capacity) {
-      const left = Math.max(1, Math.min(seats, tour.capacity - avail.bookedOn(d)));
-      setPeople((p) => Math.min(p, left));
-    }
   }
 
   if (blocked) return null;
