@@ -36,7 +36,7 @@ const GROUP_SIZE_OPTIONS = Array.from({ length: 30 }, (_, i) => i + 1);
 // rate boxes a lesson shows before a group size is picked
 const DEFAULT_LESSON_GROUP = 4;
 import { ITINERARY_MODES, itineraryMode, stepLabel } from '@/lib/itinerary';
-import { CATEGORIES } from '@/lib/catalog';
+import { CATEGORIES, categoryOf, subtypeOf } from '@/lib/catalog';
 
 // what the dropdowns show; the stored values stay short
 const OPTION_LABELS = {
@@ -126,6 +126,24 @@ const FIELDS = [
   ['walking_per_day', 'Walking per day', { placeholder: '5 – 7 hours' }],
 ];
 
+// the "Existing tours" filter: winter types first, then the other categories
+const LIST_FILTERS = [
+  ['all', 'All'],
+  ['lessons', 'Lessons'],
+  ['freeride', 'Freeride'],
+  ['freestyle', 'Freestyle'],
+  ['snowmobile', 'Snowmobile'],
+  ['paragliding', 'Paragliding'],
+  ['hiking', 'Hiking'],
+  ['camping', 'Camping'],
+  ['mountaineering', 'Mountaineering'],
+];
+function matchesListFilter(tour, key) {
+  if (key === 'all') return true;
+  if (['hiking', 'camping', 'mountaineering'].includes(key)) return categoryOf(tour) === key;
+  return categoryOf(tour) === 'ski' && subtypeOf(tour) === key;
+}
+
 export default function AdminPage() {
   const [profile, setProfile] = useState(undefined);   // undefined = still checking
   const [tours, setTours] = useState([]);
@@ -148,6 +166,8 @@ export default function AdminPage() {
   const [compare, setCompare] = useState([]);
   // build-your-own package steps (empty = a normal trip)
   const [pkgSteps, setPkgSteps] = useState([]);
+  // which kind of trip the "Existing tours" list shows
+  const [listFilter, setListFilter] = useState('all');
   // set once a timed service's time question is removed on purpose, so the
   // default times are not put back when the trip is saved or reopened
   const [noTimes, setNoTimes] = useState(false);
@@ -802,8 +822,20 @@ export default function AdminPage() {
 
         <section className="detail-block">
           <h2>Existing tours</h2>
+          {/* filter by what the trip is: the winter types, then the summer categories */}
+          <div className="admin-filter" role="group" aria-label="Show">
+            {LIST_FILTERS.map(([key, label]) => {
+              const n = tours.filter((t) => matchesListFilter(t, key)).length;
+              if (key !== 'all' && n === 0) return null;
+              return (
+                <button type="button" key={key} className={`chip${listFilter === key ? ' active' : ''}`} onClick={() => setListFilter(key)}>
+                  {label} <span className="admin-filter-n">{n}</span>
+                </button>
+              );
+            })}
+          </div>
           {tours.length === 0 && <p className="form-note">No tours yet. Add one above.</p>}
-          {tours.map((t) => (
+          {tours.filter((t) => matchesListFilter(t, listFilter)).map((t) => (
             <div className="admin-row" key={t.id}>
               <Link className="admin-row-link" href={`/activities/${t.slug}`} target="_blank" rel="noreferrer">
                 <img src={t.cover_image || '/assets/hero.svg'} alt="" />

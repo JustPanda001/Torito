@@ -139,3 +139,6 @@
 @media (max-width: 640px) {
   .admin-page .admin-grid { grid-template-columns: minmax(0, 1fr); }
 }
+.admin-page .admin-edit.no-preview{grid-template-columns:minmax(0,1fr);max-width:none}
+.admin-filter{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 16px}
+.admin-filter-n{opacity:.7;font-size:.85em;margin-left:2px}
