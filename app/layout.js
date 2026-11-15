@@ -9,6 +9,7 @@ import './styles/trip.css';
 import './styles/contrast.css';
 import './styles/layout.css';
 import './styles/admin.css';
+import './styles/palette.css';
 import OfflineBanner from '@/components/OfflineBanner';
 import AccountPrompt from '@/components/AccountPrompt';
 import ChatWidget from '@/components/ChatWidget';

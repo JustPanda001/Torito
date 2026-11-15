@@ -2684,3 +2684,12 @@ a.feature-img:hover img{transform:scale(1.04)}
 html:has(body.modal-open){overflow:hidden}
 .modal-backdrop{overscroll-behavior:contain}
 .pkg-modal,.booking-modal{overscroll-behavior:contain}
+/* logo: the rider hops in from the t and lands mid-air over the word */
+.mtani-rider{transform-box:fill-box;transform-origin:50% 100%;animation:mtaniHop .9s cubic-bezier(.3,.7,.4,1) .2s both}
+@keyframes mtaniHop{
+  0%{transform:translate(-47px,40px) rotate(-14deg) scale(.85);opacity:0}
+  20%{opacity:1}
+  60%{transform:translate(-8px,-6px) rotate(4deg) scale(1.03)}
+  100%{transform:none}
+}
+@media (prefers-reduced-motion:reduce){.mtani-rider{animation:none}}

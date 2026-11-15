@@ -1,0 +1,63 @@
+/* Blue + orange palette (trial, local only, 2026-11-15).
+   Light: ~70% white, ~15% light blue #3C6EA5 (tints, chips, soft panels),
+   ~10% dark blue #064F97 (buttons, links, headings accents), ~5% orange
+   #F26722 (badges, live dot, stars, "See all"). Dark mode keeps the site's
+   dark surfaces and swaps only the accents to the same blues and orange.
+   Delete this file and its import in app/layout.js to go back. */
+
+:root{
+  --light-blue:#3C6EA5;
+  --dark-blue:#064F97;
+  --orange:#F26722;
+
+  /* the old green scale now runs light blue -> dark blue */
+  --green-50:#eef3f9;
+  --green-100:#dce6f2;
+  --green-300:#9fb9d8;
+  --green-500:#3C6EA5;
+  --green-700:#064F97;
+  --blue-50:#f2f6fb;
+  --blue-100:#e1eaf5;
+  --blue-300:#b3c8e2;
+
+  --ink:#12304f;
+  --ink-soft:#56708c;
+  --page-bg:#ffffff;
+  --surface-2:#f6f9fc;
+  --line:#dce6f2;
+
+  --btn-green:#064F97;
+  --btn-green-hover:#043d75;
+  --text-green:#064F97;
+}
+
+:root[data-theme="dark"]{
+  /* surfaces stay as they are; only the colours change */
+  --green-50:#142536;
+  --green-100:#1a3048;
+  --green-300:#2d4f78;
+  --green-500:#3C6EA5;
+  --green-700:#8db0dc;
+  --blue-50:#142231;
+  --blue-100:#192c40;
+  --blue-300:#2b4766;
+  --btn-green:#064F97;
+  --btn-green-hover:#0a5fb3;
+  --text-green:#8db0dc;
+}
+
+/* the 5% orange */
+.badge,.badge-top,.badge-new{background:var(--orange);color:#fff}
+.hot-dot{background:var(--orange)}
+.stars,.star-btn.on{color:var(--orange)}
+.hot-btn,.hot-btn:hover{background:var(--orange);border-color:var(--orange);color:#fff}
+.hot-btn:hover{filter:brightness(.93)}
+.hero-kicker{color:#fff}
+.winter-kicker,:root:not([data-theme="dark"]) .winter-kicker{color:var(--orange)}
+/* the season pills over the feature texts */
+.tag{background:color-mix(in srgb,var(--orange) 18%,#fff);color:#b4461a}
+:root[data-theme="dark"] .tag{background:color-mix(in srgb,var(--orange) 18%,var(--surface));color:#ff9a66}
+
+/* "See the climbs →" and the other feature buttons: solid dark blue, white text */
+a.link-more,a.link-more:visited,:root[data-theme="dark"] a.link-more{background-color:var(--dark-blue);border-color:var(--dark-blue);color:#fff}
+a.link-more:hover,:root[data-theme="dark"] a.link-more:hover{background-color:#043d75;border-color:#043d75;color:#fff;filter:none}
