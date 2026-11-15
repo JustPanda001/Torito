@@ -25,11 +25,15 @@ const WINTER = [
   ['paragliding', [A + 'gudauri-paraglide-800.webp', null, 800, 413]],
 ];
 
-// [image, label, tours-page category]
+// Everything the site offers, for the sliding row: [image, label key, link]
 const ACTIVITIES = [
-  [[A + 'svaneti-history-800.webp', null, 800, 457], 'cat.hiking', 'hiking'],
-  [[A + 'camping fier.webp', null, 1000, 667], 'cat.camping', 'camping'],
-  [[A + 'sameba.webp', null, 474, 634], 'cat.mountaineering', 'mountaineering'],
+  [[A + 'skier-768.webp', null, 768, 512], 'winter.lessons', '/activities?cat=ski&type=lessons'],
+  [[A + 'trips/gudauri-1-800.webp', null, 800, 533], 'winter.freeride', '/activities?cat=ski&type=freeride'],
+  [[A + 'gudauri-1-800.webp', null, 800, 450], 'winter.snowmobile', '/activities?cat=ski&type=snowmobile'],
+  [[A + 'trips/gudauri-paragliding-1-800.webp', null, 800, 533], 'winter.paragliding', '/activities?cat=ski&type=paragliding'],
+  [[A + 'svaneti-history-800.webp', null, 800, 457], 'cat.hiking', '/activities?cat=hiking'],
+  [[A + 'camping fier.webp', null, 1000, 667], 'cat.camping', '/activities?cat=camping'],
+  [[A + 'sameba.webp', null, 474, 634], 'cat.mountaineering', '/activities?cat=mountaineering'],
 ];
 
 // One place for the loading attributes. "first" marks the single picture that
@@ -117,12 +121,22 @@ export default function HomePage() {
               {t('home.seeAll')} <span aria-hidden="true">→</span>
             </Link>
           </div>
-          <div className="activity-row">
-            {ACTIVITIES.map(([src, key, cat]) => (
-              <Link className="activity-card" href={`/activities?cat=${cat}`} key={key}>
-                <Pic p={src} /><span>{t(key)}</span>
-              </Link>
-            ))}
+          {/* slides right to left without stopping; the list is rendered twice
+              so the loop has no seam, and the copy is hidden from screen readers */}
+          <div className="activity-marquee">
+            <div className="activity-track">
+              {[0, 1].map((copy) => ACTIVITIES.map(([src, key, href]) => (
+                <Link
+                  className="activity-card"
+                  href={href}
+                  key={`${copy}-${key}`}
+                  aria-hidden={copy === 1 || undefined}
+                  tabIndex={copy === 1 ? -1 : undefined}
+                >
+                  <Pic p={src} /><span>{t(key)}</span>
+                </Link>
+              )))}
+            </div>
           </div>
         </section>
 

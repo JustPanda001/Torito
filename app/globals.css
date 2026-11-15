@@ -2693,3 +2693,30 @@ html:has(body.modal-open){overflow:hidden}
   100%{transform:none}
 }
 @media (prefers-reduced-motion:reduce){.mtani-rider{animation:none}}
+
+/* ---------- home: the sliding row of everything we offer ---------- */
+.activity-marquee{
+  overflow:hidden;padding:10px 0 26px;margin:-10px 0 -26px;
+  /* cards fade out as they reach the left edge, and fade in on the right */
+  -webkit-mask-image:linear-gradient(to right,transparent 0,#000 140px,#000 calc(100% - 70px),transparent 100%);
+          mask-image:linear-gradient(to right,transparent 0,#000 140px,#000 calc(100% - 70px),transparent 100%);
+}
+.activity-track{
+  display:flex;gap:18px;width:max-content;
+  animation:activitySlide 48s linear infinite;will-change:transform;
+}
+/* each copy is 7 cards + 7 gaps wide, so -50% minus half a gap lands exactly on the seam */
+@keyframes activitySlide{to{transform:translate3d(calc(-50% - 9px),0,0)}}
+.activity-marquee:hover .activity-track,.activity-marquee:focus-within .activity-track{animation-play-state:paused}
+.activity-track .activity-card{flex:0 0 clamp(220px,24vw,340px)}
+.js .activity-track .activity-card{opacity:1;transform:none}
+@media (max-width:640px){
+  .activity-marquee{-webkit-mask-image:linear-gradient(to right,transparent 0,#000 60px,#000 calc(100% - 30px),transparent 100%);mask-image:linear-gradient(to right,transparent 0,#000 60px,#000 calc(100% - 30px),transparent 100%)}
+  .activity-track{animation-duration:36s}
+}
+/* no motion wanted: a normal row you scroll sideways yourself */
+@media (prefers-reduced-motion:reduce){
+  .activity-marquee{overflow-x:auto;-webkit-mask-image:none;mask-image:none}
+  .activity-track{animation:none}
+  .activity-track .activity-card[aria-hidden]{display:none}
+}
