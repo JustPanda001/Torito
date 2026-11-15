@@ -2695,28 +2695,40 @@ html:has(body.modal-open){overflow:hidden}
 @media (prefers-reduced-motion:reduce){.mtani-rider{animation:none}}
 
 /* ---------- home: the sliding row of everything we offer ---------- */
-.activity-marquee{
-  overflow:hidden;padding:10px 0 26px;margin:-10px 0 -26px;
-  /* cards fade out as they reach the left edge, and fade in on the right */
-  -webkit-mask-image:linear-gradient(to right,transparent 0,#000 140px,#000 calc(100% - 70px),transparent 100%);
-          mask-image:linear-gradient(to right,transparent 0,#000 140px,#000 calc(100% - 70px),transparent 100%);
+/* moved by components/ActivityMarquee.js; it keeps moving even with reduced
+   motion on, because the owner wants it always moving */
+.activity-marquee{position:relative}
+.activity-window{
+  position:relative;overflow:hidden;padding:10px 0 26px;margin:-10px 0 -26px;
+  /* cards fade out at the left edge and fade in on the right */
+  -webkit-mask-image:linear-gradient(to right,transparent 0,#000 140px,#000 calc(100% - 90px),transparent 100%);
+          mask-image:linear-gradient(to right,transparent 0,#000 140px,#000 calc(100% - 90px),transparent 100%);
 }
-.activity-track{
-  display:flex;gap:18px;width:max-content;
-  animation:activitySlide 48s linear infinite;will-change:transform;
-}
-/* each copy is 7 cards + 7 gaps wide, so -50% minus half a gap lands exactly on the seam */
-@keyframes activitySlide{to{transform:translate3d(calc(-50% - 9px),0,0)}}
-.activity-marquee:hover .activity-track,.activity-marquee:focus-within .activity-track{animation-play-state:paused}
+.activity-track{display:flex;gap:18px;width:max-content;will-change:transform}
 .activity-track .activity-card{flex:0 0 clamp(220px,24vw,340px)}
-.js .activity-track .activity-card{opacity:1;transform:none}
-@media (max-width:640px){
-  .activity-marquee{-webkit-mask-image:linear-gradient(to right,transparent 0,#000 60px,#000 calc(100% - 30px),transparent 100%);mask-image:linear-gradient(to right,transparent 0,#000 60px,#000 calc(100% - 30px),transparent 100%)}
-  .activity-track{animation-duration:36s}
+.js .activity-track .activity-card,.js .reveal:not(.visible) .activity-track .activity-card{opacity:1;transform:none}
+/* a blur that grows toward each edge, on top of the fade */
+.marquee-blur{position:absolute;top:0;bottom:0;width:170px;pointer-events:none;z-index:2;
+  -webkit-backdrop-filter:blur(7px);backdrop-filter:blur(7px)}
+.marquee-blur.left{left:0;-webkit-mask-image:linear-gradient(to right,#000 25%,transparent);mask-image:linear-gradient(to right,#000 25%,transparent)}
+.marquee-blur.right{right:0;width:120px;-webkit-mask-image:linear-gradient(to left,#000 25%,transparent);mask-image:linear-gradient(to left,#000 25%,transparent)}
+/* the arrows sit over the edges, vertically centred on the cards */
+.marquee-arrow{
+  position:absolute;top:calc(50% - 8px);transform:translateY(-50%);z-index:3;
+  width:48px;height:48px;border-radius:50%;border:none;cursor:pointer;
+  display:grid;place-items:center;
+  background:var(--btn-green,#064F97);color:#fff;
+  box-shadow:0 6px 18px rgba(0,0,0,.28);
+  transition:transform .2s,filter .2s;
 }
-/* no motion wanted: a normal row you scroll sideways yourself */
-@media (prefers-reduced-motion:reduce){
-  .activity-marquee{overflow-x:auto;-webkit-mask-image:none;mask-image:none}
-  .activity-track{animation:none}
-  .activity-track .activity-card[aria-hidden]{display:none}
+.marquee-arrow:hover{filter:brightness(1.12);transform:translateY(-50%) scale(1.06)}
+.marquee-arrow:focus-visible{outline:3px solid var(--green-300);outline-offset:3px}
+.marquee-arrow svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+.marquee-arrow.prev{left:-6px}
+.marquee-arrow.next{right:-6px}
+@media (max-width:640px){
+  .activity-window{-webkit-mask-image:linear-gradient(to right,transparent 0,#000 60px,#000 calc(100% - 40px),transparent 100%);mask-image:linear-gradient(to right,transparent 0,#000 60px,#000 calc(100% - 40px),transparent 100%)}
+  .marquee-blur{width:80px}
+  .marquee-blur.right{width:60px}
+  .marquee-arrow{width:40px;height:40px}
 }

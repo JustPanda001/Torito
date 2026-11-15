@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import SiteHeader from '@/components/SiteHeader';
 import SiteFooter from '@/components/SiteFooter';
+import ActivityMarquee from '@/components/ActivityMarquee';
 import { useT } from '@/lib/i18n';
 
 // Optimised copies live next to the originals in /public/assets (made with
@@ -121,23 +122,13 @@ export default function HomePage() {
               {t('home.seeAll')} <span aria-hidden="true">→</span>
             </Link>
           </div>
-          {/* slides right to left without stopping; the list is rendered twice
-              so the loop has no seam, and the copy is hidden from screen readers */}
-          <div className="activity-marquee">
-            <div className="activity-track">
-              {[0, 1].map((copy) => ACTIVITIES.map(([src, key, href]) => (
-                <Link
-                  className="activity-card"
-                  href={href}
-                  key={`${copy}-${key}`}
-                  aria-hidden={copy === 1 || undefined}
-                  tabIndex={copy === 1 ? -1 : undefined}
-                >
-                  <Pic p={src} /><span>{t(key)}</span>
-                </Link>
-              )))}
-            </div>
-          </div>
+          <ActivityMarquee
+            items={ACTIVITIES.map(([src, key, href]) => [src, t(key), href])}
+            renderImage={(src) => <Pic p={src} />}
+            label={t('home.catalog')}
+            prevLabel="Previous"
+            nextLabel="Next"
+          />
         </section>
 
         <section className="section">
