@@ -29,8 +29,8 @@ const W = 170;
 const WORD_H = 170 * 450 / 1376;   // 55.6
 const WORD_Y = 52;
 const RIDER_X = 115;   // centre of the rider
-const RIDER = 64;      // rider box size
-const RIDER_Y = 7;     // tilted, its feet dip into the gap above the letters
+const RIDER = 72;      // rider box size
+const RIDER_Y = 1;     // tilted, its feet dip into the gap above the letters
 const TILT = 24;       // degrees, leaning forward toward the i
 
 function Word() {
