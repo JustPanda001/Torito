@@ -142,3 +142,13 @@
 .admin-page .admin-edit.no-preview{grid-template-columns:minmax(0,1fr);max-width:none}
 .admin-filter{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 16px}
 .admin-filter-n{opacity:.7;font-size:.85em;margin-left:2px}
+/* booking questions open and close */
+.bq-toggle{all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%}
+.bq-toggle:focus-visible{outline:2px solid var(--green-500);outline-offset:4px;border-radius:8px}
+.bq-toggle-text{display:grid;gap:2px;min-width:0}
+.bq-toggle-text strong{color:var(--ink)}
+.bq-toggle-text small{color:var(--ink-soft);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bq-arrow{display:grid;place-items:center;width:34px;height:34px;border-radius:50%;border:1px solid var(--line);color:var(--ink-soft);transition:transform .2s;flex:none}
+.bq-row.is-open .bq-arrow{transform:rotate(180deg)}
+.bq-row.is-open .bq-toggle{margin-bottom:10px}
+@media (prefers-reduced-motion:reduce){.bq-arrow{transition:none}}

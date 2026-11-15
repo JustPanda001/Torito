@@ -6,9 +6,27 @@
 // as JSON, because the point of the admin panel is that nobody should have to
 // know the storage format.
 
+import { useState } from 'react';
 import { QUESTION_TYPES, blankQuestion } from '@/lib/bookingQuestions';
 
+// the one-line summary a closed question shows
+function summary(row) {
+  if (row.type === 'number') {
+    const lo = row.min ?? '', hi = row.max ?? '';
+    return lo !== '' || hi !== '' ? `${lo || 0} – ${hi || '∞'} ${row.unit ?? ''}`.trim() : 'A number';
+  }
+  if (row.type === 'text') return 'Free text';
+  return (row.options ?? []).filter(Boolean).join(', ') || 'No choices yet';
+}
+
 export default function BookingQuestionsEditor({ rows, onChange }) {
+  // questions start closed; the arrow on each opens it. Kept by index.
+  const [open, setOpen] = useState(() => new Set());
+  const toggle = (i) => setOpen((prev) => {
+    const next = new Set(prev);
+    if (next.has(i)) next.delete(i); else next.add(i);
+    return next;
+  });
   const set = (i, key, value) => onChange(
     rows.map((r, j) => (j === i ? { ...r, [key]: value } : r)),
   );
@@ -17,6 +35,15 @@ export default function BookingQuestionsEditor({ rows, onChange }) {
     const next = [...rows];
     [next[i], next[i + by]] = [next[i + by], next[i]];
     onChange(next);
+    // the open/closed state moves with the question
+    setOpen((prev) => {
+      const s = new Set(prev);
+      const a = s.has(i), b = s.has(i + by);
+      s.delete(i); s.delete(i + by);
+      if (a) s.add(i + by);
+      if (b) s.add(i);
+      return s;
+    });
   };
 
   return (
@@ -35,7 +62,15 @@ export default function BookingQuestionsEditor({ rows, onChange }) {
 
       {rows.map((row, i) => (
         // eslint-disable-next-line react/no-array-index-key
-        <div className="bq-row" key={i}>
+        <div className={`bq-row${open.has(i) ? ' is-open' : ' is-closed'}`} key={i}>
+          <button type="button" className="bq-toggle" aria-expanded={open.has(i)} onClick={() => toggle(i)}>
+            <span className="bq-toggle-text">
+              <strong>{row.label || 'New question'}</strong>
+              <small>{summary(row)}{row.required ? ' · must be answered' : ''}</small>
+            </span>
+            <span className="bq-arrow" aria-hidden="true">▾</span>
+          </button>
+          {open.has(i) && (<>
           <div className="bq-main">
             <label className="field">
               <span className="field-label">Question</span>
@@ -148,16 +183,17 @@ export default function BookingQuestionsEditor({ rows, onChange }) {
               <button
                 type="button"
                 className="chip small"
-                onClick={() => onChange(rows.filter((_, j) => j !== i))}
+                onClick={() => { setOpen(new Set()); onChange(rows.filter((_, j) => j !== i)); }}
               >
                 Remove
               </button>
             </div>
           </div>
+          </>)}
         </div>
       ))}
 
-      <button type="button" className="chip" onClick={() => onChange([...rows, blankQuestion()])}>
+      <button type="button" className="chip" onClick={() => { setOpen((prev) => new Set(prev).add(rows.length)); onChange([...rows, blankQuestion()]); }}>
         + Add question
       </button>
     </div>
