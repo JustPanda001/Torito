@@ -61,3 +61,6 @@
 /* "See the climbs →" and the other feature buttons: solid dark blue, white text */
 a.link-more,a.link-more:visited,:root[data-theme="dark"] a.link-more{background-color:var(--dark-blue);border-color:var(--dark-blue);color:#fff}
 a.link-more:hover,:root[data-theme="dark"] a.link-more:hover{background-color:#043d75;border-color:#043d75;color:#fff;filter:none}
+
+/* header buttons (account, log in): the hover tint was the old green */
+.icon-btn:hover{background:color-mix(in srgb,var(--light-blue) 30%,transparent)}
