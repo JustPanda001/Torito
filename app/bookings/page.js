@@ -128,7 +128,11 @@ function BookingCard({ b, onCancelled }) {
   const waitlist = b.kind === 'waitlist';
   const status = b.status in STATUS_KEY ? b.status : 'new';
   const label = waitlist ? t('bookings.statusWaitlist') : t(STATUS_KEY[status]);
-  const when = [formatDay(b.wanted_date, lang), b.lesson_time].filter(Boolean).join(' · ');
+  // a booking over several days shows its whole range
+  const endDay = b.answers?.['End date'];
+  const range = endDay && endDay !== String(b.wanted_date ?? '').slice(0, 10)
+    ? `${formatDay(b.wanted_date, lang)} – ${formatDay(endDay, lang)}` : formatDay(b.wanted_date, lang);
+  const when = [range, b.lesson_time].filter(Boolean).join(' · ');
   const requested = formatCreated(b.created_at, lang);
   // the stored title is English; show the translated one when we know the trip
   const found = b.tour_slug ? findTour(b.tour_slug) : null;
@@ -215,8 +219,10 @@ export default function BookingsPage() {
 
   const today = tbilisiToday();
   // no date (waitlist) counts as upcoming
-  const upcoming = rows.filter((b) => !b.wanted_date || b.wanted_date.slice(0, 10) >= today);
-  const past = rows.filter((b) => b.wanted_date && b.wanted_date.slice(0, 10) < today);
+  // a booking stays upcoming until its last day has passed
+  const lastDayOf = (b) => (b.answers?.['End date'] || b.wanted_date || '').slice(0, 10);
+  const upcoming = rows.filter((b) => !b.wanted_date || lastDayOf(b) >= today);
+  const past = rows.filter((b) => b.wanted_date && lastDayOf(b) < today);
 
   return (
     <div className="subpage-shell">

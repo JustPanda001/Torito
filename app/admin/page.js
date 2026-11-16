@@ -28,6 +28,7 @@ import {
   LESSON, HOURLY_RATES, SUGGESTED_HOURLY_RATES, LESSON_MAX_GROUP, LESSON_MIN_HOURS, LESSON_MAX_HOURS,
   parseGroupSize, formatGroupSize,
   HOURS_ROLE, PEOPLE_ROLE, lessonHours, isHoursQuestion, isPeopleQuestion, defaultHoursQuestion, defaultPeopleQuestion,
+  DAYS_ROLE, isDaysQuestion,
 } from '@/lib/lessons';
 
 // the "Group size" dropdowns offer 1 to 30 people (tours run bigger groups
@@ -187,8 +188,11 @@ export default function AdminPage() {
     if (cat === 'ski' && sub === LESSON) {
       out = out.map((q) => (q.role ? q
         : isHoursQuestion(q) ? { ...q, role: HOURS_ROLE }
-          : isPeopleQuestion(q) ? { ...q, role: PEOPLE_ROLE } : q));
+          : isDaysQuestion(q) ? { ...q, role: DAYS_ROLE }
+            : isPeopleQuestion(q) ? { ...q, role: PEOPLE_ROLE } : q));
       if (!out.some((q) => q.role === HOURS_ROLE)) out = [...out, defaultHoursQuestion()];
+      // "How many days?" (role days) lets a lesson run several days in a row;
+      // it is optional: added on the lesson pages, removable like any question
       if (!out.some((q) => q.role === PEOPLE_ROLE)) out = [...out, defaultPeopleQuestion(groupTop)];
     }
     return out;

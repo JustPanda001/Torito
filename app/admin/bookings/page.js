@@ -241,7 +241,12 @@ export default function AdminBookingsPage() {
             {shown.map((b) => {
               const saving = busy.has(b.id);
               const status = b.status in STATUS_LABEL ? b.status : 'new';
-              const when = [formatDay(b.wanted_date), b.lesson_time].filter(Boolean).join(' · ');
+              // a booking over several days (multi-day lesson or trip) shows its whole range
+              const endDay = b.answers?.['End date'];
+              const days = b.answers?.Days;
+              const range = endDay && endDay !== String(b.wanted_date ?? '').slice(0, 10)
+                ? `${formatDay(b.wanted_date)} – ${formatDay(endDay)}` : formatDay(b.wanted_date);
+              const when = [range, b.lesson_time, days && Number(days) > 1 ? `${days} days` : null].filter(Boolean).join(' · ');
               const lesson = [b.lesson_type, b.skill_level].filter(Boolean).join(' · ');
               return (
                 <li className="rev-card ab-card" key={b.id}>

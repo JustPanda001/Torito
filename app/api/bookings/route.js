@@ -27,6 +27,7 @@ import { tourOptions } from '@/lib/options';
 import { bookingTitle, bookingTotal, findOption, unitPrice } from '@/lib/pricing';
 import {
   HOURS_ANSWER, hourlyRates, lessonHours, validHours, timeQuestion, spanFull, fitsDay,
+  DAYS_ANSWER, lessonDays, validDays, isLesson,
 } from '@/lib/lessons';
 import { sendBookingEmail } from '@/lib/bookingEmail';
 import { bookingQuestions, numberBounds } from '@/lib/bookingQuestions';
@@ -274,6 +275,15 @@ export async function POST(request) {
     }
   }
 
+  // A lesson over several days in a row (admin "How many days?"): same time
+  // and hours each day. Without a days question it is one day, as before.
+  const dayRange = isLesson(trip) && kind !== 'waitlist' ? lessonDays(trip) : { min: 1, max: 1 };
+  const multiDay = dayRange.max > 1;
+  const days = multiDay ? body.days : 1;
+  if (multiDay && !validDays(days, trip)) {
+    return Response.json({ error: `Please choose between ${dayRange.min} and ${dayRange.max} days.` }, { status: 400 });
+  }
+
   // A build-your-own package: every required step picked, every pick one of
   // the trip's own options. Only the names come from the browser.
   const steps = kind !== 'waitlist' ? packageSteps(trip) : null;
@@ -288,7 +298,7 @@ export async function POST(request) {
   const unit = unitPrice(trip, option);
   const priced = kind !== 'waitlist'
     && (rates != null || steps != null || (unit != null && unit !== '' && Number.isFinite(Number(unit))));
-  const total = priced ? Math.round(bookingTotal(trip, option, people, hours, pkg) * 100) / 100 : null;
+  const total = priced ? Math.round(bookingTotal(trip, option, people, hours, pkg, days) * 100) / 100 : null;
   if (total != null && Number.isFinite(body.total) && body.total !== total) {
     console.warn(`Booking total differs: browser said ${body.total}, server says ${total} (${slug})`);
   }
@@ -306,7 +316,12 @@ export async function POST(request) {
     // the hours of a rate-table lesson ride with the answers (no column for
     // them); ours, checked above, win over anything the post put there
     answers: hours != null
-      ? { ...(cleanAnswers(body.answers) ?? {}), [HOURS_ANSWER]: String(hours) }
+      ? {
+        ...(cleanAnswers(body.answers) ?? {}),
+        [HOURS_ANSWER]: String(hours),
+        // a multi-day lesson: how many days and the last one, worked out here
+        ...(multiDay ? { [DAYS_ANSWER]: String(days), 'End date': lastDay(body.wanted_date, days) } : {}),
+      }
       : steps
         // the package plan, as checked above, wins over anything posted
         ? { ...(cleanAnswers(body.answers) ?? {}), ...packageAnswers(steps, pkg) }
@@ -321,7 +336,7 @@ export async function POST(request) {
 
   // The dialog already greys out what is taken, but two people can have it
   // open at once, so the check is repeated here against the live table.
-  const clash = await alreadyTaken(supabase, row, trip, hours);
+  const clash = await alreadyTaken(supabase, row, trip, hours, days);
   if (clash) return Response.json({ error: clash }, { status: 409 });
   // the row is the visitor's own, so "read own bookings" lets it come back —
   // that is where the reference comes from
@@ -373,7 +388,7 @@ export async function POST(request) {
  * once its date holds as many groups as "Groups at the same time" allows. Without booked_slots() in the
  * database this lets everything through, as before.
  */
-async function alreadyTaken(supabase, row, tour, hours) {
+async function alreadyTaken(supabase, row, tour, hours, days = 1) {
   if (row.kind === 'waitlist' || !row.wanted_date) return null;
 
   // the day closes an hour after the last time offered; a lesson that would
@@ -388,6 +403,8 @@ async function alreadyTaken(supabase, row, tour, hours) {
   const { data, error } = await supabase.rpc('booked_slots', { p_slug: row.tour_slug });
   if (error || !Array.isArray(data)) return null;
   const sameDay = data.filter((r) => r.wanted_date === row.wanted_date);
+  // every day a multi-day lesson covers
+  const covered = Array.from({ length: Math.max(1, days) }, (_, k) => lastDay(row.wanted_date, k + 1));
 
   const { data: trip } = await supabase
     .from('tours').select('slot_limit').eq('slug', row.tour_slug).maybeSingle();
@@ -396,9 +413,11 @@ async function alreadyTaken(supabase, row, tour, hours) {
 
   if (row.lesson_time) {
     // a lesson holds every hour it covers (start + hours − 1)
-    return spanFull(sameDay, row.lesson_time, hours ?? 1, limit)
-      ? 'Sorry — that time was just booked by someone else. Please pick another.'
-      : null;
+    const taken = covered.find((day) => spanFull(data.filter((r) => r.wanted_date === day), row.lesson_time, hours ?? 1, limit));
+    if (!taken) return null;
+    return covered.length > 1
+      ? `Sorry — ${row.lesson_time} on ${taken} is already booked. Please pick other dates or another time.`
+      : 'Sorry — that time was just booked by someone else. Please pick another.';
   }
 
   // a trip's date takes `limit` groups, whatever their size
@@ -462,4 +481,11 @@ async function appendToSheet(row) {
   if (!res.ok || reply !== 'ok') {
     console.error('Sheet append failed:', res.status, reply.slice(0, 120));
   }
+}
+
+/** The date `days` days in a row from `start` ends on, as YYYY-MM-DD (start counts as day 1). */
+function lastDay(start, days) {
+  const [y, m, d] = String(start).split('-').map(Number);
+  const end = new Date(Date.UTC(y, m - 1, d + Math.max(1, days) - 1));
+  return end.toISOString().slice(0, 10);
 }

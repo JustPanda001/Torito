@@ -16,6 +16,7 @@ import {
 import {
   isLesson, isTimed, timeQuestion, slotTimeState, defaultTimeQuestion, SKILL_LEVELS, LESSON_TYPES,
   hourlyRates, lessonHours, isHoursQuestion, isPeopleQuestion,
+  lessonDays, isDaysQuestion, DAYS_ANSWER,
 } from '@/lib/lessons';
 import { useAvailability } from '@/lib/availability';
 import { supabase, currentProfile } from '@/lib/supabaseClient';
@@ -147,8 +148,12 @@ export default function BookingModal({ tour, option = null, pkg = null, onClose 
   const lesson = isLesson(tour);
   // lessons, snowmobile and paragliding are booked as an hour on a day
   const timed = isTimed(tour);
-  // how many days one booking covers: a 3-day trip books three in a row
-  const span = timed ? 1 : tripDays(tour);
+  // a lesson can run over several days in a row (admin "How many days?")
+  const daySpan = useMemo(() => lessonDays(tour), [tour]);
+  const [days, setDays] = useState(daySpan.min);
+  // how many days one booking covers: a 3-day trip books three in a row; a
+  // lesson covers as many days as the visitor picks
+  const span = timed ? (lesson ? days : 1) : tripDays(tour);
   const avail = useAvailability(tour);
   const [date, setDate] = useState(null);
   const endDate = date && span > 1 ? addDays(date, span - 1) : null;
@@ -187,9 +192,11 @@ export default function BookingModal({ tour, option = null, pkg = null, onClose 
   // drawn a second time with the others.
   const hoursQ = rates ? allQuestions.find(isHoursQuestion) ?? null : null;
   const peopleQ = lesson ? allQuestions.find(isPeopleQuestion) ?? null : null;
+  // drawn as the built-in days counter (it sets the price and the date range)
+  const daysQ = lesson ? allQuestions.find(isDaysQuestion) ?? null : null;
   const questions = useMemo(
-    () => allQuestions.filter((q) => (!timeQ || q.label !== timeQ.label) && q !== hoursQ && q !== peopleQ),
-    [allQuestions, timeQ, hoursQ, peopleQ],
+    () => allQuestions.filter((q) => (!timeQ || q.label !== timeQ.label) && q !== hoursQ && q !== peopleQ && q !== daysQ),
+    [allQuestions, timeQ, hoursQ, peopleQ, daysQ],
   );
   // The older built-in lesson questions (level, kind of lesson) only show on a
   // lesson whose admin wrote no questions of its own; once it has any, the
@@ -269,6 +276,7 @@ export default function BookingModal({ tour, option = null, pkg = null, onClose 
       const packed = requestKind === 'waitlist' ? null : packAnswers(questions, answers);
       // the last day of a multi-day trip rides along with the answers
       if (packed && endDate) packed[END_DATE_ANSWER] = iso(endDate);
+      if (packed && daysQ) packed[DAYS_ANSWER] = String(days);
       const res = await fetch('/api/bookings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
@@ -286,6 +294,7 @@ export default function BookingModal({ tour, option = null, pkg = null, onClose 
           people,
           // the server checks these and works the price out again itself
           hours: rates ? hours : null,
+          days: daysQ ? days : null,
           total: requestKind === 'waitlist' ? null : total,
           lesson_time: timeQ ? time : null,
           skill_level: builtInLessonQs ? level : null,
@@ -350,7 +359,7 @@ export default function BookingModal({ tour, option = null, pkg = null, onClose 
   const blocked = !isBookable(tour);
   useEffect(() => { if (blocked) onClose(); }, [blocked, onClose]);
 
-  const total = bookingTotal(tour, option, people, rates ? hours : null, pkg);
+  const total = bookingTotal(tour, option, people, rates ? hours : null, pkg, daysQ ? days : 1);
   // places still open on the chosen departure, once other bookings count
   const daySeats = seats;
   // a rate table covers groups up to its size (4), never more
@@ -363,16 +372,25 @@ export default function BookingModal({ tour, option = null, pkg = null, onClose 
     const next = Math.min(hourSpan.max, Math.max(hourSpan.min, hours + n));
     setHours(next);
     // a longer lesson may now meet a full hour or run past closing
-    if (time && (avail.tooLong(time, next) || avail.timeTaken(date, time, next))) setTime('');
+    if (time && (avail.tooLong(time, next) || avail.timeTaken(date, time, next, lessonDaysN))) setTime('');
+  };
+  const stepDays = (n) => {
+    const next = Math.min(daySpan.max, Math.max(daySpan.min, days + n));
+    setDays(next);
+    // more days may now run into a day that is already taken at that time
+    if (time && date && avail.timeTaken(date, time, lessonSpan, next)) setTime('');
+    if (date && avail.dayFull(date, timed, lessonSpan, next)) { setDate(null); setTime(''); }
   };
   const rate = rates ? hourlyRate(tour, people) : null;
 
   // a lesson holds every hour it covers, so its length counts too
   const lessonSpan = rates ? hours : 1;
+  // and every day of a multi-day lesson has to be free at that time
+  const lessonDaysN = daysQ ? days : 1;
   // why a time cannot be picked on the chosen day, or null when it can
   const slotWhy = (slot) => {
     if (avail.tooLong(slot, lessonSpan)) return t('booking.runsPastClose');
-    if (avail.timeTaken(date, slot, lessonSpan)) return t('booking.alreadyBooked');
+    if (avail.timeTaken(date, slot, lessonSpan, lessonDaysN)) return t('booking.alreadyBooked');
     const state = slotTimeState(date, slot);
     if (state === 'passed') return t('booking.timePassed');
     if (state === 'soon') return t('booking.tooSoon');
@@ -381,7 +399,7 @@ export default function BookingModal({ tour, option = null, pkg = null, onClose 
 
   function pickDate(d) {
     setDate(d);
-    if (time && (avail.timeTaken(d, time, lessonSpan) || avail.tooLong(time, lessonSpan) || slotTimeState(d, time))) setTime('');
+    if (time && (avail.timeTaken(d, time, lessonSpan, lessonDaysN) || avail.tooLong(time, lessonSpan) || slotTimeState(d, time))) setTime('');
   }
 
   if (blocked) return null;
@@ -489,7 +507,7 @@ export default function BookingModal({ tour, option = null, pkg = null, onClose 
                   rangeEnd={endDate}
                   span={span}
                   onPick={pickDate}
-                  isDisabled={(d) => !inSeason(tour, d) || avail.dayFull(d, timed, lessonSpan)}
+                  isDisabled={(d) => !inSeason(tour, d) || avail.dayFull(d, timed, lessonSpan, lessonDaysN)}
                   className="bm-cal"
                   autoFocus
                 />
@@ -671,6 +689,20 @@ export default function BookingModal({ tour, option = null, pkg = null, onClose 
                 </section>
               )}
 
+              {daysQ && (
+                <section className="bm-section">
+                  <h3>{daysQ.label}</h3>
+                  <div className="bm-people">
+                    <button type="button" className="bm-step" onClick={() => stepDays(-1)} disabled={days <= daySpan.min} aria-label="One day fewer">−</button>
+                    <span className="bm-count" aria-live="polite"><strong>{days}</strong> {t(`cal.days${pluralForm(lang, days)}`, { n: days }).replace(/^\d+\s*/, '')}</span>
+                    <button type="button" className="bm-step" onClick={() => stepDays(1)} disabled={days >= daySpan.max} aria-label="One day more">+</button>
+                  </div>
+                  <p className={`bm-hint${daysQ.hintStrong ? ' strong' : ''}`}>
+                    {daysQ.hint || `From ${daySpan.min} to ${daySpan.max} days in a row, same time each day.`}
+                  </p>
+                </section>
+              )}
+
               <section className="bm-section">
                 <h3>{peopleQ?.label || t('booking.howMany')}</h3>
                 <div className="bm-people">
@@ -742,7 +774,7 @@ export default function BookingModal({ tour, option = null, pkg = null, onClose 
               <section className="bm-section bm-total">
                 <div className="bm-line">
                   {rates
-                    ? <span>{money(rate)} × {hours} {hoursWord}</span>
+                    ? <span>{money(rate)} × {hours} {hoursWord}{daysQ && days > 1 ? ` × ${t(`cal.days${pluralForm(lang, days)}`, { n: days })}` : ''}</span>
                     : <span>{money(price)} × {people}</span>}
                   <span>{money(total)}</span>
                 </div>
