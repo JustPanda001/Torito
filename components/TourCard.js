@@ -9,6 +9,7 @@ import Stars from './Stars';
 import { useRatings } from '@/lib/ratings';
 import { filled } from '@/lib/filled';
 import { isBookable } from '@/lib/bookable';
+import { cardImage, onCardImageError } from '@/lib/cardImage';
 
 const ICONS = {
   distance: <><path d="M4 18h16" /><path d="M7 18l5-12 5 12" /></>,
@@ -61,7 +62,7 @@ export default function TourCard({ tour: source }) {
   return (
     <article className="tour-card reveal visible" onClick={onClick}>
       <Link className="tour-photo" href={href} tabIndex={-1}>
-        <img src={tour.cover_image || '/assets/hero.svg'} alt={tour.title} loading="lazy" decoding="async" />
+        <img src={cardImage(tour.cover_image) || '/assets/hero.svg'} onError={onCardImageError(tour.cover_image)} alt={tour.title} loading="lazy" decoding="async" />
       </Link>
 
       <div className="tour-main">

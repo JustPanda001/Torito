@@ -14,6 +14,7 @@ import { categoryOf, isOffered } from '@/lib/catalog';
 import { searchTours } from '@/lib/search';
 import { useT } from '@/lib/i18n';
 import { localizeTour } from '@/lib/trip-translations';
+import { cardImage, onCardImageError } from '@/lib/cardImage';
 
 let catalog = null;
 function loadCatalog() {
@@ -57,7 +58,7 @@ export default function SearchSuggest({ query, open, onPick, onSeeAll }) {
           // mousedown, not click: the field's blur would close the list first
           onMouseDown={(e) => { e.preventDefault(); onPick(`/activities/${tour.slug}`); }}
         >
-          <img src={tour.cover_image || '/assets/hero.svg'} alt="" loading="lazy" />
+          <img src={cardImage(tour.cover_image) || '/assets/hero.svg'} onError={onCardImageError(tour.cover_image)} alt="" loading="lazy" />
           <span>
             <strong>{tour.full_title || tour.title}</strong>
             <em>{t(`cat.${categoryOf(source)}`)}{tour.region ? ` · ${tour.region}` : ''}</em>

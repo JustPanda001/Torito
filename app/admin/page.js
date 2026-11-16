@@ -54,6 +54,7 @@ const OPTION_LABELS = {
   unlimited: '∞  Unlimited',
 };
 import { parseCoord, parsePair } from '@/lib/coords';
+import { cardImage, onCardImageError } from '@/lib/cardImage';
 
 // these render as dropdowns backed by tour_options, with a + to add a choice
 const OPTION_FIELDS = [
@@ -841,7 +842,7 @@ export default function AdminPage() {
           {tours.filter((t) => matchesListFilter(t, listFilter)).map((t) => (
             <div className="admin-row" key={t.id}>
               <Link className="admin-row-link" href={`/activities/${t.slug}`} target="_blank" rel="noreferrer">
-                <img src={t.cover_image || '/assets/hero.svg'} alt="" />
+                <img src={cardImage(t.cover_image) || '/assets/hero.svg'} onError={onCardImageError(t.cover_image)} alt="" />
                 <div className="admin-row-main">
                   <strong>{t.title}</strong>
                   <span>

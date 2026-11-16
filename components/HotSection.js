@@ -17,6 +17,7 @@ import { fetchViewCounts, seasonOf } from '@/lib/views';
 import { categoryOf } from '@/lib/catalog';
 import { useT } from '@/lib/i18n';
 import { localizeTour } from '@/lib/trip-translations';
+import { cardImage, onCardImageError } from '@/lib/cardImage';
 
 /**
  * In-season trips first, most-opened at the top. If the season is thin —
@@ -73,7 +74,8 @@ export default function HotSection() {
           return (
             <Link className="hot-tile" href={`/activities/${tour.slug}`} key={tour.slug}>
               <img
-                src={tour.cover_image || '/assets/hero.svg'}
+                src={cardImage(tour.cover_image) || '/assets/hero.svg'}
+                onError={onCardImageError(tour.cover_image)}
                 alt={tour.title}
                 loading="lazy"
                 decoding="async"
