@@ -2732,3 +2732,5 @@ html:has(body.modal-open){overflow:hidden}
   .marquee-blur.right{width:60px}
   .marquee-arrow{width:40px;height:40px}
 }
+/* sign-in and admin cards: the hand-lettered logo with the rider */
+.auth-logo .auth-logo-mark{height:62px;width:auto;color:var(--ink)}

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import MtaniLogo from '@/components/MtaniLogo';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import { useT } from '@/lib/i18n';
@@ -67,8 +68,7 @@ export default function LoginPage() {
     <main className="auth-page">
       <div className="auth-card">
         <Link className="auth-logo" href="/">
-          <img src="/assets/mtani-mark.svg" alt={t('auth.logoAlt')} />
-          <span>MTANI</span>
+          <MtaniLogo className="auth-logo-mark" />
         </Link>
 
         <h1>{t('auth.signIn')}</h1>

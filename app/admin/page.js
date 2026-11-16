@@ -8,6 +8,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import MtaniLogo from '@/components/MtaniLogo';
 import SiteHeader from '@/components/SiteHeader';
 import OptionSelect from '@/components/OptionSelect';
 import PhotoManager from '@/components/PhotoManager';
@@ -869,7 +870,7 @@ function Denied({ message }) {
     <main className="auth-page">
       <div className="auth-card">
         <Link className="auth-logo" href="/">
-          <img src="/assets/mtani-mark.svg" alt="" /><span>MTANI</span>
+          <MtaniLogo className="auth-logo-mark" />
         </Link>
         <h1>Admins only</h1>
         <p className="form-note">{message}</p>
