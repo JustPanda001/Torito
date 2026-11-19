@@ -397,12 +397,13 @@ export default function BookingModal({ tour, option = null, pkg = null, onClose 
     const text = last
       ? `A ${h}-hour lesson has to end by ${close}, so the latest start is ${last}. Add hours and the late times close.`
       : `A ${h}-hour lesson would run past ${close}. Pick fewer hours.`;
-    const TIP_MS = 3200; // ~15 words: about 3 s to read
-    tipTimers.current = [
-      setTimeout(() => setTip({ text }), 1000),
-      setTimeout(() => setTipOut(true), 1000 + TIP_MS),
-      setTimeout(() => { setTip(null); setTipOut(false); }, 1000 + TIP_MS + 450),
-    ];
+    // appears 1 s after the last click and stays until the visitor closes it
+    tipTimers.current = [setTimeout(() => setTip({ text }), 1000)];
+  }
+  function closeTip() {
+    clearTipTimers();
+    setTipOut(true);
+    tipTimers.current = [setTimeout(() => { setTip(null); setTipOut(false); }, 450)];
   }
   function hideTipForever() {
     try { localStorage.setItem('mtani-tip-start-time', 'off'); } catch { /* private mode */ }
@@ -726,6 +727,7 @@ export default function BookingModal({ tour, option = null, pkg = null, onClose 
                     <div className={`bm-tip${tipOut ? ' out' : ''}`} role="status">
                       <span className="bm-tip-icon" aria-hidden="true">i</span>
                       <p>{tip.text}</p>
+                      <button type="button" className="bm-tip-close" aria-label="Close" onClick={closeTip}>×</button>
                       <button type="button" className="bm-tip-off" onClick={hideTipForever}>Don’t show again</button>
                     </div>
                   )}

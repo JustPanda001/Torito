@@ -253,7 +253,7 @@ export default function AdminPage() {
     if (process.env.NODE_ENV !== 'production'
         && typeof window !== 'undefined'
         && new URLSearchParams(window.location.search).get('mockuser') === 'admin') {
-      setProfile({ id: 'mock', full_name: 'Sandro Phkhaladze', email: 'justpanda001@gmail.com', role: 'admin' });
+      setProfile({ id: 'mock', full_name: 'Test Admin', email: 'admin@example.invalid', role: 'admin' });
       return;
     }
     currentProfile().then(setProfile).catch(() => setProfile(null));
@@ -840,6 +840,8 @@ export default function AdminPage() {
           </div>
         </section>
 
+        <TelegramRelink />
+
         <section className="detail-block">
           <h2>Existing tours</h2>
           {/* filter by what the trip is: the winter types, then the summer categories */}
@@ -896,5 +898,35 @@ function Denied({ message }) {
         </p>
       </div>
     </main>
+  );
+}
+
+// Re-points Telegram replies at the site with the current secret (SEC-04).
+// Needed once after the Telegram webhook secret changes; harmless to repeat.
+function TelegramRelink() {
+  const [state, setState] = useState(null); // null | 'busy' | { ok, text }
+  async function relink() {
+    setState('busy');
+    try {
+      const { data } = await supabase.auth.getSession();
+      const res = await fetch('/api/admin/telegram-webhook', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${data?.session?.access_token ?? ''}` },
+      });
+      const out = await res.json().catch(() => ({}));
+      setState(res.ok ? { ok: true, text: 'Done: Telegram replies are linked to the site.' } : { ok: false, text: out.error || 'Could not re-link.' });
+    } catch {
+      setState({ ok: false, text: 'Could not reach the server.' });
+    }
+  }
+  return (
+    <section className="detail-block">
+      <h2>Telegram replies</h2>
+      <p className="form-note">Answering a chat alert in Telegram replies to the visitor on the site. Press this once after the Telegram secret changes.</p>
+      <button type="button" className="auth-btn" disabled={state === 'busy'} onClick={relink}>
+        {state === 'busy' ? 'Re-linking…' : 'Re-link Telegram replies'}
+      </button>
+      {state && state !== 'busy' && <p className={`form-note${state.ok ? '' : ' error'}`}>{state.text}</p>}
+    </section>
   );
 }

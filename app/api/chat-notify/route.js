@@ -8,13 +8,15 @@
 // back when the alert is replied to, to know which thread the reply belongs to.
 
 import { createClient } from '@supabase/supabase-js';
+import { secretMatches } from '@/lib/secretMatch';
+import { SITE_URL } from '@/lib/siteUrl';
 
 export const runtime = 'nodejs';
 
 // Chat alerts go to the support bot. Without one set, they fall back to the
 // bookings bot so nothing is lost.
 const {
-  CHAT_WEBHOOK_SECRET,
+  CHAT_NOTIFY_SECRET,
   NEXT_PUBLIC_SUPABASE_URL: SUPABASE_URL,
   SUPABASE_SERVICE_ROLE_KEY,
 } = process.env;
@@ -59,8 +61,31 @@ async function justAlerted(message) {
   }
 }
 
+// Across the whole site, at most this many visitor messages a minute ring
+// Telegram; beyond that the team reads them in the /chat inbox (SEC-07).
+const ALERTS_PER_MINUTE = 12;
+
+async function overAlertBudget() {
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) return false;
+  try {
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+    const { count, error } = await supabase
+      .from('chat_messages')
+      .select('id', { count: 'exact', head: true })
+      .eq('sender', 'user')
+      .gte('created_at', new Date(Date.now() - 60 * 1000).toISOString());
+    if (error) return false;
+    return (count ?? 0) > ALERTS_PER_MINUTE;
+  } catch {
+    return false;
+  }
+}
+
 export async function POST(request) {
-  if (!CHAT_WEBHOOK_SECRET || request.headers.get('x-webhook-secret') !== CHAT_WEBHOOK_SECRET) {
+  // its own random secret, sent by the database trigger "chat-alerts" (SEC-04)
+  if (!secretMatches(request.headers.get('x-webhook-secret'), CHAT_NOTIFY_SECRET)) {
     return Response.json({ error: 'Forbidden.' }, { status: 401 });
   }
 
@@ -78,8 +103,10 @@ export async function POST(request) {
   // nothing to show the team
   if (!String(message.body ?? '').trim()) return Response.json({ ok: true, skipped: true });
   if (await justAlerted(message)) return Response.json({ ok: true, skipped: true, throttled: true });
+  // a flood of guest messages must not keep the team's phone ringing (SEC-07)
+  if (await overAlertBudget()) return Response.json({ ok: true, skipped: true, budget: true });
 
-  const inbox = `${new URL(request.url).origin}/chat`;
+  const inbox = `${SITE_URL}/chat`;
   const res = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

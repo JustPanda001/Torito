@@ -64,7 +64,7 @@ export default function AccountMenu() {
         && typeof window !== 'undefined'
         && new URLSearchParams(window.location.search).has('mockuser')) {
       const role = new URLSearchParams(window.location.search).get('mockuser');
-      setProfile({ id: 'mock', full_name: 'Sandro Phkhaladze', email: 'justpanda001@gmail.com', role });
+      setProfile({ id: 'mock', full_name: 'Test Admin', email: 'admin@example.invalid', role });
       return () => { alive = false; };
     }
     currentProfile()

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import MtaniLogo from '@/components/MtaniLogo';
 import { useRouter } from 'next/navigation';
+import { safeNext } from '@/lib/safeNext';
 import { supabase } from '@/lib/supabaseClient';
 import { useT } from '@/lib/i18n';
 import SocialSignIn from '@/components/SocialSignIn';
@@ -28,7 +29,7 @@ function nextUrl() {
   const raw = new URLSearchParams(window.location.search).get('next');
   // only same-site paths, so the parameter cannot be used to bounce someone
   // off to another domain
-  return raw && raw.startsWith('/') && !raw.startsWith('//') ? raw : '/';
+  return safeNext(raw);
 }
 
 export default function LoginPage() {

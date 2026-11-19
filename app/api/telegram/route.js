@@ -8,13 +8,14 @@
 // security rules would otherwise refuse a message with sender 'admin'.
 
 import { createClient } from '@supabase/supabase-js';
+import { secretMatches } from '@/lib/secretMatch';
 
 export const runtime = 'nodejs';
 
 const {
   NEXT_PUBLIC_SUPABASE_URL: SUPABASE_URL,
   SUPABASE_SERVICE_ROLE_KEY,
-  CHAT_WEBHOOK_SECRET,
+  TELEGRAM_WEBHOOK_SECRET,
 } = process.env;
 
 // the support bot's webhook; same fallback as /api/chat-notify
@@ -24,8 +25,8 @@ const TELEGRAM_CHAT_ID = process.env.SUPPORT_CHAT_ID || process.env.TELEGRAM_CHA
 const CHAT_LINE = /^Chat: ([0-9a-f-]{36})$/m;
 
 export async function POST(request) {
-  if (!CHAT_WEBHOOK_SECRET
-      || request.headers.get('x-telegram-bot-api-secret-token') !== CHAT_WEBHOOK_SECRET) {
+  // its own random secret, set with setWebhook (see /api/admin/telegram-webhook)
+  if (!secretMatches(request.headers.get('x-telegram-bot-api-secret-token'), TELEGRAM_WEBHOOK_SECRET)) {
     return Response.json({ error: 'Forbidden.' }, { status: 401 });
   }
 

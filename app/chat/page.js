@@ -46,7 +46,7 @@ export default function ChatAdminPage() {
     if (process.env.NODE_ENV !== 'production'
         && typeof window !== 'undefined'
         && new URLSearchParams(window.location.search).get('mockuser') === 'admin') {
-      setProfile({ id: 'mock', full_name: 'Sandro Phkhaladze', email: 'justpanda001@gmail.com', role: 'admin' });
+      setProfile({ id: 'mock', full_name: 'Test Admin', email: 'admin@example.invalid', role: 'admin' });
       return;
     }
     currentProfile().then(setProfile).catch(() => setProfile(null));

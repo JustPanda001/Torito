@@ -88,7 +88,9 @@ export async function POST(request) {
   const countError = recent.error || day.error;
   let tableReady = !countError;
   if (countError) {
-    console.error('Contact rate limit off (run CONTACT-RATE-LIMIT.sql):', countError.message);
+    // the limit could not be checked: refuse rather than let a flood through (SEC-11)
+    console.error('Contact rate limit check failed:', countError.message);
+    return Response.json({ error: 'Sorry — please try again in a moment.' }, { status: 503 });
   } else if ((recent.count ?? 0) >= LIMITS[0].max || (day.count ?? 0) >= LIMITS[1].max) {
     return Response.json({ error: 'You have sent a few messages already. Please try again later.' }, { status: 429 });
   }

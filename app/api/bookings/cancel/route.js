@@ -20,6 +20,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { bookingRef } from '@/lib/bookingRef';
 import { sendBookingEmail } from '@/lib/bookingEmail';
+import { SITE_URL } from '@/lib/siteUrl';
 
 export const runtime = 'nodejs';
 
@@ -139,7 +140,7 @@ export async function POST(request) {
   }
 
   const ref = bookingRef(booking.id);
-  const site = new URL(request.url).origin;
+  const site = SITE_URL;
   // the account's own verified address, never the one stored on the row (SEC-01)
   const row = { ...booking, status: 'cancelled', ref, email: user.email ?? null };
 

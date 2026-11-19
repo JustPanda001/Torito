@@ -33,6 +33,7 @@ import { sendBookingEmail } from '@/lib/bookingEmail';
 import { bookingQuestions, numberBounds } from '@/lib/bookingQuestions';
 import { packageSteps, packageExtra, packageAnswers } from '@/lib/packageBuilder';
 import { groupMax, groupsLimit } from '@/lib/groups';
+import { SITE_URL } from '@/lib/siteUrl';
 
 export const runtime = 'nodejs';
 
@@ -357,6 +358,11 @@ export async function POST(request) {
   if (error) {
     // two requests sent at the same moment can both pass the count above; the
     // database trigger from RATE-LIMITS.sql then refuses the extra one
+    if (/too many open requests/.test(error.message ?? '')) {
+      return Response.json({
+        error: 'You already have several requests waiting for confirmation. Please wait for us to confirm them, or cancel one in My bookings.',
+      }, { status: 429 });
+    }
     if (error.code === 'PT429' || /rate_limited/.test(error.message ?? '')) {
       return Response.json({ error: RATE_LIMITS[0].error }, { status: 429 });
     }
@@ -369,7 +375,7 @@ export async function POST(request) {
   // admin confirms or declines it; status is the column default, 'new'
   // category is for the sheet only (it keeps winter trips); it is not a column of the row
   const record = { ...row, id: saved.id, ref, status: saved.status ?? 'new', created_at: saved.created_at, category: trip.category ?? null };
-  const site = new URL(request.url).origin;
+  const site = SITE_URL;
 
   // copies and the customer's email, best effort, never blocking the answer
   const [, , mail] = await Promise.allSettled([
@@ -401,7 +407,8 @@ async function alreadyTaken(supabase, row, tour, hours, days = 1) {
   }
 
   const { data, error } = await supabase.rpc('booked_slots', { p_slug: row.tour_slug });
-  if (error || !Array.isArray(data)) return null;
+  // could not check what is booked: refuse rather than risk a double booking (SEC-11)
+  if (error || !Array.isArray(data)) return 'Sorry — we could not check that date just now. Please try again in a moment.';
   const sameDay = data.filter((r) => r.wanted_date === row.wanted_date);
   // every day a multi-day lesson covers
   const covered = Array.from({ length: Math.max(1, days) }, (_, k) => lastDay(row.wanted_date, k + 1));

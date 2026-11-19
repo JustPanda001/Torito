@@ -13,6 +13,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { bookingRef } from '@/lib/bookingRef';
 import { sendBookingEmail } from '@/lib/bookingEmail';
+import { SITE_URL } from '@/lib/siteUrl';
 
 export const runtime = 'nodejs';
 
@@ -86,7 +87,7 @@ export async function POST(request) {
     .select('id, status, tour_slug, tour_title, kind, wanted_date, lesson_time, people, skill_level, lesson_type, answers, total, name, email, user_id');
   if (error) {
     console.error('Booking status update failed:', error.message);
-    return Response.json({ error: error.message || 'Could not save the change.' }, { status: 500 });
+    return Response.json({ error: 'Could not save the change. Please try again.' }, { status: 500 });
   }
   // RLS hides a row you may not change: no error, but nothing comes back
   if (!data || data.length === 0) {
@@ -95,7 +96,7 @@ export async function POST(request) {
 
   const saved = data[0];
   const ref = bookingRef(saved.id);
-  const site = new URL(request.url).origin;
+  const site = SITE_URL;
   // the customer hears about Confirm and Decline once; Undo (back to new) is silent
   const notify = (saved.status === 'confirmed' || saved.status === 'declined')
     && before?.status !== saved.status;

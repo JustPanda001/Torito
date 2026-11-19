@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import MtaniLogo from '@/components/MtaniLogo';
 import { useRouter } from 'next/navigation';
+import { safeNext } from '@/lib/safeNext';
 import { supabase } from '@/lib/supabaseClient';
 import { useT } from '@/lib/i18n';
 import { DEFAULT_DIAL, phoneDigits } from '@/lib/dial-codes';
@@ -16,7 +17,7 @@ import DialSelect from '@/components/DialSelect';
 /** Same-site path to continue to afterwards. */
 function nextUrl() {
   const raw = new URLSearchParams(window.location.search).get('next');
-  return raw && raw.startsWith('/') && !raw.startsWith('//') ? raw : '/';
+  return safeNext(raw);
 }
 
 export default function CompleteProfilePage() {
