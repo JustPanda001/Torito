@@ -2734,3 +2734,25 @@ html:has(body.modal-open){overflow:hidden}
 }
 /* sign-in and admin cards: the hand-lettered logo with the rider */
 .auth-logo .auth-logo-mark{height:62px;width:auto;color:var(--ink)}
+/* admin photos: order arrows on each tile */
+.photo-order{position:absolute;left:50%;bottom:8px;transform:translateX(-50%);display:flex;align-items:center;gap:4px;
+  background:rgba(10,20,30,.72);color:#fff;border-radius:999px;padding:2px 4px;font-size:12px;font-weight:700}
+.photo-order button{all:unset;cursor:pointer;width:22px;height:22px;display:grid;place-items:center;border-radius:50%;font-size:17px;line-height:1}
+.photo-order button:hover:not(:disabled){background:rgba(255,255,255,.2)}
+.photo-order button:disabled{opacity:.3;cursor:default}
+.photo-order span{min-width:12px;text-align:center}
+.photo-tile.is-cover .photo-order{bottom:30px}
+.photo-tile{cursor:grab}
+.photo-tile.dragging{opacity:.45;cursor:grabbing}
+/* booking window: the "longer lesson = earlier start" tip */
+.bm-tip{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;align-items:start;margin-top:10px;padding:10px 12px;
+  border-radius:12px;background:color-mix(in srgb,var(--light-blue,#3C6EA5) 14%,var(--surface));border:1px solid color-mix(in srgb,var(--light-blue,#3C6EA5) 35%,transparent);
+  animation:bmTipIn .35s cubic-bezier(.2,.8,.3,1) both}
+.bm-tip.out{animation:bmTipOut .45s ease both}
+.bm-tip p{margin:0;font-size:13.5px;line-height:1.45;color:var(--ink)}
+.bm-tip-icon{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font:700 12px/1 Georgia,serif;font-style:italic;color:#fff;background:var(--dark-blue,#064F97);margin-top:1px}
+.bm-tip-off{all:unset;grid-column:2;justify-self:start;cursor:pointer;font-size:12.5px;font-weight:600;color:var(--text-green,#064F97)}
+.bm-tip-off:hover{text-decoration:underline}
+@keyframes bmTipIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+@keyframes bmTipOut{from{opacity:1;transform:none}to{opacity:0;transform:translateY(-4px)}}
+@media (prefers-reduced-motion:reduce){.bm-tip,.bm-tip.out{animation-duration:.01s}}

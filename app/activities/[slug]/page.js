@@ -246,7 +246,7 @@ export default function TourPage({ params }) {
 
         <div className="detail-top">
           <div className="gallery-col">
-            <Gallery photos={tour.gallery} alt={name} />
+            <Gallery photos={tour.cover_image && (tour.gallery ?? []).includes(tour.cover_image) ? [tour.cover_image, ...tour.gallery.filter((u) => u !== tour.cover_image)] : tour.gallery} alt={name} />
             {credits.length > 0 && (
               <details className="photo-credits">
                 <summary>{t('trip.photoCredits')}</summary>

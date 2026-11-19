@@ -7,7 +7,7 @@
 // several days books a run of days: tapping the start selects them all, and a
 // start whose run would cross a closed day cannot be picked.
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import Calendar from './Calendar';
 import {
@@ -164,6 +164,13 @@ export default function BookingModal({ tour, option = null, pkg = null, onClose 
   // the hours this lesson can be booked for, from its admin hours question
   const hourSpan = useMemo(() => lessonHours(tour), [tour]);
   const [hours, setHours] = useState(hourSpan.min);
+  // the "longer lesson = earlier start" tip: shown 1 s after the visitor stops
+  // adding hours, for TIP_MS, then fades; "Don't show again" is remembered
+  const [tip, setTip] = useState(null);       // { text } while showing
+  const [tipOut, setTipOut] = useState(false); // fading out
+  const tipTimers = useRef([]);
+  const clearTipTimers = () => { tipTimers.current.forEach(clearTimeout); tipTimers.current = []; };
+  useEffect(() => clearTipTimers, []);
   // lesson requests only: when, and what they want out of it
   const [time, setTime] = useState('');
   const [level, setLevel] = useState('');
@@ -373,7 +380,36 @@ export default function BookingModal({ tour, option = null, pkg = null, onClose 
     setHours(next);
     // a longer lesson may now meet a full hour or run past closing
     if (time && (avail.tooLong(time, next) || avail.timeTaken(date, time, next, lessonDaysN))) setTime('');
+    // more hours rule out the late start times: explain it, once they stop clicking
+    if (n > 0 && timeQ?.options?.some((slot) => avail.tooLong(slot, next) && !avail.tooLong(slot, hours))) {
+      scheduleTip(next);
+    }
   };
+  function scheduleTip(h) {
+    let off = false;
+    try { off = localStorage.getItem('mtani-tip-start-time') === 'off'; } catch { /* private mode */ }
+    if (off) return;
+    clearTipTimers();
+    setTip(null); setTipOut(false);
+    const times = (timeQ?.options ?? []).filter((slot) => !avail.tooLong(slot, h));
+    const last = times[times.length - 1];
+    const close = closingTime(timeQ?.options);
+    const text = last
+      ? `A ${h}-hour lesson has to end by ${close}, so the latest start is ${last}. Add hours and the late times close.`
+      : `A ${h}-hour lesson would run past ${close}. Pick fewer hours.`;
+    const TIP_MS = 3200; // ~15 words: about 3 s to read
+    tipTimers.current = [
+      setTimeout(() => setTip({ text }), 1000),
+      setTimeout(() => setTipOut(true), 1000 + TIP_MS),
+      setTimeout(() => { setTip(null); setTipOut(false); }, 1000 + TIP_MS + 450),
+    ];
+  }
+  function hideTipForever() {
+    try { localStorage.setItem('mtani-tip-start-time', 'off'); } catch { /* private mode */ }
+    clearTipTimers();
+    setTipOut(true);
+    tipTimers.current = [setTimeout(() => { setTip(null); setTipOut(false); }, 450)];
+  }
   const stepDays = (n) => {
     const next = Math.min(daySpan.max, Math.max(daySpan.min, days + n));
     setDays(next);
@@ -686,6 +722,13 @@ export default function BookingModal({ tour, option = null, pkg = null, onClose 
                   <p className={`bm-hint${hoursQ?.hintStrong ? ' strong' : ''}`}>
                     {hoursQ?.hint || t('booking.hoursHint', { min: hourSpan.min, max: hourSpan.max })}
                   </p>
+                  {tip && (
+                    <div className={`bm-tip${tipOut ? ' out' : ''}`} role="status">
+                      <span className="bm-tip-icon" aria-hidden="true">i</span>
+                      <p>{tip.text}</p>
+                      <button type="button" className="bm-tip-off" onClick={hideTipForever}>Don’t show again</button>
+                    </div>
+                  )}
                 </section>
               )}
 
@@ -807,4 +850,13 @@ export default function BookingModal({ tour, option = null, pkg = null, onClose 
       </div>
     </div>
   );
+}
+
+/** The hour a lesson day ends: one hour after the last start time offered. */
+function closingTime(options) {
+  const mins = (options ?? []).map((o) => { const [h, m] = String(o).split(':').map(Number); return h * 60 + (m || 0); })
+    .filter(Number.isFinite);
+  if (!mins.length) return 'closing time';
+  const end = Math.max(...mins) + 60;
+  return `${String(Math.floor(end / 60)).padStart(2, '0')}:${String(end % 60).padStart(2, '0')}`;
 }

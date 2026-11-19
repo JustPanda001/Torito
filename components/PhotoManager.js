@@ -54,23 +54,26 @@ export default function PhotoManager({ photos, cover, onChange }) {
 
     const next = [...photos, ...added];
     // the first photo ever added becomes the cover, so a trip always has one
-    onChange({ photos: next, cover: cover || next[0] });
+    // the first photo is the cover
+    onChange({ photos: next, cover: next[0] ?? '' });
     if (fileInput.current) fileInput.current.value = '';
   }
 
   function remove(url) {
     const next = photos.filter((p) => p !== url);
-    onChange({ photos: next, cover: cover === url ? (next[0] ?? '') : cover });
+    onChange({ photos: next, cover: next[0] ?? '' });
   }
 
-  function drop(toIndex) {
-    if (dragFrom === null || dragFrom === toIndex) return;
+  // The order here is the order on the trip page, and the first photo is the
+  // cover (listing card and first gallery photo). Moving keeps that true.
+  function move(from, to) {
+    if (from === to || to < 0 || to >= photos.length) return;
     const next = [...photos];
-    const [moved] = next.splice(dragFrom, 1);
-    next.splice(toIndex, 0, moved);
-    setDragFrom(null);
-    onChange({ photos: next, cover });
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+    onChange({ photos: next, cover: next[0] });
   }
+  const makeCover = (i) => move(i, 0);
 
   return (
     <div className="photo-manager">
@@ -79,7 +82,7 @@ export default function PhotoManager({ photos, cover, onChange }) {
           Photos {photos.length > 0 && <em>{photos.length} added</em>}
         </span>
         <span className="field-hint">
-          Star the cover photo. Drag to reorder — the first is shown after the cover.
+          Drag photos, or use the arrows, to set the order. This is the order on the trip page; the first one (★) is the cover.
         </span>
       </div>
 
@@ -87,31 +90,43 @@ export default function PhotoManager({ photos, cover, onChange }) {
         {photos.map((url, i) => (
           <div
             key={url}
-            className={`photo-tile${cover === url ? ' is-cover' : ''}${dragFrom === i ? ' dragging' : ''}`}
+            className={`photo-tile${i === 0 ? ' is-cover' : ''}${dragFrom === i ? ' dragging' : ''}`}
             draggable
-            onDragStart={() => setDragFrom(i)}
+            onDragStart={(e) => {
+              setDragFrom(i);
+              e.dataTransfer.effectAllowed = 'move';
+              e.dataTransfer.setData('text/plain', String(i)); // Firefox needs data to start a drag
+            }}
+            // the photo moves live as it passes over the others
+            onDragEnter={(e) => { e.preventDefault(); if (dragFrom !== null && dragFrom !== i) { move(dragFrom, i); setDragFrom(i); } }}
+            onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }}
+            onDrop={(e) => { e.preventDefault(); setDragFrom(null); }}
             onDragEnd={() => setDragFrom(null)}
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={() => drop(i)}
           >
-            <img src={url} alt="" />
+            {/* the image itself must not start its own drag */}
+            <img src={url} alt="" draggable={false} />
 
             <button
               type="button"
-              className={`photo-star${cover === url ? ' on' : ''}`}
-              title={cover === url ? 'This is the cover photo' : 'Make this the cover photo'}
-              aria-label={cover === url ? 'Cover photo' : 'Make cover photo'}
-              aria-pressed={cover === url}
-              onClick={() => onChange({ photos, cover: url })}
+              className={`photo-star${i === 0 ? ' on' : ''}`}
+              title={i === 0 ? 'This is the cover photo' : 'Move to first (cover)'}
+              aria-label={i === 0 ? 'Cover photo' : 'Make cover photo'}
+              aria-pressed={i === 0}
+              onClick={() => makeCover(i)}
             >
-              <svg viewBox="0 0 24 24" width="15" height="15" fill={cover === url ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.8">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill={i === 0 ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.8">
                 <path d="M12 3.5l2.6 5.3 5.9.9-4.2 4.1 1 5.8-5.3-2.8-5.3 2.8 1-5.8L3.5 9.7l5.9-.9z" />
               </svg>
             </button>
 
             <button type="button" className="photo-remove" title="Remove photo" aria-label="Remove photo" onClick={() => remove(url)}>×</button>
 
-            {cover === url && <span className="photo-badge">Cover</span>}
+            {i === 0 && <span className="photo-badge">Cover</span>}
+            <span className="photo-order">
+              <button type="button" aria-label="Move earlier" title="Move earlier" disabled={i === 0} onClick={() => move(i, i - 1)}>‹</button>
+              <span>{i + 1}</span>
+              <button type="button" aria-label="Move later" title="Move later" disabled={i === photos.length - 1} onClick={() => move(i, i + 1)}>›</button>
+            </span>
           </div>
         ))}
 

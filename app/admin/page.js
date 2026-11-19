@@ -325,8 +325,15 @@ export default function AdminPage() {
     setCompare(Array.isArray(tour.compare) ? tour.compare : []);
     setItinMode(itineraryMode({ ...tour, itinerary: asPairs(tour.itinerary) }));
     setSubtype(tour.subtype ?? '');
-    setPhotos(Array.isArray(tour.gallery) ? tour.gallery : []);
-    setCover(tour.cover_image ?? '');
+    {
+      // the order is the page order and the first photo is the cover; older
+      // trips kept the cover separately, so it is moved to the front here
+      const g = Array.isArray(tour.gallery) ? tour.gallery : [];
+      const c = tour.cover_image && g.includes(tour.cover_image) ? tour.cover_image : null;
+      const ordered = c ? [c, ...g.filter((u) => u !== c)] : g;
+      setPhotos(ordered);
+      setCover(ordered[0] ?? tour.cover_image ?? '');
+    }
     pendingFill.current = { tour, scrollY: opts.scrollY ?? null };
     setFillTick((n) => n + 1);
     if (opts.scrollY == null) {
@@ -412,6 +419,14 @@ export default function AdminPage() {
     const row = Object.fromEntries(new FormData(e.currentTarget).entries());
 
     row.published = e.currentTarget.elements.published.checked;
+    // the slug is the page address: capitals or a trailing space break the
+    // link (a trip went to "Page not found" that way), so it is always cleaned
+    row.slug = slugify(row.slug || row.title);
+    if (!row.slug) {
+      setNote({ error: true, text: 'URL slug: use letters or numbers, e.g. svaneti-ski-touring.' });
+      return;
+    }
+    row.title = String(row.title ?? '').trim();
     row.spots_left = row.spots_left === '' ? null : Number(row.spots_left);
     row.price = row.price === '' ? null : Number(row.price);
 
@@ -492,7 +507,8 @@ export default function AdminPage() {
 
     row.gallery = photos;
     // a starred photo wins; otherwise fall back to the first one
-    row.cover_image = cover || photos[0] || null;
+    // the first photo is the cover
+    row.cover_image = photos[0] || cover || null;
 
     const scrollY = window.scrollY;
     const wasEditing = editingId;
