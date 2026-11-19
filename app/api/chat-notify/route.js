@@ -116,7 +116,7 @@ export async function POST(request) {
         '💬 New chat message',
         String(message.body ?? '').slice(0, 3000),
         '',
-        `Reply to this message to answer, or open ${inbox}`,
+        `Open the inbox to answer: ${inbox}`,
         `Chat: ${message.conversation_id}`,
       ].join('\n'),
       disable_web_page_preview: true,

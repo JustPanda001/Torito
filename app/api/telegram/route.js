@@ -1,64 +1,10 @@
-// Telegram's webhook: replying to a chat alert answers the visitor on the site.
-//
-// Only a reply to one of the bot's alerts, from the team's own chat, counts.
-// Telegram sends the secret set with setWebhook on every call. Anything else
-// gets a plain 200, because Telegram retries whatever it sees fail.
-//
-// This writes as the service role: there is no signed-in admin here, so the row
-// security rules would otherwise refuse a message with sender 'admin'.
-
-import { createClient } from '@supabase/supabase-js';
-import { secretMatches } from '@/lib/secretMatch';
+// Telegram replies to chat alerts are switched off (owner, 2026-11-20): alerts
+// only notify the team, who answer from the /chat inbox on the site. This
+// address stays so Telegram's old webhook gets a quiet 200 instead of
+// retrying an error; it does nothing and reads nothing.
 
 export const runtime = 'nodejs';
 
-const {
-  NEXT_PUBLIC_SUPABASE_URL: SUPABASE_URL,
-  SUPABASE_SERVICE_ROLE_KEY,
-  TELEGRAM_WEBHOOK_SECRET,
-} = process.env;
-
-// the support bot's webhook; same fallback as /api/chat-notify
-const TELEGRAM_BOT_TOKEN = process.env.SUPPORT_BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN;
-const TELEGRAM_CHAT_ID = process.env.SUPPORT_CHAT_ID || process.env.TELEGRAM_CHAT_ID;
-
-const CHAT_LINE = /^Chat: ([0-9a-f-]{36})$/m;
-
-export async function POST(request) {
-  // its own random secret, set with setWebhook (see /api/admin/telegram-webhook)
-  if (!secretMatches(request.headers.get('x-telegram-bot-api-secret-token'), TELEGRAM_WEBHOOK_SECRET)) {
-    return Response.json({ error: 'Forbidden.' }, { status: 401 });
-  }
-
-  const update = await request.json().catch(() => null);
-  const message = update?.message;
-  const id = CHAT_LINE.exec(message?.reply_to_message?.text ?? '')?.[1];
-  const body = message?.text?.trim();
-
-  if (!id || !body || String(message.chat?.id) !== String(TELEGRAM_CHAT_ID)) {
-    return Response.json({ ok: true });
-  }
-  if (!SUPABASE_SERVICE_ROLE_KEY) {
-    await tell(message.chat.id, 'Not sent: SUPABASE_SERVICE_ROLE_KEY is not set.');
-    return Response.json({ ok: true });
-  }
-
-  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-  const { error } = await supabase
-    .from('chat_messages')
-    .insert({ conversation_id: id, sender: 'admin', body });
-
-  if (error) console.error('Telegram reply failed:', error.message);
-  await tell(message.chat.id, error ? 'Not sent, please answer on the site.' : 'Sent ✓');
-  return Response.json({ ok: true });
-}
-
-async function tell(chatId, text) {
-  await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ chat_id: chatId, text }),
-  });
+export async function POST() {
+  return Response.json({ ok: true, ignored: true });
 }
