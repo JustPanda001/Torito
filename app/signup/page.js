@@ -10,6 +10,7 @@ import { useT } from '@/lib/i18n';
 import SocialSignIn from '@/components/SocialSignIn';
 import { DEFAULT_DIAL, phoneDigits } from '@/lib/dial-codes';
 import DialSelect from '@/components/DialSelect';
+import { isPwnedPassword } from '@/lib/pwnedPassword';
 
 /** Supabase error -> friendly, translated text; anything unknown gets a generic line. */
 function authMessage(error, t) {
@@ -78,6 +79,12 @@ export default function SignupPage() {
     }
 
     setBusy(true);
+    // a password from a known data breach is refused (checked privately)
+    if (await isPwnedPassword(password)) {
+      setBusy(false);
+      setNote({ error: true, key: 'auth.errPwned' });
+      return;
+    }
     const { data: result, error } = await supabase.auth.signUp({
       email: String(data.get('email')).trim(),
       password,

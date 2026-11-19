@@ -22,7 +22,7 @@ const nextConfig = {
       "style-src 'self' 'unsafe-inline' https://accounts.google.com",
       "img-src 'self' data: blob: https:",
       "font-src 'self' data:",
-      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.open-meteo.com https://archive-api.open-meteo.com https://photon.komoot.io https://accounts.google.com",
+      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.open-meteo.com https://archive-api.open-meteo.com https://photon.komoot.io https://accounts.google.com https://api.pwnedpasswords.com",
       "frame-src https://accounts.google.com https://www.strava.com https://strava-embeds.com https://www.openstreetmap.org",
       "frame-ancestors 'none'",
       "base-uri 'self'",

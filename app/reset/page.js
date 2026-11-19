@@ -16,6 +16,7 @@ import { useRouter } from 'next/navigation';
 import { safeNext } from '@/lib/safeNext';
 import { supabase } from '@/lib/supabaseClient';
 import { useT } from '@/lib/i18n';
+import { isPwnedPassword } from '@/lib/pwnedPassword';
 
 /** Supabase error -> friendly, translated text; anything unknown gets a generic line. */
 function authMessage(error, t) {
@@ -125,6 +126,12 @@ export default function ResetPage() {
     }
 
     setBusy(true);
+    // a password from a known data breach is refused (checked privately)
+    if (await isPwnedPassword(password)) {
+      setBusy(false);
+      setNote({ error: true, key: 'auth.errPwned' });
+      return;
+    }
     const { error } = await supabase.auth.updateUser({ password });
     setBusy(false);
 
