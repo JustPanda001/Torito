@@ -1075,7 +1075,7 @@ body.has-offline-banner{padding-bottom:104px}
 /* the brand column centres on its own; the link columns stay left-aligned */
 .footer-brand{text-align:center}
 .footer-brand .footer-logo{margin-left:auto;margin-right:auto}
-.footer-logo{height:84px;width:auto;margin-bottom:14px;color:var(--ink)}
+.footer-logo{height:124px;width:auto;margin-bottom:14px;color:var(--ink)}
 .site-footer h4{margin:0 0 10px;font-size:15px}
 .site-footer a{display:block;font-size:14px;color:var(--ink-soft);padding:3px 0}
 .site-footer a:hover{color:var(--green-500)}
@@ -1138,7 +1138,7 @@ body.has-offline-banner{padding-bottom:104px}
   .hero{height:76vh}
   .section{padding:48px 16px}
   .footer-inner{grid-template-columns:1fr}
-  .footer-logo{height:64px}
+  .footer-logo{height:100px}
 }
 
 /* ================= THEME + LANGUAGE CONTROLS ================= */
@@ -2701,17 +2701,17 @@ html:has(body.modal-open){overflow:hidden}
 .activity-window{
   position:relative;overflow:hidden;padding:10px 0 26px;margin:-10px 0 -26px;
   /* cards fade out at the left edge and fade in on the right */
-  -webkit-mask-image:linear-gradient(to right,transparent 0,#000 140px,#000 calc(100% - 90px),transparent 100%);
-          mask-image:linear-gradient(to right,transparent 0,#000 140px,#000 calc(100% - 90px),transparent 100%);
+  -webkit-mask-image:linear-gradient(to right,transparent 0,#000 56px,#000 calc(100% - 56px),transparent 100%);
+          mask-image:linear-gradient(to right,transparent 0,#000 56px,#000 calc(100% - 56px),transparent 100%);
 }
 .activity-track{display:flex;gap:18px;width:max-content;will-change:transform}
 .activity-track .activity-card{flex:0 0 clamp(220px,24vw,340px)}
 .js .activity-track .activity-card,.js .reveal:not(.visible) .activity-track .activity-card{opacity:1;transform:none}
 /* a blur that grows toward each edge, on top of the fade */
-.marquee-blur{position:absolute;top:0;bottom:0;width:170px;pointer-events:none;z-index:2;
+.marquee-blur{position:absolute;top:0;bottom:0;width:64px;pointer-events:none;z-index:2;
   -webkit-backdrop-filter:blur(7px);backdrop-filter:blur(7px)}
 .marquee-blur.left{left:0;-webkit-mask-image:linear-gradient(to right,#000 25%,transparent);mask-image:linear-gradient(to right,#000 25%,transparent)}
-.marquee-blur.right{right:0;width:120px;-webkit-mask-image:linear-gradient(to left,#000 25%,transparent);mask-image:linear-gradient(to left,#000 25%,transparent)}
+.marquee-blur.right{right:0;width:64px;-webkit-mask-image:linear-gradient(to left,#000 25%,transparent);mask-image:linear-gradient(to left,#000 25%,transparent)}
 /* the arrows sit over the edges, vertically centred on the cards */
 .marquee-arrow{
   position:absolute;top:calc(50% - 8px);transform:translateY(-50%);z-index:3;
@@ -2727,9 +2727,11 @@ html:has(body.modal-open){overflow:hidden}
 .marquee-arrow.prev{left:-6px}
 .marquee-arrow.next{right:-6px}
 @media (max-width:640px){
-  .activity-window{-webkit-mask-image:linear-gradient(to right,transparent 0,#000 60px,#000 calc(100% - 40px),transparent 100%);mask-image:linear-gradient(to right,transparent 0,#000 60px,#000 calc(100% - 40px),transparent 100%)}
-  .marquee-blur{width:80px}
-  .marquee-blur.right{width:60px}
+  .activity-window{-webkit-mask-image:linear-gradient(to right,transparent 0,#000 28px,#000 calc(100% - 28px),transparent 100%);mask-image:linear-gradient(to right,transparent 0,#000 28px,#000 calc(100% - 28px),transparent 100%)}
+  .marquee-blur,.marquee-blur.right{width:32px}
+  /* two cards fit side by side on a phone */
+  .activity-track .activity-card{flex-basis:150px}
+  .activity-track{gap:12px}
   .marquee-arrow{width:40px;height:40px}
 }
 /* sign-in and admin cards: the hand-lettered logo with the rider */
@@ -2759,3 +2761,14 @@ html:has(body.modal-open){overflow:hidden}
 .bm-tip{position:relative;padding-right:34px}
 .bm-tip-close{all:unset;cursor:pointer;position:absolute;top:6px;right:8px;width:22px;height:22px;display:grid;place-items:center;border-radius:50%;font-size:16px;color:var(--ink-soft)}
 .bm-tip-close:hover{background:color-mix(in srgb,var(--ink) 10%,transparent);color:var(--ink)}
+
+/* out-of-season trip: the page sits blurred behind a short note */
+.detail-page.off-season{filter:blur(9px);pointer-events:none;user-select:none}
+.off-season-veil{position:fixed;inset:0;z-index:60;display:grid;place-items:center;padding:16px;background:rgba(18,48,79,.25)}
+.off-season-card{max-width:420px;width:100%;background:#fff;color:#12304f;border-radius:20px;padding:28px 24px;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.25)}
+.off-season-card h2{margin:0 0 10px;font-size:24px;color:#12304f}
+.off-season-card p{margin:0 0 22px;color:#4a5f73}
+.off-season-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.off-season-btn{padding:12px 22px;border-radius:999px;font-weight:700;font-size:15px;cursor:pointer;border:2px solid #064F97;background:transparent;color:#064F97;text-decoration:none}
+.off-season-btn.primary{background:#064F97;color:#fff}
+.off-season-btn:hover{filter:brightness(1.1)}

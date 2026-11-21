@@ -52,6 +52,33 @@ const Icon = ({ children }) => (
   <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.7">{children}</svg>
 );
 
+// Summer trips are out of season (owner, 2026-11-21): the page stays behind a
+// blur with a short note, a way back and a way to the winter trips.
+const OFF_SEASON = {
+  en: ['Not available right now', 'This trip is out of season. Have a look at what winter has to offer.', 'Back', 'See what winter offers'],
+  ka: ['ახლა მიუწვდომელია', 'ეს ტური ახლა სეზონს გარეთაა. ნახე, რას გთავაზობს ზამთარი.', 'უკან', 'ნახე ზამთრის შეთავაზებები'],
+  ru: ['Сейчас недоступно', 'Этот тур сейчас не в сезоне. Посмотрите, что предлагает зима.', 'Назад', 'Что есть зимой'],
+  zh: ['暂不开放', '该行程目前不在季节内。看看冬季有哪些活动吧。', '返回', '查看冬季活动'],
+};
+
+function OffSeason({ lang }) {
+  const router = useRouter();
+  const [title, text, back, winter] = OFF_SEASON[lang] || OFF_SEASON.en;
+  const goBack = () => (window.history.length > 1 ? router.back() : router.push('/activities'));
+  return (
+    <div className="off-season-veil" role="dialog" aria-modal="true" aria-labelledby="off-season-title">
+      <div className="off-season-card">
+        <h2 id="off-season-title">{title}</h2>
+        <p>{text}</p>
+        <div className="off-season-actions">
+          <button type="button" className="off-season-btn" onClick={goBack}>{back}</button>
+          <Link className="off-season-btn primary" href="/activities?cat=ski">{winter}</Link>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function TourPage({ params }) {
   const { slug } = use(params);
   const { t, lang } = useT();
@@ -214,7 +241,8 @@ export default function TourPage({ params }) {
   return (
     <div className="subpage-shell">
       <SiteHeader solid />
-      <main className="detail-page">
+      {!bookable && <OffSeason lang={lang} />}
+      <main className={`detail-page${bookable ? '' : ' off-season'}`} aria-hidden={!bookable || undefined}>
 
         <nav className="crumbs">
           <Link href="/">{t('trip.crumbHome')}</Link><span>/</span>

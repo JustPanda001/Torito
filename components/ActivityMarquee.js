@@ -15,7 +15,7 @@
 import { useEffect, useRef } from 'react';
 import Link from 'next/link';
 
-const SPEED = 38;        // px per second
+const SPEED = 58;        // px per second
 const NUDGE_MS = 650;    // how long an arrow nudge takes
 
 const easeOut = (t) => 1 - (1 - t) ** 3;

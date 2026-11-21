@@ -416,7 +416,7 @@ export default function ChatWidget() {
       {open && (
         <div className="chat-panel" ref={sheetRef} role="dialog" aria-label={t('chat.title')}>
           <div className="chat-head">
-            <span className="chat-avatar"><img src="/assets/mtani-mark.svg" alt="" /></span>
+            <span className="chat-avatar"><img src="/assets/mtani-mark-blue.png" alt="" /></span>
             <div className="chat-head-main">
               <strong>{t('chat.title')}</strong>
               <span>{t('chat.sub')}</span>

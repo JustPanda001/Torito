@@ -28,7 +28,6 @@ export default function SiteFooter() {
           <span>{t('footer.location')}</span>
         </div>
       </div>
-      <p className="copyright">© 2026 MTANI</p>
     </footer>
   );
 }

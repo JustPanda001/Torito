@@ -14,7 +14,7 @@ const ENTITY = '[TODO: legal entity name, registration number and registered add
 const RETENTION = '[TODO: confirm how long account and booking data are kept]';
 const LAW = '[TODO: governing law and court]';
 
-const SECTIONS = 7;
+const SECTIONS = 12;
 
 export default function LegalPage() {
   const { t } = useT();
