@@ -1120,7 +1120,7 @@ body.has-offline-banner{padding-bottom:104px}
 @media (max-width:820px){
   .header-inner{gap:12px;padding:0 16px}
   .header-inner > .search-box{display:none}
-  .search-toggle{display:flex}
+  .search-toggle{display:flex;margin-left:6px}
   /* no room for the heart in the bar; it lives in the account menu instead */
   .saved-btn{display:none}
   .account-drop .drop-fav{display:flex}
