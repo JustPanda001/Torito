@@ -2779,3 +2779,9 @@ html:has(body.modal-open){overflow:hidden}
    as tall as it is wide, so 0.23 x 178cqw = 41cqw. */
 .winter-card:has(img[src*="lessons-tezza"]),.activity-card:has(img[src*="lessons-tezza"]){container-type:inline-size;background:#e9e4e3}
 img[src*="lessons-tezza"]{position:absolute;left:0;width:100%!important;height:auto!important;object-fit:fill!important;bottom:calc(36% - 41cqw);top:auto}
+
+/* freeride photo: zoomed out so three of the four jumps fit. Shown at full
+   card width and sat on the bottom edge; the foggy sky above it is matched
+   by the card colour, so the top blends in */
+.winter-card:has(img[src*="freeride-home"]),.activity-card:has(img[src*="freeride-home"]){background:linear-gradient(#dfe6f3,#e4eaf6)}
+img[src*="freeride-home"]{position:absolute;left:0;bottom:0;top:auto;width:100%!important;height:auto!important;object-fit:fill!important;-webkit-mask-image:linear-gradient(transparent,#000 18%);mask-image:linear-gradient(transparent,#000 18%)}

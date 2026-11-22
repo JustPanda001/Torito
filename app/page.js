@@ -22,14 +22,14 @@ const HERO = [GUDAURI1, SKIER, GUDAURI, SVANETI, CAMPING];
 const WINTER = [
   ['lessons', [A + 'lessons-tezza-800.webp', null, 800, 1423]],
   ['skitouring', [A + 'skitouring-800.webp', null, 800, 1200]],
-  ['freeride', [A + 'gudauri-hero-800.webp', null, 800, 450]],
+  ['freeride', [A + 'freeride-home-1000.webp', null, 900, 844]],
   ['paragliding', [A + 'paragliding-home-800.webp', null, 800, 533]],
 ];
 
 // Everything the site offers, for the sliding row: [image, label key, link]
 const ACTIVITIES = [
   [[A + 'lessons-tezza-800.webp', null, 800, 1423], 'winter.lessons', '/activities?cat=ski&type=lessons'],
-  [[A + 'trips/gudauri-1-800.webp', null, 800, 533], 'winter.freeride', '/activities?cat=ski&type=freeride'],
+  [[A + 'freeride-home-1000.webp', null, 900, 844], 'winter.freeride', '/activities?cat=ski&type=freeride'],
   [[A + 'skitouring-800.webp', null, 800, 1200], 'winter.skitouring', '/activities?cat=ski&type=skitouring'],
   [[A + 'paragliding-home-800.webp', null, 800, 533], 'winter.paragliding', '/activities?cat=ski&type=paragliding'],
   [[A + 'svaneti-history-800.webp', null, 800, 457], 'cat.hiking', '/activities?cat=hiking'],
