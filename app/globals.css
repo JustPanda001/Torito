@@ -2772,3 +2772,10 @@ html:has(body.modal-open){overflow:hidden}
 .off-season-btn{padding:12px 22px;border-radius:999px;font-weight:700;font-size:15px;cursor:pointer;border:2px solid #064F97;background:transparent;color:#064F97;text-decoration:none}
 .off-season-btn.primary{background:#064F97;color:#fff}
 .off-season-btn:hover{filter:brightness(1.1)}
+
+/* lessons photo: shown at its natural width (no zoom), lifted so the people's
+   feet sit about a third of the way up the card, just above the title.
+   Feet are ~23% of the photo's height above its bottom; the photo is 1.78x
+   as tall as it is wide, so 0.23 x 178cqw = 41cqw. */
+.winter-card:has(img[src*="lessons-tezza"]),.activity-card:has(img[src*="lessons-tezza"]){container-type:inline-size;background:#e9e4e3}
+img[src*="lessons-tezza"]{position:absolute;left:0;width:100%!important;height:auto!important;object-fit:fill!important;bottom:calc(36% - 41cqw);top:auto}
