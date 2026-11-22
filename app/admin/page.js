@@ -48,6 +48,7 @@ const OPTION_LABELS = {
   mountaineering: 'Mountaineering',
   lessons: 'Instructors & schools (lessons)',
   freeride: 'Freeride',
+  skitouring: 'Ski touring',
   freestyle: 'Freestyle',
   snowmobile: 'Snowmobile rides',
   paragliding: 'Paragliding',
@@ -97,7 +98,7 @@ const FIELDS = [
   ['category', 'Category *', { required: true, wide: true, options: CATEGORIES }],
   // ski only: what the visitor is actually booking. A lesson has no journey,
   // so choosing it strips the form down the same way the category used to.
-  ['subtype', 'Winter type *', { options: ['', 'lessons', 'freeride', 'freestyle', 'snowmobile', 'paragliding'], wide: true, onlyFor: 'ski' }],
+  ['subtype', 'Winter type *', { options: ['', 'lessons', 'skitouring', 'freeride', 'freestyle', 'snowmobile', 'paragliding'], wide: true, onlyFor: 'ski' }],
   ['slug', 'URL slug *', { required: true, wide: true, placeholder: 'mestia-ushguli-trek', hint: 'Fills itself from the title — edit it if you want a different address' }],
   ['subtitle', 'Subtitle', { wide: true, placeholder: '4 days' }],
   ['region', 'Region', { placeholder: 'Svaneti' }],
@@ -132,6 +133,7 @@ const FIELDS = [
 const LIST_FILTERS = [
   ['all', 'All'],
   ['lessons', 'Lessons'],
+  ['skitouring', 'Ski touring'],
   ['freeride', 'Freeride'],
   ['freestyle', 'Freestyle'],
   ['snowmobile', 'Snowmobile'],
