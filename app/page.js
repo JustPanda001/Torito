@@ -9,7 +9,7 @@ import { useT } from '@/lib/i18n';
 // Optimised copies live next to the originals in /public/assets (made with
 // sharp; originals are untouched). [src, srcSet, width, height]
 const A = '/assets/';
-const GUDAURI1 = [A + 'gudauri-1-1600.webp', A + 'gudauri-1-800.webp 800w, ' + A + 'gudauri-1-1600.webp 1600w', 1600, 900];
+const GUDAURI1 = [A + 'hero-gudauri-1600.webp', A + 'hero-gudauri-800.webp 800w, ' + A + 'hero-gudauri-1600.webp 1600w, ' + A + 'hero-gudauri-2400.webp 2400w', 1600, 843];
 const GUDAURI = [A + 'gudauri-hero-1600.webp', A + 'gudauri-hero-800.webp 800w, ' + A + 'gudauri-hero-1600.webp 1600w', 1600, 900];
 const SVANETI = [A + 'svaneti-1600.webp', A + 'svaneti-800.webp 800w, ' + A + 'svaneti-1600.webp 1600w', 1600, 1009];
 const CAMPING = [A + 'camping-1300.webp', A + 'camping-800.webp 800w, ' + A + 'camping-1300.webp 1300w', 1300, 867];
