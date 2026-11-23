@@ -10,19 +10,18 @@
 // (currentProfile() in lib/supabaseClient.js) and what is_admin() checks in
 // the database.
 
+//
+// The sheet update and the customer email live in lib/bookingStatus.js, so
+// the automatic confirm (Gudauri lessons) does exactly what Confirm does here.
+
 import { createClient } from '@supabase/supabase-js';
-import { bookingRef } from '@/lib/bookingRef';
-import { sendBookingEmail } from '@/lib/bookingEmail';
-import { SITE_URL } from '@/lib/siteUrl';
+import { STATUS_COLUMNS, statusSideEffects } from '@/lib/bookingStatus';
 
 export const runtime = 'nodejs';
 
 const {
   NEXT_PUBLIC_SUPABASE_URL: SUPABASE_URL,
   NEXT_PUBLIC_SUPABASE_ANON_KEY: SUPABASE_KEY,
-  SUPABASE_SERVICE_ROLE_KEY,
-  SHEETS_WEBHOOK_URL,
-  SHEETS_WEBHOOK_SECRET,
 } = process.env;
 
 const STATUSES = ['new', 'confirmed', 'declined'];
@@ -82,9 +81,11 @@ export async function POST(request) {
     return Response.json({ error: 'The customer cancelled this booking.' }, { status: 409 });
   }
 
+  // an admin's answer also stops a pending automatic confirm, so Undo (back
+  // to new) is never confirmed again behind the admin's back
   const { data, error } = await supabase
-    .from('bookings').update({ status }).eq('id', id)
-    .select('id, status, tour_slug, tour_title, kind, wanted_date, lesson_time, people, skill_level, lesson_type, answers, total, name, email, user_id');
+    .from('bookings').update({ status, auto_confirm_at: null }).eq('id', id)
+    .select(STATUS_COLUMNS);
   if (error) {
     console.error('Booking status update failed:', error.message);
     return Response.json({ error: 'Could not save the change. Please try again.' }, { status: 500 });
@@ -95,56 +96,7 @@ export async function POST(request) {
   }
 
   const saved = data[0];
-  const ref = bookingRef(saved.id);
-  const site = SITE_URL;
-  // the customer hears about Confirm and Decline once; Undo (back to new) is silent
-  const notify = (saved.status === 'confirmed' || saved.status === 'declined')
-    && before?.status !== saved.status;
-  // the email goes to the customer's account address, never the one stored on
-  // the booking row (SEC-01); no account address, no email
-  const to = notify ? await accountEmail(saved.user_id) : null;
+  const { emailed } = await statusSideEffects(saved, before?.status);
 
-  const [sheet, mail] = await Promise.allSettled([
-    updateSheet(ref, saved.status),
-    notify && to ? sendBookingEmail({ ...saved, email: to, ref }, site, saved.status) : Promise.resolve(false),
-  ]);
-  if (sheet.status === 'rejected') console.error('Sheet status update failed:', sheet.reason?.message);
-  if (mail.status === 'rejected') console.error('Status email failed:', mail.reason?.message);
-
-  return Response.json({
-    ok: true, id: saved.id, status: saved.status,
-    emailed: mail.status === 'fulfilled' && mail.value === true,
-  });
-}
-
-/** Tells the sheet's script to set the Status cell and row colour for this ref. */
-async function updateSheet(ref, status) {
-  if (!SHEETS_WEBHOOK_URL) return;
-
-  const res = await fetch(SHEETS_WEBHOOK_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ secret: SHEETS_WEBHOOK_SECRET ?? '', action: 'status', ref, status }),
-  });
-
-  // same check as the booking append: Google answers a misconfigured web app
-  // with a 200 sign-in page, and a wrong secret with "no"
-  const reply = (await res.text()).trim();
-  if (res.ok && reply === 'not found') {
-    // normal for bookings made before the sheet had a Ref column
-    console.warn('Sheet status update: no row with ref', ref);
-  } else if (!res.ok || reply !== 'ok') {
-    console.error('Sheet status update failed:', res.status, reply.slice(0, 120));
-  }
-}
-
-/** The verified email of the account that made a booking, or null. */
-async function accountEmail(userId) {
-  if (!userId || !SUPABASE_SERVICE_ROLE_KEY) return null;
-  const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-  const { data, error } = await admin.auth.admin.getUserById(userId);
-  if (error) { console.error('Account email lookup failed:', error.message); return null; }
-  return data?.user?.email ?? null;
+  return Response.json({ ok: true, id: saved.id, status: saved.status, emailed });
 }

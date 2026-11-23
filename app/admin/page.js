@@ -421,6 +421,10 @@ export default function AdminPage() {
     const row = Object.fromEntries(new FormData(e.currentTarget).entries());
 
     row.published = e.currentTarget.elements.published.checked;
+    // team-only booking switches (see app/api/bookings/route.js); a box the
+    // form does not show for this category saves as off
+    row.auto_confirm = Boolean(e.currentTarget.elements.auto_confirm?.checked);
+    row.assign_instructors = Boolean(e.currentTarget.elements.assign_instructors?.checked);
     // the slug is the page address: capitals or a trailing space break the
     // link (a trip went to "Page not found" that way), so it is always cleaned
     row.slug = slugify(row.slug || row.title);
@@ -826,6 +830,21 @@ export default function AdminPage() {
               <input type="checkbox" name="published" defaultChecked />
               <span>Published (visible on the site)</span>
             </label>
+
+            <label className="check">
+              <input type="checkbox" name="auto_confirm" />
+              <span>Confirm bookings automatically (about 40 seconds after the request, with the same confirmation email as pressing Confirm). Team only</span>
+            </label>
+
+            {lessonForm && (
+              <label className="check">
+                <input type="checkbox" name="assign_instructors" />
+                <span>
+                  Assign instructors from the <Link className="auth-link" href="/admin/instructors">instructor roster</Link>
+                  {' '}(needs a SKI / SNOWBOARD question). Team only
+                </span>
+              </label>
+            )}
 
             <div className="admin-actions">
               <button className="auth-btn" type="submit" disabled={saving}>

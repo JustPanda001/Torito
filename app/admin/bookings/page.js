@@ -44,6 +44,15 @@ const STATUS_LABEL = { new: 'Needs answer', confirmed: 'Confirmed', declined: 'D
 // transfers are all 'trip'
 const KIND_LABEL = { trip: 'Activity', lesson: 'Lesson', waitlist: 'Waitlist' };
 
+// 'ski' / 'snowboard' from a booking's answers ("SKI OR SNOWBOARD"), as the
+// database reads it in assign_instructor()
+function disciplineOf(answers) {
+  const values = Object.values(answers && typeof answers === 'object' ? answers : {}).map(String);
+  if (values.some((v) => /^\s*snow\s*board/i.test(v))) return 'snowboard';
+  if (values.some((v) => /^\s*ski(s|ing|er)?\s*$/i.test(v))) return 'ski';
+  return null;
+}
+
 // "2026-12-28" -> "28 Dec 2026". The date has no time zone, so format as UTC
 // to keep the day from shifting.
 function formatDay(value) {
@@ -86,6 +95,11 @@ export default function AdminBookingsPage() {
   // per-booking save errors, and the ids with a save in flight
   const [rowErrors, setRowErrors] = useState({});
   const [busy, setBusy] = useState(() => new Set());
+  // the instructor roster (/admin/instructors) and the trips that assign one
+  const [instructors, setInstructors] = useState([]);
+  const [assignSlugs, setAssignSlugs] = useState(() => new Set());
+  // per-booking notes after an instructor change (e.g. "already teaches then")
+  const [rowNotes, setRowNotes] = useState({});
   // re-rendered every minute so "x minutes ago" stays honest
   const [now, setNow] = useState(() => Date.now());
   const userId = profile?.id ?? null;
@@ -112,6 +126,14 @@ export default function AdminBookingsPage() {
     }
     setRows(data ?? []);
     setNow(Date.now());
+    // the roster and the trips that use it; either failing only hides the picker
+    const [roster, trips] = await Promise.all([
+      supabase.from('instructors').select('id, name, discipline, rank, position, active')
+        .order('discipline').order('rank').order('position'),
+      supabase.from('tours').select('slug').eq('assign_instructors', true),
+    ]);
+    if (!roster.error) setInstructors(roster.data ?? []);
+    if (!trips.error) setAssignSlugs(new Set((trips.data ?? []).map((t) => t.slug)));
     // opening the list is what clears the "!" on Booking requests
     markAdminBookingsSeen(userId, data ?? []);
   }, [userId]);
@@ -187,13 +209,49 @@ export default function AdminBookingsPage() {
     }
   }
 
+  // Optimistic like change(): the picker shows the new name at once and goes
+  // back with an error under it if the server refuses.
+  async function setInstructor(booking, value) {
+    const before = booking.instructor_id ?? null;
+    const wanted = value === '' ? null : value;
+    setRowErrors((prev) => ({ ...prev, [booking.id]: null }));
+    setRowNotes((prev) => ({ ...prev, [booking.id]: null }));
+    setBusy((prev) => new Set(prev).add(booking.id));
+    if (wanted !== 'auto') {
+      setRows((list) => list.map((r) => (r.id === booking.id ? { ...r, instructor_id: wanted } : r)));
+    }
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
+      if (!token) throw new Error('Your session has expired. Please sign in again.');
+      const res = await fetch('/api/admin/booking-instructor', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ id: booking.id, instructor_id: wanted }),
+      });
+      const result = await res.json().catch(() => null);
+      if (!res.ok || !result?.ok) throw new Error(result?.error || 'The change was not saved.');
+      setRows((list) => list.map((r) => (r.id === booking.id ? { ...r, instructor_id: result.instructor_id } : r)));
+      if (result.warning) setRowNotes((prev) => ({ ...prev, [booking.id]: result.warning }));
+    } catch (error) {
+      setRows((list) => list.map((r) => (r.id === booking.id ? { ...r, instructor_id: before } : r)));
+      setRowErrors((prev) => ({ ...prev, [booking.id]: `Could not change the instructor: ${friendlyError(error)}` }));
+    } finally {
+      setBusy((prev) => { const next = new Set(prev); next.delete(booking.id); return next; });
+    }
+  }
+
   return (
     <div className="subpage-shell">
       <SiteHeader solid />
       <main className="detail-page rev-admin">
         <div className="listing-head rev-admin-head">
           <h1>Bookings</h1>
-          <Link className="auth-link" href="/admin">Manage activities</Link>
+          <span>
+            <Link className="auth-link" href="/admin/instructors">Instructors</Link>
+            {' · '}
+            <Link className="auth-link" href="/admin">Manage activities</Link>
+          </span>
         </div>
         <p className="rev-admin-intro">
           Requests from the booking form, newest first. Confirming or declining changes the status the customer sees on My bookings. No email is sent from here, so reply to the customer yourself.
@@ -270,6 +328,14 @@ export default function AdminBookingsPage() {
                     <div><dt>People</dt><dd>{b.people ?? '-'}</dd></div>
                     <div><dt>Total</dt><dd>{b.total != null ? money(b.total) : '-'}</dd></div>
                     {lesson && <div><dt>Lesson</dt><dd>{lesson}</dd></div>}
+                    {b.kind !== 'waitlist' && (b.instructor_id || assignSlugs.has(b.tour_slug)) && (
+                      <InstructorPick
+                        booking={b}
+                        instructors={instructors}
+                        disabled={saving || b.status === 'cancelled' || b.status === 'declined'}
+                        onPick={(value) => setInstructor(b, value)}
+                      />
+                    )}
                   </dl>
 
                   <dl className="ab-meta ab-contact">
@@ -289,6 +355,7 @@ export default function AdminBookingsPage() {
                   </p>
 
                   {rowErrors[b.id] && <p className="rev-error" role="alert">{rowErrors[b.id]}</p>}
+                  {rowNotes[b.id] && <p className="form-note" role="status">{rowNotes[b.id]}</p>}
 
                   {b.status === 'cancelled' ? (
                     // the customer cancelled it themselves: nothing to answer
@@ -318,6 +385,43 @@ export default function AdminBookingsPage() {
           </ul>
         )}
       </main>
+    </div>
+  );
+}
+
+// Who teaches it: the booking's own discipline first, inactive instructors
+// only when already assigned. "Auto-assign" re-runs the roster rules.
+function InstructorPick({ booking, instructors, disabled, onPick }) {
+  const discipline = disciplineOf(booking.answers);
+  const current = booking.instructor_id ?? '';
+  const known = instructors.some((i) => i.id === current);
+  const usable = instructors.filter((i) => i.active || i.id === current);
+  const order = discipline === 'snowboard' ? ['snowboard', 'ski'] : ['ski', 'snowboard'];
+  return (
+    <div>
+      <dt>Instructor{discipline ? ` (${discipline})` : ''}</dt>
+      <dd>
+        <select
+          aria-label={`Instructor for ${bookingRef(booking.id)}`}
+          value={current}
+          disabled={disabled}
+          onChange={(e) => onPick(e.target.value)}
+          style={!current ? { color: '#b4534a', fontWeight: 600 } : undefined}
+        >
+          <option value="">Unassigned</option>
+          {current && !known && <option value={current}>(removed instructor)</option>}
+          {order.map((d) => {
+            const list = usable.filter((i) => i.discipline === d);
+            if (!list.length) return null;
+            return (
+              <optgroup key={d} label={d === 'ski' ? 'Ski' : 'Snowboard'}>
+                {list.map((i) => <option key={i.id} value={i.id}>{i.name}{i.active ? '' : ' (inactive)'}</option>)}
+              </optgroup>
+            );
+          })}
+          <option value="auto">Auto-assign by the rules</option>
+        </select>
+      </dd>
     </div>
   );
 }

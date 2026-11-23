@@ -19,6 +19,16 @@
 // and title are recomputed with lib/pricing.js — the same helper the booking
 // dialog uses to show its preview. The post's total and tour_title are ignored.
 
+//
+// Two extras for trips that ask for them in admin (today the Gudauri lessons):
+// "Assign instructors" picks the instructor as soon as the row is saved (see
+// lib/instructors.js), and "Confirm automatically" confirms the request about
+// 40 seconds after the "request received" email, with the same email and
+// sheet update as the admin's Confirm button (lib/bookingStatus.js). The timer
+// runs after the answer has gone back to the visitor; the every-minute sweep
+// (/api/cron/auto-confirm) catches any it missed.
+
+import { after } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { bookingRef } from '@/lib/bookingRef';
 import { isBookable } from '@/lib/bookable';
@@ -34,15 +44,20 @@ import { bookingQuestions, numberBounds } from '@/lib/bookingQuestions';
 import { packageSteps, packageExtra, packageAnswers } from '@/lib/packageBuilder';
 import { groupMax, groupsLimit } from '@/lib/groups';
 import { SITE_URL } from '@/lib/siteUrl';
+import { inSeason } from '@/lib/season';
+import { SAME_DAY_LEAD_MINUTES } from '@/lib/lessons';
+import { sendTelegram } from '@/lib/telegram';
+import { AUTO_CONFIRM_SECONDS, autoConfirm } from '@/lib/bookingStatus';
+import { assignInstructor, alertUnassigned, disciplineOf, lessonShape } from '@/lib/instructors';
 
 export const runtime = 'nodejs';
+// the automatic confirm waits ~40 s after the answer has been sent
+export const maxDuration = 60;
 
 const {
   NEXT_PUBLIC_SUPABASE_URL: SUPABASE_URL,
   NEXT_PUBLIC_SUPABASE_ANON_KEY: SUPABASE_KEY,
   SUPABASE_SERVICE_ROLE_KEY,
-  TELEGRAM_BOT_TOKEN,
-  TELEGRAM_CHAT_ID,
   SHEETS_WEBHOOK_URL,
   SHEETS_WEBHOOK_SECRET,
 } = process.env;
@@ -335,8 +350,14 @@ export async function POST(request) {
     phone: clean(body.phone, 40),
   };
 
+  // what the calendar greys out by the clock and the season, checked again
+  // here so a hand-made request cannot get round it
+  const offWhen = whenProblem(row, trip, days);
+  if (offWhen) return Response.json({ error: offWhen }, { status: 400 });
+
   // The dialog already greys out what is taken, but two people can have it
-  // open at once, so the check is repeated here against the live table.
+  // open at once, so the check is repeated here against the live table (and
+  // once more inside the insert, by the bookings_capacity_guard trigger).
   const clash = await alreadyTaken(supabase, row, trip, hours, days);
   if (clash) return Response.json({ error: clash }, { status: 409 });
   // the row is the visitor's own, so "read own bookings" lets it come back —
@@ -352,10 +373,24 @@ export async function POST(request) {
   const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
+  // "Confirm automatically" (admin, per trip): when the confirm is due
+  const autoAt = trip.auto_confirm === true && kind !== 'waitlist'
+    ? new Date(Date.now() + AUTO_CONFIRM_SECONDS * 1000).toISOString() : null;
   const { data: saved, error } = await admin
-    .from('bookings').insert({ ...row, user_id: user.id }).select('id, created_at, status').single();
+    .from('bookings')
+    .insert({ ...row, user_id: user.id, ...(autoAt ? { auto_confirm_at: autoAt } : {}) })
+    .select('id, created_at, status').single();
 
   if (error) {
+    // the database's own check (bookings_capacity_guard): someone else took
+    // the last place between our check above and this insert
+    if (/slot_full/.test(error.message ?? '')) {
+      return Response.json({
+        error: row.lesson_time
+          ? 'Sorry — that time was just booked by someone else. Please pick another.'
+          : 'Sorry — that date is fully booked. Please pick another.',
+      }, { status: 409 });
+    }
     // two requests sent at the same moment can both pass the count above; the
     // database trigger from RATE-LIMITS.sql then refuses the extra one
     if (/too many open requests/.test(error.message ?? '')) {
@@ -377,11 +412,38 @@ export async function POST(request) {
   const record = { ...row, id: saved.id, ref, status: saved.status ?? 'new', created_at: saved.created_at, category: trip.category ?? null };
   const site = SITE_URL;
 
+  // "Assign instructors" (admin, per trip): who teaches it. Never blocks the
+  // booking: nobody free, or the call failing, leaves it unassigned + alert.
+  let staff = null;
+  if (trip.assign_instructors === true && kind !== 'waitlist') {
+    const picked = await assignInstructor(admin, saved.id);
+    const { hours: h, days: d } = lessonShape(row.answers);
+    staff = {
+      instructor: picked?.name ?? null,
+      discipline: picked?.discipline ?? disciplineOf(row.answers),
+      hours: h,
+      days: d,
+    };
+  }
+
   // copies and the customer's email, best effort, never blocking the answer
   const [, , mail] = await Promise.allSettled([
-    notifyTelegram(record), appendToSheet(record), sendBookingEmail(record, site, record.kind === 'waitlist' ? 'waitlist' : 'received'),
+    notifyTelegram(record, staff, Boolean(autoAt)),
+    appendToSheet(staff ? { ...record, ...staff, instructor_row: true } : record),
+    sendBookingEmail(record, site, record.kind === 'waitlist' ? 'waitlist' : 'received'),
+    staff && !staff.instructor ? alertUnassigned(record, staff.discipline) : null,
   ]);
   if (mail.status === 'rejected') console.error('Confirmation email failed:', mail.reason?.message);
+
+  // the automatic confirm, once the visitor has their answer; if this is cut
+  // short, the every-minute sweep confirms it instead (the update is
+  // conditional, so only one of the two ever emails)
+  if (autoAt) {
+    after(async () => {
+      await new Promise((resolve) => { setTimeout(resolve, AUTO_CONFIRM_SECONDS * 1000 + 1500); });
+      await autoConfirm(saved.id, admin);
+    });
+  }
 
   return Response.json({
     ok: true, id: saved.id, ref, emailed: mail.status === 'fulfilled' && mail.value === true,
@@ -427,10 +489,48 @@ async function alreadyTaken(supabase, row, tour, hours, days = 1) {
       : 'Sorry — that time was just booked by someone else. Please pick another.';
   }
 
-  // a trip's date takes `limit` groups, whatever their size
-  return sameDay.length >= limit
+  // a trip's date takes `limit` groups, whatever their size. booked_slots()
+  // returns one row per (date, time, hours) with a `bookings` count, so the
+  // groups are the sum of those counts, not the number of rows.
+  const groups = sameDay.reduce((n, r) => n + (Number(r.bookings) || 1), 0);
+  return groups >= limit
     ? 'Sorry — that date is fully booked. Please pick another.'
     : null;
+}
+
+/**
+ * Why this date or time cannot be booked by the clock or the season, or null.
+ * The calendar already greys these out; this keeps a hand-made request to the
+ * same rules: every day the booking covers (a multi-day lesson's too) inside
+ * the trip's season, a time that is one of the times offered, and today's
+ * times only with SAME_DAY_LEAD_MINUTES of notice in Tbilisi.
+ */
+function whenProblem(row, tour, days = 1) {
+  if (row.kind === 'waitlist' || !row.wanted_date) return null;
+
+  const [y, m, d] = row.wanted_date.split('-').map(Number);
+  for (let k = 0; k < Math.max(1, days); k += 1) {
+    if (!inSeason(tour, new Date(y, m - 1, d + k))) {
+      return days > 1
+        ? 'Sorry — those days run outside the season. Please pick other dates or fewer days.'
+        : 'Sorry — that date is outside the season. Please pick another.';
+    }
+  }
+
+  if (!row.lesson_time) return null;
+  const offered = timeQuestion(tour, bookingQuestions(tour))?.options ?? [];
+  if (offered.length && !offered.includes(row.lesson_time)) {
+    return 'Please pick one of the times offered.';
+  }
+  if (row.wanted_date === georgiaToday()) {
+    const now = new Date(Date.now() + 4 * 60 * 60 * 1000);
+    const nowMin = now.getUTCHours() * 60 + now.getUTCMinutes();
+    const [hh, mm] = row.lesson_time.split(':').map(Number);
+    if (hh * 60 + (mm || 0) < nowMin + SAME_DAY_LEAD_MINUTES) {
+      return 'Sorry — that time has passed or starts too soon to book online. Please pick a later time, or write to us in the chat.';
+    }
+  }
+  return null;
 }
 
 function lines(row) {
@@ -453,20 +553,13 @@ function lines(row) {
   return out;
 }
 
-async function notifyTelegram(row) {
-  if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) return;
-
-  const res = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      chat_id: TELEGRAM_CHAT_ID,
-      text: lines(row).join('\n'),
-      disable_web_page_preview: true,
-    }),
-  });
-
-  if (!res.ok) console.error('Telegram notify failed:', res.status, await res.text());
+async function notifyTelegram(row, staff = null, auto = false) {
+  const out = lines(row);
+  // trips that assign instructors say who got it (or that nobody is free yet)
+  if (staff) out.push(`Instructor: ${staff.instructor ?? 'UNASSIGNED'}`);
+  // a trip with "Confirm automatically" on
+  if (auto) out.push(`Auto-confirms in ~${AUTO_CONFIRM_SECONDS} s`);
+  await sendTelegram(out.join('\n'));
 }
 
 async function appendToSheet(row) {

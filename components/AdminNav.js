@@ -115,6 +115,9 @@ export default function AdminNav({ rootRef }) {
         Bookings
         {newBookings > 0 && <span className="admin-nav-count">{newBookings}</span>}
       </Link>
+      <Link className="admin-nav-btn top admin-nav-link" href="/admin/instructors">
+        Instructors
+      </Link>
       {items.map((item) => (
         <button
           type="button"

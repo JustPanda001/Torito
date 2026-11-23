@@ -50,6 +50,10 @@ group's id — it starts with a minus sign.
 This uses an Apps Script attached to the sheet itself. No Google Cloud project,
 no service account, no JSON key.
 
+> **Newest version of the script:** `scripts/sheets/booking-log.gs`. It is the
+> code below plus the Instructor column and the **Instructors** tabs (section 7).
+> Paste that file rather than the block below.
+
 1. Create a blank sheet. You do **not** need to add headers — the script writes
    them the first time a booking arrives.
 
@@ -425,6 +429,40 @@ Without this, the link still confirms the account but lands on the Site URL.
 Run `BOOKINGS-ACCOUNT.sql` in the Supabase SQL editor. It links requests made
 before this change to their accounts by email, so they show on My bookings
 too. New requests are linked automatically.
+
+---
+
+## 7. Instructors, auto-confirm and the daily report (15 minutes, once)
+
+The database side (`INSTRUCTORS-AUTOCONFIRM.sql`) is already applied. What is
+left is on Vercel and Google:
+
+1. **CRON_SECRET.** In Supabase -> SQL editor run
+   `select decrypted_secret from vault.decrypted_secrets where name = 'cron_secret';`
+   and copy the value. In Vercel -> Settings -> Environment Variables add
+   `CRON_SECRET` = that value (Production), then **Redeploy**. Vercel Cron sends
+   it to `/api/cron/daily-report`; the Supabase job `auto-confirm-bookings`
+   sends the same value to `/api/cron/auto-confirm`. Without it both answer 401
+   (the 40-second confirm inside the booking still works on its own).
+2. **The sheet script.** Open the booking-log sheet -> Extensions -> Apps
+   Script, select all, paste `scripts/sheets/booking-log.gs`. Put your own
+   `SECRET` back on its line (the same as `SHEETS_WEBHOOK_SECRET`).
+3. **The second spreadsheet.** Create it (blank), copy the id from its address
+   (`docs.google.com/spreadsheets/d/<ID>/edit`) into `SECOND_SHEET_ID`.
+4. **Save**, pick `setUpInstructorTabs` in the function menu and press **Run**.
+   Google asks for permission once (the script now opens a second file):
+   allow it. Both files get an **Instructors** tab.
+5. **Deploy -> Manage deployments -> edit (pencil) -> Version: New version ->
+   Deploy.** Same URL, so nothing changes in Vercel. Open the URL: `alive`.
+
+Columns of the Instructors tabs: Date, Time, Hours, Days, Discipline,
+Instructor, People, Booking id (the MT-… reference), Status. Rows follow
+Confirm / Decline / Cancel and instructor changes made on /admin/bookings.
+
+The roster is on **/admin/instructors** (rename the helpers there). The two
+switches **Confirm bookings automatically** and **Assign instructors** are at
+the bottom of each trip's form in /admin; both are on for the Gudauri lessons
+only.
 
 ---
 

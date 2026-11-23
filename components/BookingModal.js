@@ -544,7 +544,10 @@ export default function BookingModal({ tour, option = null, pkg = null, onClose 
                   rangeEnd={endDate}
                   span={span}
                   onPick={pickDate}
-                  isDisabled={(d) => !inSeason(tour, d) || avail.dayFull(d, timed, lessonSpan, lessonDaysN)}
+                  // a lesson over several days needs every one of them in season
+                  // (the server refuses one that runs past the season's end)
+                  isDisabled={(d) => Array.from({ length: lessonDaysN }, (_, k) => addDays(d, k)).some((day) => !inSeason(tour, day))
+                    || avail.dayFull(d, timed, lessonSpan, lessonDaysN)}
                   className="bm-cal"
                   autoFocus
                 />
