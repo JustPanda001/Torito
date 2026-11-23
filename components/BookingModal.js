@@ -323,6 +323,11 @@ export default function BookingModal({ tour, option = null, pkg = null, onClose 
         setFailed(await serverText(res, 'booking.justBooked'));
         return;
       }
+      if (res.status === 429 || res.status === 400) {
+        // the server says why (too many open requests, a bad date, ...)
+        setFailed(await serverText(res, 'booking.failed'));
+        return;
+      }
       if (res.status === 401) {
         setFailed(await serverText(res, 'booking.signInAgain'));
         return;
