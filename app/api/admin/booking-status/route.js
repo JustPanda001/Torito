@@ -87,6 +87,13 @@ export async function POST(request) {
     .from('bookings').update({ status, auto_confirm_at: null }).eq('id', id)
     .select(STATUS_COLUMNS);
   if (error) {
+    // bookings_capacity_guard_reactivate (PRELAUNCH-GUARDS.sql): a declined
+    // request cannot come back into a time that has filled up since
+    if (/slot_full/.test(error.message ?? '')) {
+      return Response.json({
+        error: 'That time is full now (other bookings took the place). Leave it declined, or free a place first.',
+      }, { status: 409 });
+    }
     console.error('Booking status update failed:', error.message);
     return Response.json({ error: 'Could not save the change. Please try again.' }, { status: 500 });
   }

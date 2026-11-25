@@ -263,6 +263,29 @@ export async function POST(request) {
     return Response.json({ error: `One booking can be at most ${groupMax(trip)} people.` }, { status: 400 });
   }
 
+  // What the dialog will not send without, checked again so a hand-made request
+  // cannot skip it: a date, the time when the trip asks for one, and every
+  // required "Pick one" / free-text answer (a "Pick one" must be one of its
+  // choices). Without these a lesson slipped past the hourly slot check and
+  // could not be given an instructor (no SKI/SNOWBOARD, no time).
+  const timeQ = timeQuestion(trip, bookingQuestions(trip));
+  if (kind !== 'waitlist') {
+    if (typeof body.wanted_date !== 'string' || !body.wanted_date.trim()) {
+      return Response.json({ error: 'Please pick a date.' }, { status: 400 });
+    }
+    if (timeQ?.required && !clean(body.lesson_time, 20)) {
+      return Response.json({ error: 'Please pick a time.' }, { status: 400 });
+    }
+    const given = body.answers && typeof body.answers === 'object' && !Array.isArray(body.answers) ? body.answers : {};
+    for (const q of bookingQuestions(trip)) {
+      if (!q.required || q.type === 'number' || (timeQ && q.label === timeQ.label)) continue;
+      const value = typeof given[q.label] === 'string' ? given[q.label].trim() : '';
+      if (!value || (q.type === 'choice' && !q.options.includes(value))) {
+        return Response.json({ error: `Please answer "${q.label}".` }, { status: 400 });
+      }
+    }
+  }
+
   // A number question with a lowest / highest set must be answered inside it;
   // the counter enforces this in the browser, this keeps a hand-made request out.
   if (kind !== 'waitlist' && body.answers && typeof body.answers === 'object') {
@@ -326,7 +349,9 @@ export async function POST(request) {
     wanted_date: typeof body.wanted_date === 'string' ? clean(body.wanted_date, 10) : null,
     people,
     total,
-    lesson_time: clean(body.lesson_time, 20),
+    // only a trip with a time picker has a time; anything else would be
+    // counted as an hour slot by the database without being one we offer
+    lesson_time: timeQ ? clean(body.lesson_time, 20) : null,
     skill_level: clean(body.skill_level, 40),
     lesson_type: clean(body.lesson_type, 40),
     // the hours of a rate-table lesson ride with the answers (no column for

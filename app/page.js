@@ -16,7 +16,10 @@ const CAMPING = [A + 'camping-1300.webp', A + 'camping-800.webp 800w, ' + A + 'c
 const SKIER = [A + 'skier-768.webp', null, 768, 512];
 
 // winter leads: it is where the season's bookings are
-const HERO = [GUDAURI1, SKIER, GUDAURI, SVANETI, CAMPING];
+// Only the first slide is shown for now. To bring the slider back, add the other
+// entries below, restore the clone slide in the JSX, and restore the keyframes in
+// globals.css (see the comment above .hero-track).
+const HERO = [GUDAURI1 /*, SKIER, GUDAURI, SVANETI, CAMPING */];
 
 // Card and feature pictures are shown at most ~600px wide, so 800px is enough.
 const WINTER = [
@@ -32,8 +35,8 @@ const ACTIVITIES = [
   [[A + 'freeride-home-1000.webp', null, 900, 844], 'winter.freeride', '/activities?cat=ski&type=freeride'],
   [[A + 'skitouring-800.webp', null, 800, 1200], 'winter.skitouring', '/activities?cat=ski&type=skitouring'],
   [[A + 'paragliding-home-800.webp', null, 800, 533], 'winter.paragliding', '/activities?cat=ski&type=paragliding'],
-  [[A + 'svaneti-history-800.webp', null, 800, 457], 'cat.hiking', '/activities?cat=hiking'],
-  [[A + 'camping fier.webp', null, 1000, 667], 'cat.camping', '/activities?cat=camping'],
+  [[A + 'marquee-hiking-800.webp', null, 800, 1067], 'cat.hiking', '/activities?cat=hiking'],
+  [[A + 'marquee-camping-800.webp', null, 800, 1422], 'cat.camping', '/activities?cat=camping'],
   [[A + 'sameba.webp', null, 474, 634], 'cat.mountaineering', '/activities?cat=mountaineering'],
 ];
 
@@ -72,8 +75,8 @@ export default function HomePage() {
             {HERO.map((p, i) => (
               <div className="hero-slide" key={p[0]}><Pic p={p} sizes="100vw" first={i === 0} slide /></div>
             ))}
-            {/* clone of slide 1 so the loop restarts without a visible jump */}
-            <div className="hero-slide" aria-hidden="true"><Pic p={HERO[0]} sizes="100vw" slide /></div>
+            {/* with several slides, add a clone of slide 1 here so the loop restarts without a jump:
+                <div className="hero-slide" aria-hidden="true"><Pic p={HERO[0]} sizes="100vw" slide /></div> */}
           </div>
           <div className="hero-scrim" />
           <div className="hero-content">
@@ -136,7 +139,7 @@ export default function HomePage() {
 
           <div className="feature">
             <Link className="feature-img" href="/activities?cat=ski">
-              <Pic p={[A + 'gudauri-hero-800.webp', null, 800, 450]} alt={t('home.winter.alt')} />
+              <Pic p={[A + 'feature-winter-800.webp', null, 800, 532]} alt={t('home.winter.alt')} />
             </Link>
             <div className="feature-text">
               <span className="tag">{t('home.winter.tag')}</span>
@@ -150,7 +153,7 @@ export default function HomePage() {
 
           <div className="feature reverse">
             <Link className="feature-img" href="/activities?cat=hiking">
-              <Pic p={[A + 'svaneti-hiking-800.webp', null, 800, 450]} alt={t('home.hiking.alt')} />
+              <Pic p={[A + 'feature-hiking-800.webp', null, 800, 533]} alt={t('home.hiking.alt')} />
             </Link>
             <div className="feature-text">
               <span className="tag">{t('home.hiking.tag')}</span>
@@ -165,7 +168,7 @@ export default function HomePage() {
 
           <div className="feature">
             <Link className="feature-img" href="/activities?cat=camping">
-              <Pic p={[A + 'camping-800.webp', null, 800, 534]} alt={t('home.camping.alt')} />
+              <Pic p={[A + 'feature-camping-800.webp', null, 800, 533]} alt={t('home.camping.alt')} />
             </Link>
             <div className="feature-text">
               <span className="tag">{t('home.camping.tag')}</span>
@@ -180,7 +183,7 @@ export default function HomePage() {
 
           <div className="feature reverse">
             <Link className="feature-img" href="/activities?cat=mountaineering">
-              <Pic p={[A + 'sameba-800.webp', null, 800, 533]} alt={t('home.climb.alt')} />
+              <Pic p={[A + 'feature-mountaineering-800.webp', null, 800, 533]} alt={t('home.climb.alt')} />
             </Link>
             <div className="feature-text">
               <span className="tag">{t('home.climb.tag')}</span>

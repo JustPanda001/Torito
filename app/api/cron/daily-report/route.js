@@ -1,6 +1,6 @@
 // The daily booking report, sent to the team's Telegram alerts chat at 23:30
 // Tbilisi time (19:30 UTC; Georgia has no summer time). Run by Vercel Cron
-// (vercel.json, "30 7 * * *"), which calls this with
+// (vercel.json, "30 19 * * *"), which calls this with
 // "Authorization: Bearer <CRON_SECRET>".
 //
 // It covers every booking request created in the 24 hours before the run,
