@@ -31,7 +31,7 @@ import { itineraryMode } from '@/lib/itinerary';
 import { filled } from '@/lib/filled';
 import { useT } from '@/lib/i18n';
 import { localizeTour } from '@/lib/trip-translations';
-import { hourlyRates } from '@/lib/lessons';
+import { hourlyRates, groupRates, lowestPerPerson } from '@/lib/lessons';
 import PackageBuilder from '@/components/PackageBuilder';
 import { packageSteps, defaultChoices } from '@/lib/packageBuilder';
 
@@ -325,6 +325,9 @@ export default function TourPage({ params }) {
                 <span className="fact-value">
                   {hourlyRates(tour)
                     ? t('trip.pricePerHour', { price: money(hourlyRates(tour)[0]) })
+                    // priced by group size: "from" the cheapest price per person
+                    : groupRates(tour)
+                    ? t('trip.priceFromPer', { price: money(lowestPerPerson(groupRates(tour))) })
                     : options.length > 1
                     ? t('trip.priceFromPer', { price: money(Math.min(...options.map((o) => o.price))) })
                     : t('trip.pricePer', { price: money(chosen ? chosen.price : tour.price) })}

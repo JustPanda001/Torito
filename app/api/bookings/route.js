@@ -36,7 +36,7 @@ import { TOURS } from '@/lib/tours-data';
 import { tourOptions } from '@/lib/options';
 import { bookingTitle, bookingTotal, findOption, unitPrice } from '@/lib/pricing';
 import {
-  HOURS_ANSWER, hourlyRates, lessonHours, validHours, timeQuestion, spanFull, fitsDay,
+  HOURS_ANSWER, hourlyRates, groupRates, lessonHours, validHours, timeQuestion, spanFull, fitsDay,
   DAYS_ANSWER, lessonDays, validDays, isLesson,
 } from '@/lib/lessons';
 import { sendBookingEmail } from '@/lib/bookingEmail';
@@ -314,6 +314,13 @@ export async function POST(request) {
     }
   }
 
+  // A trip priced by group size has one flat total per size: the group cannot
+  // be bigger than the table (the Group size check above still applies too).
+  const groupTable = kind !== 'waitlist' ? groupRates(trip) : null;
+  if (groupTable && people > groupTable.length) {
+    return Response.json({ error: `Please choose between 1 and ${groupTable.length} people.` }, { status: 400 });
+  }
+
   // A lesson over several days in a row (admin "How many days?"): same time
   // and hours each day. Without a days question it is one day, as before.
   const dayRange = isLesson(trip) && kind !== 'waitlist' ? lessonDays(trip) : { min: 1, max: 1 };
@@ -336,7 +343,7 @@ export async function POST(request) {
   // made-up 0. Rounded to cents so float noise never reaches the row.
   const unit = unitPrice(trip, option);
   const priced = kind !== 'waitlist'
-    && (rates != null || steps != null || (unit != null && unit !== '' && Number.isFinite(Number(unit))));
+    && (rates != null || groupTable != null || steps != null || (unit != null && unit !== '' && Number.isFinite(Number(unit))));
   const total = priced ? Math.round(bookingTotal(trip, option, people, hours, pkg, days) * 100) / 100 : null;
   if (total != null && Number.isFinite(body.total) && body.total !== total) {
     console.warn(`Booking total differs: browser said ${body.total}, server says ${total} (${slug})`);

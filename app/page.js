@@ -80,7 +80,6 @@ export default function HomePage() {
           </div>
           <div className="hero-scrim" />
           <div className="hero-content">
-            <span className="hero-kicker">❄ {t('winter.kicker')}</span>
             <h1>{t('hero.title1')}<br />{t('hero.title2')}</h1>
             <p>{t('hero.sub')}</p>
             <div className="hero-ctas">

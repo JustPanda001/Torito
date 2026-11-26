@@ -30,6 +30,7 @@ import {
   parseGroupSize, formatGroupSize,
   HOURS_ROLE, PEOPLE_ROLE, lessonHours, isHoursQuestion, isPeopleQuestion, defaultHoursQuestion, defaultPeopleQuestion,
   DAYS_ROLE, isDaysQuestion,
+  GROUP_RATES, GROUP_RATES_MAX,
 } from '@/lib/lessons';
 
 // the "Group size" dropdowns offer 1 to 30 people (tours run bigger groups
@@ -208,6 +209,11 @@ export default function AdminPage() {
   const noRates = () => Array.from({ length: LESSON_MAX_GROUP }, () => '');
   const [rates, setRates] = useState(noRates);
   const setRate = (i, value) => setRates((prev) => prev.map((r, j) => (j === i ? value : r)));
+  // trips (not lessons): the TOTAL for 1, 2, 3 … people, as typed. Empty list =
+  // off, so the trip keeps the price-per-person rule. Saved as a hidden
+  // booking_fields entry { type: 'group_rates', rates: [...] }.
+  const [groupPrices, setGroupPrices] = useState([]);
+  const setGroupPrice = (i, value) => setGroupPrices((prev) => prev.map((r, j) => (j === i ? value : r)));
   // "Group size" as { min, max, note }, or null when none is set. A lesson
   // shows one rate box per group size up to max.
   const [group, setGroup] = useState(null);
@@ -312,10 +318,13 @@ export default function AdminPage() {
       // own boxes, not as a question
       const saved = raw.find((q) => q?.type === HOURLY_RATES)?.rates;
       setRates(noRates().map((_, i) => (Array.isArray(saved) && saved[i] != null ? String(saved[i]) : '')));
+      // the group price table is another hidden entry, edited in its own boxes
+      const savedGroup = raw.find((q) => q?.type === GROUP_RATES)?.rates;
+      setGroupPrices(Array.isArray(savedGroup) ? savedGroup.slice(0, GROUP_RATES_MAX).map((r) => String(r ?? '')) : []);
       // the package steps are another hidden entry, edited in PackageEditor
       setPkgSteps(packageSteps({ booking_fields: raw }) ?? []);
       setBookingFields(withTimeQuestion(
-        raw.filter((q) => q?.type !== NO_TIMES && q?.type !== HOURLY_RATES && q?.type !== PACKAGE),
+        raw.filter((q) => q?.type !== NO_TIMES && q?.type !== HOURLY_RATES && q?.type !== GROUP_RATES && q?.type !== PACKAGE),
         tour.category, tour.subtype, optedOut,
         Array.isArray(saved) && saved.length ? saved.length : (parseGroupSize(tour.group_size)?.max ?? DEFAULT_LESSON_GROUP),
       ));
@@ -398,6 +407,7 @@ export default function AdminPage() {
     setNoTimes(false);
     setRequiredItems([]);
     setRates(noRates());
+    setGroupPrices([]);
     setGroup(null);
     setGroupText('');
     setOptions([]);
@@ -496,6 +506,17 @@ export default function AdminPage() {
     if (!lessonForm) {
       const entry = packageEntryFrom(pkgSteps);
       if (entry) row.booking_fields.push(entry);
+    }
+    // a trip priced by group size: the total for 1, 2, 3 … people, every box
+    // filled in with a number above 0 (a lesson uses the hourly table instead)
+    if (!lessonForm && groupPrices.length > 0) {
+      const typed = groupPrices.map((r) => String(r ?? '').trim());
+      const nums = typed.map(Number);
+      if (typed.some((r) => r === '') || !nums.every((n) => Number.isFinite(n) && n > 0)) {
+        setNote({ error: true, text: `Price by group size: fill in all ${typed.length} totals with a number above 0, or switch it off.` });
+        return;
+      }
+      row.booking_fields.push({ type: GROUP_RATES, rates: nums });
     }
     // a lesson's rate table: one rate per group size up to Group size's
     // maximum, all filled in, or none at all
@@ -729,6 +750,69 @@ export default function AdminPage() {
                   >
                     Fill in {SUGGESTED_HOURLY_RATES.slice(0, groupMax).join(' / ')} ₾
                   </button>
+                )}
+              </section>
+            )}
+
+            {!lessonForm && (
+              <section className="admin-section" data-pv="facts">
+                <div className="admin-section-head">
+                  <h3>Price by group size (total for the whole group)</h3>
+                  <span className="field-hint">
+                    One flat total per group size, not per person and not per hour (e.g. 1 person 1350 ₾, 2 people 1560 ₾, 3 people 1890 ₾).
+                    The number of boxes is the most people one booking can bring (Group size still caps it).
+                    While this is on, it replaces Price per person and the options' prices for the total.
+                  </span>
+                </div>
+                <label className="check">
+                  <input
+                    type="checkbox"
+                    checked={groupPrices.length > 0}
+                    onChange={(e) => setGroupPrices(e.target.checked ? [''] : [])}
+                  />
+                  <span>Price this trip by group size</span>
+                </label>
+                {groupPrices.length > 0 && (
+                  <>
+                    <div className="admin-grid">
+                      {groupPrices.map((value, i) => (
+                        <label className="field" key={i}>
+                          <span className="field-label">{i + 1} {i === 0 ? 'person' : 'people'} — total ₾</span>
+                          {/* no name: these are saved into booking_fields, not as columns */}
+                          <input
+                            type="number"
+                            min={1}
+                            inputMode="decimal"
+                            value={value}
+                            placeholder={i === 0 ? '1350' : ''}
+                            onChange={(e) => setGroupPrice(i, e.target.value)}
+                          />
+                          {Number(value) > 0 && (
+                            <span className="field-hint">{Math.round(Number(value) / (i + 1))} ₾ per person</span>
+                          )}
+                        </label>
+                      ))}
+                    </div>
+                    <div className="admin-actions">
+                      <button
+                        type="button"
+                        className="chip"
+                        disabled={groupPrices.length >= GROUP_RATES_MAX}
+                        onClick={() => setGroupPrices((prev) => [...prev, ''])}
+                      >
+                        + Add group size ({groupPrices.length + 1} people)
+                      </button>
+                      {groupPrices.length > 1 && (
+                        <button
+                          type="button"
+                          className="chip danger"
+                          onClick={() => setGroupPrices((prev) => prev.slice(0, -1))}
+                        >
+                          Remove {groupPrices.length} people
+                        </button>
+                      )}
+                    </div>
+                  </>
                 )}
               </section>
             )}

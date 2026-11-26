@@ -21,7 +21,7 @@ import { itineraryMode } from '@/lib/itinerary';
 import { filled } from '@/lib/filled';
 import { bookingQuestions, numberBounds, initialAnswer } from '@/lib/bookingQuestions';
 import { useT } from '@/lib/i18n';
-import { hourlyRates } from '@/lib/lessons';
+import { hourlyRates, groupRates, lowestPerPerson } from '@/lib/lessons';
 
 const CANVAS_WIDTH = 560;
 const GAP = '…';
@@ -204,7 +204,9 @@ export default function AdminTripPreview({ row, focus, block }) {
               <span className="fact-value">
                 {hourlyRates(tour)
                   ? t('trip.pricePerHour', { price: money(hourlyRates(tour)[0]) })
-                  : options.length > 1
+                  : groupRates(tour)
+                    ? t('trip.priceFromPer', { price: money(lowestPerPerson(groupRates(tour))) })
+                    : options.length > 1
                     ? t('trip.priceFromPer', { price: money(Math.min(...options.map((o) => o.price))) })
                     : t('trip.pricePer', { price: money(options[0]?.price ?? tour.price) })}
               </span>

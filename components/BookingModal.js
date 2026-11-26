@@ -15,7 +15,7 @@ import {
 } from '@/lib/season';
 import {
   isLesson, isTimed, timeQuestion, slotTimeState, defaultTimeQuestion, SKILL_LEVELS, LESSON_TYPES,
-  hourlyRates, lessonHours, isHoursQuestion, isPeopleQuestion,
+  hourlyRates, groupRates, lessonHours, isHoursQuestion, isPeopleQuestion,
   lessonDays, isDaysQuestion, DAYS_ANSWER,
 } from '@/lib/lessons';
 import { useAvailability } from '@/lib/availability';
@@ -161,6 +161,9 @@ export default function BookingModal({ tour, option = null, pkg = null, onClose 
   // a lesson with a rate table is priced per hour by group size, and the
   // visitor picks how many hours; null for everything else
   const rates = useMemo(() => hourlyRates(tour), [tour]);
+  // a trip priced by group size: one flat total per size (1, 2, 3 … people),
+  // not per person; null for everything else
+  const groupTable = useMemo(() => groupRates(tour), [tour]);
   // the hours this lesson can be booked for, from its admin hours question
   const hourSpan = useMemo(() => lessonHours(tour), [tour]);
   const [hours, setHours] = useState(hourSpan.min);
@@ -378,7 +381,10 @@ export default function BookingModal({ tour, option = null, pkg = null, onClose 
   const groupTop = rates ? Math.min(rates.length, peopleQ?.max ?? rates.length) : null;
   const maxPeople = rates
     ? Math.min(groupTop, Number.isFinite(daySeats) && daySeats > 0 ? daySeats : groupTop)
-    : daySeats;
+    // a group price table covers groups up to its length, and the group size
+    // (already part of daySeats) still caps it
+    : groupTable ? Math.min(groupTable.length, daySeats)
+      : daySeats;
   const step = (n) => setPeople((p) => Math.min(maxPeople, Math.max(1, p + n)));
   const stepHours = (n) => {
     const next = Math.min(hourSpan.max, Math.max(hourSpan.min, hours + n));
@@ -765,7 +771,7 @@ export default function BookingModal({ tour, option = null, pkg = null, onClose 
                     type="button"
                     className="bm-step"
                     onClick={() => step(1)}
-                    disabled={rates ? people >= maxPeople : false}
+                    disabled={rates || groupTable ? people >= maxPeople : false}
                     aria-label={t('booking.oneMore')}
                   >
                     +
@@ -777,6 +783,21 @@ export default function BookingModal({ tour, option = null, pkg = null, onClose 
                     {' · '}
                     {t('booking.groupMax', { n: maxPeople })}
                   </p>
+                )}
+                {groupTable && (
+                  <>
+                    {/* the flat total for each group size, e.g. 1 person 1,350 ₾ · 2 people 1,560 ₾ */}
+                    <p className="bm-hint lp-rate">
+                      {groupTable.slice(0, maxPeople)
+                        .map((r, i) => `${i + 1} ${t(`booking.peopleWord${pluralForm(lang, i + 1)}`)} ${money(r)}`)
+                        .join(' · ')}
+                    </p>
+                    <p className="bm-hint">
+                      {t('booking.groupFlat')}
+                      {' · '}
+                      {t('booking.groupMax', { n: maxPeople })}
+                    </p>
+                  </>
                 )}
                 <p className="bm-hint">
                   {lesson
@@ -828,7 +849,9 @@ export default function BookingModal({ tour, option = null, pkg = null, onClose 
                 <div className="bm-line">
                   {rates
                     ? <span>{money(rate)} × {hours} {hoursWord}{daysQ && days > 1 ? ` × ${t(`cal.days${pluralForm(lang, days)}`, { n: days })}` : ''}</span>
-                    : <span>{money(price)} × {people}</span>}
+                    : groupTable
+                      ? <span>{t('booking.groupOf', { n: people, people: peopleWord })}</span>
+                      : <span>{money(price)} × {people}</span>}
                   <span>{money(total)}</span>
                 </div>
                 <div className="bm-line bm-grand"><span>{t('booking.total')}</span><span>{money(total)}</span></div>
